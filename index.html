@@ -682,7 +682,7 @@ details.card>summary select{margin-left:auto;width:auto;min-width:125px;padding:
 <input id="importFile" type="file" accept=".json,application/json" class="hidden">
 
 <script>
-const APP_VERSION = '3.0.67';
+const APP_VERSION = '3.0.68';
 
 "use strict";
 
@@ -2257,7 +2257,6 @@ function switchEntryTab(tab){
 
   if(!isTeam){
     renderSpecialTeamEntrySettings();
-    $("specialTeamEntryOptions")?.scrollIntoView({behavior:"smooth",block:"nearest"});
   }
 }
 
