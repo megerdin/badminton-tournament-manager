@@ -446,9 +446,11 @@ details.card>summary select{margin-left:auto;width:auto;min-width:125px;padding:
 #specialTeamDistributionSummary{padding-top:2px}
 #distributeSpecialTeamsBtn{margin-top:9px!important}
 
-.header-subtitle{position:relative;display:flex;align-items:center;width:100%;min-height:2.2em;padding-bottom:1.1em;box-sizing:border-box}
-.header-subtitle .header-tournament-name{min-width:0;max-width:62%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#4f7d52}
-.header-subtitle .header-team-group{margin-left:auto;white-space:nowrap}
+.header-subtitle{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;width:100%;min-height:2.2em;padding-bottom:1.1em;box-sizing:border-box;column-gap:16px}
+.header-subtitle .header-club-info{min-width:0;line-height:1.2;color:#4f7d52;overflow:visible}
+.header-subtitle .header-tournament-name{display:inline;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:break-word}
+.header-subtitle .header-club-icon{display:inline-block;margin:0;font-size:1.7em;line-height:1;white-space:nowrap;vertical-align:middle}
+.header-subtitle .header-team-group{align-self:start;white-space:nowrap}
 .header-subtitle .app-version{position:absolute;right:0;bottom:0;white-space:nowrap;font-size:.62em;font-weight:400;color:#6b7280}
 </style>
 </head>
@@ -456,7 +458,7 @@ details.card>summary select{margin-left:auto;width:auto;min-width:125px;padding:
 
 <div class="app">
 <header>
-<h1>🏸 Badminton Tournament Manager</h1>
+<h1>Badminton Tournament Manager</h1>
 <p class="header-subtitle" id="headerTournamentName"></p>
 </header>
 
@@ -570,8 +572,8 @@ details.card>summary select{margin-left:auto;width:auto;min-width:125px;padding:
 <details class="card" id="tournamentSettingsCard"><summary><strong>⚙ Tournament Settings</strong></summary><div style="margin-top:10px">
 <div style="margin-top:12px">
 <div class="field">
-<label for="tournamentName">Tournament name</label>
-<input id="tournamentName" placeholder="e.g. Summer Club Championship">
+<label for="clubName">Club name</label>
+<input id="clubName" placeholder="e.g. Magpie Club">
 </div>
 <div class="small-grid">
 <div class="field">
@@ -682,7 +684,7 @@ details.card>summary select{margin-left:auto;width:auto;min-width:125px;padding:
 <input id="importFile" type="file" accept=".json,application/json" class="hidden">
 
 <script>
-const APP_VERSION = '3.0.68';
+const APP_VERSION = '3.0.71';
 
 "use strict";
 
@@ -703,7 +705,7 @@ function blankTournament(){
   return {
     schemaVersion: 2,
     id: id("tournament"),
-    name: "",
+    clubName: "",
     date: "",
     settings: {
       defaultFormat:"doubles",
@@ -765,7 +767,7 @@ function saveLocal(silent=false){
 }
 
 function syncSettings(){
-  tournament.name=$("tournamentName").value.trim();
+  tournament.clubName=$("clubName").value.trim();
   tournament.date=$("tournamentDate").value;
   tournament.settings.defaultFormat=$("format").value;
   tournament.settings.entryFormat=$("entryFormatSetting")?.value||tournament.settings.entryFormat||tournament.settings.defaultFormat;
@@ -792,6 +794,8 @@ function migrateTournamentData(data){
   const version=Number(migrated.schemaVersion||1);
   if(!Number.isInteger(version) || version<1 || version>2) throw new Error("Unsupported schema version");
   migrated.settings=(migrated.settings&&typeof migrated.settings==="object"&&!Array.isArray(migrated.settings))?migrated.settings:{};
+  if(migrated.clubName===undefined)migrated.clubName=typeof migrated.name==="string"?migrated.name:"";
+  delete migrated.name;
   const defaults=blankTournament();
   for(const key of Object.keys(defaults.settings)){
     if(migrated.settings[key]===undefined)migrated.settings[key]=defaults.settings[key];
@@ -2027,7 +2031,7 @@ function renderAll(){
   renderSpecialTeamEntrySettings();
   const fixturesCardOpen=$("fixturesCard")?.open ?? false;
   const knockoutCardOpen=$("knockoutCard")?.open ?? false;
-  renderHeaderTournamentName();
+  renderHeaderClubName();
   calculateAndStoreGroupGlobalMetrics();
   if(!Array.isArray(tournament.manualKnockoutTeams))tournament.manualKnockoutTeams=[];
   if(!Array.isArray(tournament.fixtures))tournament.fixtures=[];
@@ -2039,7 +2043,7 @@ function renderAll(){
   if(!tournament.settings.bestOf)tournament.settings.bestOf=1;
   if(!tournament.settings.pointsTarget)tournament.settings.pointsTarget=21;
 
-  $("tournamentName").value=tournament.name||"";
+  $("clubName").value=tournament.clubName||"";
   $("tournamentDate").value=tournament.date||"";
   $("format").value=tournament.settings?.defaultFormat||"doubles";
   if($("entryFormatSetting"))$("entryFormatSetting").value=tournament.settings?.entryFormat||$("format").value||"singles";
@@ -4547,7 +4551,7 @@ function exportJson(){
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
   a.href=url;
-  a.download=(tournament.name||"badminton-tournament").replace(/[^a-z0-9_-]+/gi,"_")+".json";
+  a.download=(tournament.clubName||"badminton-tournament").replace(/[^a-z0-9_-]+/gi,"_")+".json";
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -4714,7 +4718,7 @@ $("defaultQualifiers").addEventListener("change",()=>{
   saveLocal(true);
 });
 
-["tournamentName","tournamentDate","format","bestOf","pointsTarget"].forEach(key=>{
+["clubName","tournamentDate","format","bestOf","pointsTarget"].forEach(key=>{
   $(key).addEventListener("change",()=>{syncSettings();saveLocal(true);});
 });
 
@@ -4733,13 +4737,13 @@ if(!Number.isFinite(Number(tournament.settings.playerPoolCount)))
 ensurePlayerPoolState(tournament.settings.playerPoolCount);
 renderAll();
 
-function renderHeaderTournamentName(){
+function renderHeaderClubName(){
   const el=document.getElementById("headerTournamentName");
   if(!el)return;
-  const name=tournament?.name||"";
+  const name=tournament?.clubName||"Your club name";
   const teamCount=Array.isArray(tournament?.teams)?tournament.teams.length:0;
   const groupCount=Array.isArray(tournament?.groups)?tournament.groups.length:0;
-  el.innerHTML=`<span class="header-tournament-name">${escapeHtml(name)}</span><span class="header-team-group">Teams: ${teamCount}&nbsp;&nbsp;&nbsp;&nbsp;Groups: ${groupCount}</span><span id="appVersion" class="app-version">V${escapeHtml(APP_VERSION)}</span>`;
+  el.innerHTML=`<span class="header-club-info"><span class="header-tournament-name">${escapeHtml(name)}</span>&nbsp;&nbsp;<span class="header-club-icon" aria-hidden="true">🏸</span></span><span class="header-team-group">Teams: ${teamCount}&nbsp;&nbsp;&nbsp;&nbsp;Groups: ${groupCount}</span><span id="appVersion" class="app-version">V${escapeHtml(APP_VERSION)}</span>`;
 }
 
 
