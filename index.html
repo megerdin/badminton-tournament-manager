@@ -877,7 +877,7 @@ details.card>summary>strong{flex:1 1 auto;text-align:left}
 <input id="importFile" type="file" accept=".json,application/json" class="hidden">
 
 <script>
-const APP_VERSION = '4.0.1';
+const APP_VERSION = '4.0.2';
 
 "use strict";
 
@@ -4840,7 +4840,7 @@ function renderPodium(){
   }
   const third=tournament.thirdPlacePlayoff;
   el.innerHTML=`<div class="result-box">
-    <div class="podium-title">🏆 Tournament positions</div>
+    <div class="podium-title">🏆 Tournament Champions</div>
     <div class="podium-list">
       <div class="podium-item"><strong>🥇 ${knockoutDisplayLabel(final.winnerTeamId)}</strong></div>
       <div class="podium-item">🥈 ${knockoutDisplayLabel(final.loserTeamId)}</div>
