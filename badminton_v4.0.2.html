@@ -592,48 +592,7 @@ details.card>summary>strong{flex:1 1 auto;text-align:left}
   .main-ko-allocation-row{border-bottom-color:#353a40}
 }
 
-/* DARK THEME — Application palette and collapsible section headers. */
-details.card>summary{position:relative}
-details.card>summary>strong{flex:1 1 auto;text-align:left}
-@media(prefers-color-scheme:dark){
-  :root{color:#f3f4f6;background:#111315}
-  body{background:#111315;color:#f3f4f6}
-  .app{background:#17191b}
-  header{background:#3b3d3f;color:#f8fafc}
-  header p{color:#cbd5e1}
-  .card{background:#1d2023;border-color:#34383d;color:#f3f4f6}
-  input,select{background:#25292d;color:#f3f4f6;border-color:#4a5057}
-  .group{border-color:#3b4147}
-  .team-item{border-top-color:#353a40}
-  .muted{color:#aeb6c0}
-  .notice{background:#17263a;color:#bfdbfe}
-  .warning{background:#332812;color:#fde68a}
-  .preliminary-regenerate-warning{background:#332b19;border-color:#8a6a25;color:#f3f4f6}
-  .preliminary-regenerate-warning strong{color:#fbbf24}
-  .preliminary-regenerate-warning .muted{color:#d6c28a}
-  .empty{color:#aeb6c0;border-color:#4a5057}
-  .badge{background:#343a40;color:#f3f4f6}
-  .bottom{background:#17191b;border-top-color:#34383d}
-  .btn-secondary{background:#343a40;color:#f3f4f6}
-  .btn-danger{background:#4a2528;color:#fecaca}
-  .entry-card{background:#202428;border-color:#3a4046}
-  #addTeamPanel>.entry-card{background:#202428!important;border-color:#3a4046!important;color:#f3f4f6!important}
-  .special-team-pool{background:#202428}
-  #playerTeamEntryCard>summary{background:#1c3022}
-  #fixturesCard>summary{background:#1b2a3a}
-  #qualificationCard>summary{background:#2a2534}
-  #knockoutCard>summary{background:#1c3022}
-  #tournamentSettingsCard>summary{background:#332b19}
-  .tournament-status-card>summary{background:#25272a}
-  .tournament-ranking-card>summary{background:#2a2534}
-  .preliminary-round-card>summary{background:#332b19}
-  .main-ko-allocation-card>summary{background:#1b2a3a}
-  .ko-result-editor-card{background:#202428;border-color:#3a4046}
-  .main-ko-match-selectable:hover,.main-ko-match-selected{background:#252a2f}
-  .ko-prelim-match:hover,.ko-prelim-match.selected-prelim-match{background:#252a2f;color:#f3f4f6}
-  .main-ko-allocation-list{border-color:#3a4046}
-  .main-ko-allocation-row{border-bottom-color:#353a40}
-}
+
 </style>
 </head>
 <body>
@@ -716,16 +675,7 @@ details.card>summary>strong{flex:1 1 auto;text-align:left}
 <select id="qualificationGroupFilter"></select>
 </div>
 </div>
-<div class="row" style="align-items:center;margin-top:8px">
-<div class="field" style="margin:0;flex:1">
-<label for="qualificationMode">Qualification mode</label>
-<select id="qualificationMode">
-<option value="direct">Direct qualifiers</option>
-<option value="exception">Exception / playoff</option>
-</select>
-</div>
-</div>
-<div id="qualificationModeHelp" class="muted" style="margin-top:5px"></div>
+<div id="qualificationHelp" class="muted" style="margin-top:5px"></div>
 <div id="qualificationList" style="margin-top:8px"></div>
 <div id="qualificationActions" style="margin-top:8px"></div>
 </div>
@@ -842,7 +792,7 @@ details.card>summary>strong{flex:1 1 auto;text-align:left}
 <div id="groupsCompact"></div>
 
 </div>
-</div><div class="notice">These are the initial tournament settings. Later steps will add the detailed scoring, group rules, qualification and knockout controls.</div>
+</div><div class="notice">Tournament settings control scoring, group structure, qualification and team-entry options. Changes remain editable so the admin can correct tournament setup mistakes when needed.</div>
 
 </div></details>
 
@@ -1112,6 +1062,8 @@ function saveLocal(silent=false){
   if(!silent) showMessage("Tournament saved locally.");
 }
 
+// Tournament settings remain editable after results exist so the admin can correct
+// setup mistakes without locking the tournament to its original scoring configuration.
 function syncSettings(){
   tournament.clubName=$("clubName").value.trim();
   tournament.date=$("tournamentDate").value;
@@ -1149,6 +1101,14 @@ function migrateTournamentData(data){
   for(const key of ["players","teams","groups","history","fixtures","results"]){
     if(!Array.isArray(migrated[key]))migrated[key]=[];
   }
+  // Legacy BYE/exception qualification fields are no longer part of the active model.
+  // Per-group directQualifiers and qualifierOverridden remain the supported custom qualification controls.
+  migrated.groups.forEach(group=>{
+    if(!group || typeof group!=="object")return;
+    delete group.qualificationMode;
+    delete group.exceptionQualifiers;
+    delete group.exceptionTeamIds;
+  });
   if(migrated.thirdPlacePlayoff===undefined)migrated.thirdPlacePlayoff=null;
   if(!migrated.stageBuildState || typeof migrated.stageBuildState!=="object" || Array.isArray(migrated.stageBuildState))
     migrated.stageBuildState={};
@@ -3103,6 +3063,21 @@ function buildSpecialTeams(){
     return;
   }
 
+  // Build Teams requires each player name to belong to only one pool.
+  // Comparison is case-insensitive and ignores repeated whitespace.
+  const playerPoolNames=new Map();
+  for(let poolIndex=0;poolIndex<pools.length;poolIndex++){
+    for(const rawName of pools[poolIndex]){
+      const normalized=rawName.toLowerCase().replace(/\s+/g," ").trim();
+      const previousPool=playerPoolNames.get(normalized);
+      if(previousPool!==undefined && previousPool!==poolIndex){
+        showMessage(`Player "${rawName}" appears in more than one player pool.`,"warning");
+        return;
+      }
+      playerPoolNames.set(normalized,poolIndex);
+    }
+  }
+
   const teamCount=Math.min(...pools.map(p=>p.length));
   const shuffled=pools.map(shuffleArray);
 
@@ -3693,6 +3668,8 @@ function renderResultEditor(){
 }
 
 
+// Scoring validation intentionally stays simple: require complete, non-tied game scores
+// and a valid match game count, but do not enforce badminton-specific deuce/30-point rules.
 function normalizeMatchGames(games,bestOf){
   const targetGames=Math.max(1,Number(bestOf)||1);
   const needed=Math.floor(targetGames/2)+1;
@@ -4102,23 +4079,6 @@ function calculateQualifications(groupId){
   return standings.map((r,i)=>({...r,qualifier:i<count}));
 }
 
-function getExceptionPlayoff(groupId){
-  const group=tournament.groups.find(g=>String(g.id)===String(groupId));
-  if(!group)return null;
-  const standings=calculateGroupStandings(groupId);
-  const directCount=qualificationCountForGroup(group);
-  const direct=standings.slice(0,directCount);
-  const remaining=standings.slice(directCount);
-
-  // The special playoff is intended for cases where direct qualifiers
-  // do not produce the desired knockout field. Admin can choose the
-  // playoff entrants and number of additional qualifiers.
-  const additional=Math.max(0,Number(group.exceptionQualifiers||0));
-  const selectedIds=Array.isArray(group.exceptionTeamIds)?group.exceptionTeamIds.map(String):[];
-  const selected=remaining.filter(r=>selectedIds.includes(String(r.team.id)));
-  return {group,standings,direct,remaining,additional,selected};
-}
-
 function renderQualificationGroupFilter(){
   const el=$("qualificationGroupFilter");
   if(!el)return;
@@ -4138,10 +4098,9 @@ function qualificationTeamLabel(team){
 
 function renderQualification(){
   renderQualificationGroupFilter();
-  const mode=$("qualificationMode")?.value||"direct";
   const el=$("qualificationList");
   const actions=$("qualificationActions");
-  const help=$("qualificationModeHelp");
+  const help=$("qualificationHelp");
   if(!el)return;
   const gid=$("qualificationGroupFilter")?.value;
   const group=tournament.groups.find(g=>String(g.id)===String(gid));
@@ -4154,68 +4113,18 @@ function renderQualification(){
   }
 
   const rows=calculateQualifications(gid);
-
-  if(mode==="direct"){
-    if(help)help.textContent="Top teams qualify automatically according to the group qualifier setting.";
-    el.innerHTML=`<div class="standings-table group-ranking-table">
-      <div class="standing-row standing-head">
-        <span>Pos</span><span>Team</span><span>W</span><span>L</span><span>Lost</span><span>Qualify</span><span class="group-metric-head">Metrics</span>
-      </div>
-      ${rows.map(r=>`<div class="standing-row ${r.qualifier?'qualifier-row':''}">
-        <span>${r.position}</span><span class="standing-team">${qualificationTeamLabel(r.team)}</span>
-        <span>${r.wins}</span><span>${r.losses}</span><span>${r.lostScore}</span>
-        <span>${r.qualifier?'✓':'—'}</span><span class="group-metric">${Number(r.team?.globalMetric??0)}</span>
-      </div>`).join("")}
-    </div>`;
-    if(actions)actions.innerHTML=`<div class="muted">Direct qualifiers: <strong>${qualificationCountForGroup(group)}</strong>${group.qualifierOverridden?' · Group override active':' · Using tournament default'}</div>`;
-    return;
-  }
-
-  const ex=getExceptionPlayoff(gid);
-  if(help)help.textContent="Use this mode when the normal direct qualifiers need an additional playoff to create the required knockout field.";
-
-  const remaining=ex.remaining;
-  const selected=new Set((group.exceptionTeamIds||[]).map(String));
+  if(help)help.textContent="Top teams qualify automatically according to each group’s qualifier setting.";
   el.innerHTML=`<div class="standings-table group-ranking-table">
     <div class="standing-row standing-head">
-      <span>Pos</span><span>Team</span><span>W</span><span>L</span><span>Lost</span><span>Playoff</span><span class="group-metric-head">Metrics</span>
+      <span>Pos</span><span>Team</span><span>W</span><span>L</span><span>Lost</span><span>Qualify</span><span class="group-metric-head">Metrics</span>
     </div>
-    ${rows.map(r=>{
-      const direct=r.position<=ex.direct.length;
-      const checked=!direct&&selected.has(String(r.team.id));
-      return `<div class="standing-row ${direct?'qualifier-row':''}">
-        <span>${r.position}</span><span class="standing-team">${qualificationTeamLabel(r.team)}</span>
-        <span>${r.wins}</span><span>${r.losses}</span><span>${r.lostScore}</span>
-        <span>${direct?'Direct':`<input type="checkbox" class="exception-team" value="${r.team.id}" ${checked?'checked':''}>`}</span>
-        <span class="group-metric">${Number(r.team?.globalMetric??0)}</span>
-      </div>`;
-    }).join("")}
+    ${rows.map(r=>`<div class="standing-row ${r.qualifier?'qualifier-row':''}">
+      <span>${r.position}</span><span class="standing-team">${qualificationTeamLabel(r.team)}</span>
+      <span>${r.wins}</span><span>${r.losses}</span><span>${r.lostScore}</span>
+      <span>${r.qualifier?'✓':'—'}</span><span class="group-metric">${Number(r.team?.globalMetric??0)}</span>
+    </div>`).join("")}
   </div>`;
-
-  if(actions){
-    actions.innerHTML=`<div class="row" style="align-items:center">
-      <div class="field" style="margin:0;flex:1">
-        <label for="exceptionQualifierCount">Additional qualifiers</label>
-        <input id="exceptionQualifierCount" type="number" min="0" max="${remaining.length}" value="${ex.additional}">
-      </div>
-      <button class="btn btn-primary btn-small" onclick="saveExceptionQualification('${group.id}')">Save playoff setup</button>
-    </div>
-    <div class="muted" style="margin-top:5px">Selected teams will enter the playoff. Playoff results and automatic progression will be added with the knockout engine.</div>`;
-  }
-}
-
-function saveExceptionQualification(groupId){
-  const group=tournament.groups.find(g=>String(g.id)===String(groupId));
-  if(!group)return;
-  const boxes=[...document.querySelectorAll(".exception-team:checked")];
-  group.exceptionTeamIds=boxes.map(x=>x.value);
-  group.exceptionQualifiers=Math.max(0,Number($("exceptionQualifierCount")?.value)||0);
-  group.qualificationMode="exception";
-  group.updatedAt=Date.now();
-  addHistory("Exception qualification configured",group.name);
-  saveLocal(true);
-  renderQualification();
-  showMessage("Exception playoff setup saved.");
+  if(actions)actions.innerHTML=`<div class="muted">Direct qualifiers: <strong>${qualificationCountForGroup(group)}</strong>${group.qualifierOverridden?' · Group override active':' · Using tournament default'}</div>`;
 }
 
 function getQualifiedTeamIds(){
@@ -4840,7 +4749,7 @@ function renderPodium(){
   }
   const third=tournament.thirdPlacePlayoff;
   el.innerHTML=`<div class="result-box">
-    <div class="podium-title">🏆 Tournament Champions</div>
+    <div class="podium-title">🏆 Tournament positions</div>
     <div class="podium-list">
       <div class="podium-item"><strong>🥇 ${knockoutDisplayLabel(final.winnerTeamId)}</strong></div>
       <div class="podium-item">🥈 ${knockoutDisplayLabel(final.loserTeamId)}</div>
@@ -5095,9 +5004,6 @@ function createGroups(){
       teamCount:0,
       updatedAt:Date.now()+i,
       directQualifiers:Math.max(0,Number($("defaultQualifiers")?.value)||0),
-      qualificationMode:"direct",
-      exceptionQualifiers:0,
-      exceptionTeamIds:[],
       qualifierOverridden:false,
       teams:[],
       fixtures:[],
@@ -5349,6 +5255,8 @@ function exportJson(){
 // Global UI event bindings are installed once when the application script loads.
 // Render functions may rebuild their own dynamic DOM, so bindings for rebuilt
 // controls belong inside those render functions and must be guarded where needed.
+// Some controls intentionally retain inline handlers; delegated listeners are used
+// where dynamic DOM is recreated frequently. This mixed approach is kept for now.
 $("specialTeamEntry").addEventListener("change",()=>{
   const g=tournament.groups[0];
   if(!g)return;
@@ -5402,8 +5310,8 @@ $("specialTeamDistributionGroups").addEventListener("change",e=>{
 });
 
 // Player Pool uses delegated Enter handling because the entry input is
-// recreated by renderSpecialTeamPools(). The blur fallback covers mobile
-// keyboards that complete the IME action without emitting a detectable Enter.
+// recreated by renderSpecialTeamPools(). The blur fallback is retained for
+// mobile keyboards that complete the IME action without emitting a detectable Enter.
 $("specialTeamPools").addEventListener("keydown",e=>{
   if(e.key!=="Enter")return;
   if(e.target.id!=="playerPoolPlayerName")return;
@@ -5417,9 +5325,8 @@ $("specialTeamPools").addEventListener("blur",e=>{
   addPoolPlayerFromEntry();
 },true);
 
-// Team Entry uses delegated Enter handling only. Do not add a blur
-// fallback here: Enter already handles navigation/submission, and a second
-// completion path can submit the same team twice.
+// Player Pool add/remove controls use delegated click handling because the
+// pool rows are recreated by renderSpecialTeamPools().
 $("specialTeamPools").addEventListener("click",e=>{
   const add=e.target.closest(".special-team-add-player");
   const remove=e.target.closest(".special-team-remove-player");
@@ -5457,7 +5364,6 @@ $("fixtureGroupFilter").addEventListener("change",renderFixtures);
 $("resultGroupFilter").addEventListener("change",renderResultEditor);
 
 $("qualificationGroupFilter").addEventListener("change",renderQualification);
-$("qualificationMode").addEventListener("change",renderQualification);
 $("buildKnockoutBtn").addEventListener("click",()=>{
   buildMainKnockout();
 });

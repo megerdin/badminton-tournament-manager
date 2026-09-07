@@ -1,0 +1,9 @@
+cd badminton-tournament-manager
+git pull
+
+# edit/create the new version
+
+cp badminton_v4.0.2.html index.html
+git add badminton_v4.0.1.html index.html
+git commit -m "Release 4.0.2"
+git push
