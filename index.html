@@ -59,8 +59,12 @@ summary{cursor:pointer;list-style:none}summary::-webkit-details-marker{display:n
 .entry-line>#entryGroup{width:112px;min-width:112px;padding:9px 8px}
 .entry-line>#playerEntryFields{flex:1 1 0;min-width:0}
 .entry-line>#addTeamBtn{white-space:nowrap;min-width:86px}
+.entry-line>#teamPoolTeamName{flex:0 0 92px;min-width:92px}
+.entry-line>#teamPoolPlayer1,.entry-line>#teamPoolPlayer2{flex:1 1 0;min-width:0;padding:9px 8px;box-sizing:border-box}
+.entry-line>#teamPoolAddBtn{white-space:nowrap;min-width:86px}
+.entry-line>#playerPoolPlayerName{flex:0 1 236px;width:236px;min-width:105px;padding:9px 8px;box-sizing:border-box}
 .player-entry-row{display:flex;gap:6px;align-items:center}
-.player-entry-row input{min-width:0;padding:9px 8px}
+.player-entry-row input{flex:1 1 0;width:0;min-width:0;padding:9px 8px}
 .player-entry-row .add-player{padding:8px 10px;white-space:nowrap}
 .format-options{display:flex;gap:12px;flex-wrap:wrap}
 .format-options label{font-weight:500;margin:0}
@@ -127,7 +131,8 @@ details.card>summary select{margin-left:auto;width:auto;min-width:125px;padding:
 .merged-score-fixture-row select{width:100%;box-sizing:border-box}
 .merged-match-score #resultEditor{margin-top:6px!important}
 @media(max-width:480px){.merged-score-fixture-row{margin:0}.merged-match-score .result-actions{gap:5px}}
-@media(max-width:600px){.entry-line{gap:3px}.entry-line>#entryGroup{width:84px;min-width:84px;padding:9px 2px}.entry-line>#playerEntryFields{flex:1 1 0;min-width:0}.entry-line>#addTeamBtn{min-width:70px;padding:8px 7px}.player-entry-row{gap:3px}.player-entry-row input{padding:9px 6px}.entry-card{padding:10px 8px}#addTeamPanel>.entry-card{background:#fff;border-color:#e5e7eb;color:#111827}}
+@media(max-width:600px){.entry-line{gap:3px}.entry-line>#entryGroup{width:84px;min-width:84px;padding:9px 2px}.entry-line>#playerEntryFields{flex:1 1 0;min-width:0}.entry-line>#addTeamBtn{min-width:70px;padding:8px 7px}.entry-line>#teamPoolTeamName{flex-basis:78px;min-width:78px}.entry-line>#teamPoolPlayer1,.entry-line>#teamPoolPlayer2{min-width:0;padding:9px 6px;box-sizing:border-box}.entry-line>#teamPoolAddBtn{min-width:70px;padding:8px 7px}.entry-line>#playerPoolPlayerName{flex-basis:92px;width:92px;min-width:92px;padding:9px 6px;box-sizing:border-box}.player-entry-row{gap:3px}.player-entry-row input{padding:9px 6px}.entry-card-title{font-size:14px;font-weight:700;margin-bottom:6px}
+.entry-card{padding:10px 8px}#addTeamPanel>.entry-card{background:#fff;border-color:#e5e7eb;color:#111827}}
 .compact-group-row,.compact-fixture-row{display:flex;align-items:center;gap:6px;margin:5px 0}
 .compact-group-row label,.compact-fixture-row label{font-weight:600;white-space:nowrap}
 .compact-group-row select{flex:1;min-width:0}
@@ -399,26 +404,22 @@ details.card>summary select{margin-left:auto;width:auto;min-width:125px;padding:
 }
 
 
-.special-team-settings{border-top:1px solid #e5e7eb;padding-top:10px}
-#specialTeamEntryOptions{display:block}
-#specialTeamPools{display:grid;grid-template-columns:1fr;gap:8px}
-.special-team-pool{background:#fafafa}
-.special-team-player-row input{padding:8px}.special-team-entry-player-name{font-size:20px}
-.special-team-build-summary{font-size:12px}.special-generated-team{font-size:20px}.special-generated-team-number{display:inline-block;margin-right:10px}
+#playerPoolOptions{display:block}
+#playerPools{display:grid;grid-template-columns:1fr;gap:8px}
+
+.player-pool-build-summary{font-size:12px}.player-pool-generated-team{font-size:20px}.player-pool-generated-team-number{display:inline-block;margin-right:10px}
 @media(min-width:600px){
-  #specialTeamPools{grid-template-columns:1fr 1fr}
+  #playerPools{grid-template-columns:1fr 1fr}
 }
 
-.special-team-distribution-groups{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px}
-.special-team-distribution-group{display:flex;align-items:center;gap:6px}
-@media(max-width:420px){.special-team-distribution-groups{grid-template-columns:1fr}}
-
-#specialTeamEntryOptions{max-width:100%;box-sizing:border-box}
-.special-team-pool{margin-bottom:0!important}
+@media(max-width:420px){
+#playerPoolOptions{max-width:100%;box-sizing:border-box}
 @media(min-width:600px){}
 
 .entry-tabs{display:flex;gap:6px;margin-bottom:8px}
 .entry-tab{flex:1;min-width:0}
+.manual-team-entry-btn{width:calc(50% - 3px);box-sizing:border-box}
+#playerTeamEntryCard{scroll-margin-top:84px}
 .entry-tab.active{font-weight:700}
 .entry-tab-panel{width:100%}
 
@@ -443,11 +444,17 @@ details.card>summary select{margin-left:auto;width:auto;min-width:125px;padding:
 .entry-tabs .entry-tab:not(.active):hover{
   background:#3b4048;
 }
+.manual-team-entry-btn.active{
+  background:#214c35!important;
+  color:#fff!important;
+  border:1px solid #2f6548;
+  box-shadow:0 0 0 1px rgba(47,101,72,.25);
+}
 
 .settings-subsection{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.12)}
 .settings-subsection-title{font-weight:700;font-size:1.05em;margin-bottom:8px}
 
-#buildSpecialTeamsBtn,#distributeSpecialTeamsBtn{
+#playerPoolLotteryBtn{
   font-size:15px!important;
   font-weight:600;
   min-height:42px;
@@ -456,14 +463,10 @@ details.card>summary select{margin-left:auto;width:auto;min-width:125px;padding:
   background:linear-gradient(180deg,#1b2942 0%,#111827 100%);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
 }
-#buildSpecialTeamsBtn:not(:disabled):hover,#distributeSpecialTeamsBtn:not(:disabled):hover{
+#playerPoolLotteryBtn:not(:disabled):hover{
   background:linear-gradient(180deg,#243653 0%,#162033 100%);
 }
 
-#specialTeamDistribution{max-width:100%}
-#specialTeamDistribution>strong{display:block;font-size:15px;margin-bottom:8px}
-#specialTeamDistributionSummary{padding-top:2px}
-#distributeSpecialTeamsBtn{margin-top:9px!important}
 
 .header-subtitle{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;width:100%;min-height:2.2em;padding-bottom:1.1em;box-sizing:border-box;column-gap:16px}
 .header-subtitle .header-club-info{min-width:0;line-height:1.2;color:#4f7d52;overflow:visible}
@@ -556,7 +559,7 @@ details.card>summary select{margin-left:auto;width:auto;min-width:125px;padding:
 .header-title-row h1{font-size:22px;line-height:1.12;margin:2px 0 0;letter-spacing:-.3px}
 .eyebrow{font-size:10px;letter-spacing:.14em;font-weight:800;opacity:.68}
 .header-racket{font-size:30px;line-height:1}
-.app-header .header-subtitle{margin-top:12px;min-height:0;padding:0;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.app-header .header-subtitle{margin-top:0;min-height:0;padding:0;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .app-header .header-club-info{color:#a9d3ae;font-size:14px;font-weight:700;line-height:1.25}
 .app-header .app-version{position:static;font-size:10px;color:#9ca9a0;margin-left:auto}
 .landing-dashboard{margin:0 0 20px}
@@ -568,8 +571,8 @@ details.card>summary select{margin-left:auto;width:auto;min-width:125px;padding:
 .dashboard-stat{background:#202428;border:1px solid #30353b;border-radius:13px;padding:11px 8px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.12)}
 .dashboard-stat strong{display:block;font-size:21px;line-height:1.05;color:#fff}
 .dashboard-stat span{display:block;margin-top:4px;font-size:10px;font-weight:700;color:#aeb6c0}
-.dashboard-primary-action,.dashboard-knockout{display:flex;align-items:center;gap:12px;padding:14px 15px;border-radius:15px;cursor:pointer;user-select:none;transition:transform .12s ease,filter .12s ease}
-.dashboard-primary-action{background:linear-gradient(135deg,#214c35,#183626);border:1px solid #326449;box-shadow:0 5px 14px rgba(24,54,38,.28);margin-bottom:6px}
+.dashboard-primary-action,.dashboard-knockout{display:flex;align-items:center;gap:12px;padding:14px 15px;border-radius:15px;cursor:pointer;user-select:none;transition:transform .12s ease,filter .12s ease;box-sizing:border-box;height:66px}
+.dashboard-primary-action{background:linear-gradient(135deg,#1d4330,#173528);border:1px solid #2f5d43;box-shadow:0 5px 14px rgba(24,54,38,.28);margin-bottom:6px}
 .dashboard-knockout{background:linear-gradient(135deg,#332b19,#282114);border:1px solid #5a4925;margin-top:6px}
 .dashboard-primary-action:active,.dashboard-knockout:active,.dashboard-card:active{transform:scale(.99);filter:brightness(.97)}
 .dashboard-action-icon,.dashboard-knockout-icon{font-size:23px;line-height:1;width:34px;text-align:center;flex:0 0 34px}
@@ -579,8 +582,8 @@ details.card>summary select{margin-left:auto;width:auto;min-width:125px;padding:
 .dashboard-primary-action .dashboard-action-copy span{color:#b7cdbb}
 .dashboard-arrow,.dashboard-card-arrow{font-size:27px;line-height:1;color:#aeb6c0;font-weight:300}
 .dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.dashboard-card{position:relative;min-height:94px;padding:12px 13px;border-radius:15px;cursor:pointer;user-select:none;border:1px solid #30353b;box-shadow:0 3px 10px rgba(0,0,0,.12)}
-.dashboard-blue{background:#1b2a3a;border-color:#31465d}
+.dashboard-card{position:relative;min-height:0;height:66px;padding:12px 13px;border-radius:15px;cursor:pointer;user-select:none;border:1px solid #30353b;box-shadow:0 3px 10px rgba(0,0,0,.12);box-sizing:border-box}
+.dashboard-blue{background:#203449;border-color:#3b5872}
 .dashboard-purple{background:#2a2534;border-color:#493f58}
 .dashboard-card-icon{display:inline-block;font-size:21px;line-height:1;vertical-align:middle;margin-right:5px}
 .dashboard-card-title{display:inline-block;font-size:15px;font-weight:800;color:#f3f4f6;vertical-align:middle}
@@ -611,7 +614,7 @@ main{padding-bottom:82px}
   .dashboard-heading h2{font-size:18px}
   .dashboard-stat{padding:10px 6px}
   .dashboard-stat strong{font-size:19px}
-  .dashboard-card{min-height:90px;padding:11px 12px}
+  .dashboard-card{height:66px;min-height:0;padding:11px 12px}
 }
 
 /* DARK THEME — Application palette and collapsible section headers. */
@@ -640,8 +643,7 @@ details.card>summary>strong{flex:1 1 auto;text-align:left}
   .btn-danger{background:#4a2528;color:#fecaca}
   .entry-card{background:#202428;border-color:#3a4046}
   #addTeamPanel>.entry-card{background:#202428!important;border-color:#3a4046!important;color:#f3f4f6!important}
-  .special-team-pool{background:#202428}
-  #playerTeamEntryCard>summary{background:#1c3022}
+    #playerTeamEntryCard>summary{background:#1c3022}
   #fixturesCard>summary{background:#1b2a3a}
   #qualificationCard>summary{background:#2a2534}
   #knockoutCard>summary{background:#1c3022}
@@ -688,9 +690,9 @@ details.card>summary>strong{flex:1 1 auto;text-align:left}
 
 <section class="landing-dashboard" aria-label="Tournament dashboard">
   <div class="dashboard-stats">
-    <div class="dashboard-stat"><strong id="dashboardTeamCount">0</strong><span>Teams</span></div>
-    <div class="dashboard-stat"><strong id="dashboardGroupCount">0</strong><span>Groups</span></div>
-    <div class="dashboard-stat"><strong id="dashboardFixtureProgress">0/0</strong><span>Matches</span></div>
+    <div class="dashboard-stat" onclick="openDashboardSection('fixturesCard')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDashboardSection('fixturesCard');}"><strong id="dashboardTeamCount">0</strong><span>Teams</span></div>
+    <div class="dashboard-stat" onclick="openDashboardSection('fixturesCard')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDashboardSection('fixturesCard');}"><strong id="dashboardGroupCount">0</strong><span>Groups</span></div>
+    <div class="dashboard-stat" onclick="openDashboardSection('fixturesCard')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDashboardSection('fixturesCard');}"><strong id="dashboardFixtureProgress">0/0</strong><span>Matches</span></div>
   </div>
 
   <div class="dashboard-primary-action" onclick="openDashboardSection('playerTeamEntryCard')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDashboardSection('playerTeamEntryCard');}">
@@ -709,7 +711,7 @@ details.card>summary>strong{flex:1 1 auto;text-align:left}
       <div class="dashboard-card-meta" id="dashboardGroupMeta">Set up groups and fixtures</div>
       <span class="dashboard-card-arrow">›</span>
     </div>
-    <div class="dashboard-card dashboard-purple" onclick="openDashboardSection('qualificationCard')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDashboardSection('qualificationCard');}">
+    <div class="dashboard-card dashboard-purple" onclick="openDashboardSection('tournamentRanking')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDashboardSection('tournamentRanking');}">
       <div class="dashboard-card-icon">🏆</div>
       <div class="dashboard-card-title">Rankings</div>
       <div class="dashboard-card-meta" id="dashboardRankingMeta">Group and tournament rankings</div>
@@ -732,12 +734,34 @@ details.card>summary>strong{flex:1 1 auto;text-align:left}
 <details class="card" id="playerTeamEntryCard">
 <summary><strong>👥 Player/ Team entry</strong></summary>
 <div style="margin-top:12px">
-<div class="entry-tabs" role="tablist" aria-label="Entry type">
-  <button type="button" class="btn btn-primary entry-tab active" id="addTeamTabBtn" role="tab" aria-selected="true" onclick="switchEntryTab('team')">➕ Add Team</button>
+<div class="entry-tabs" role="tablist" aria-label="Pool entry type">
+  <button type="button" class="btn btn-primary entry-tab active" id="teamPoolTabBtn" role="tab" aria-selected="true" onclick="switchEntryTab('teamPool')">➕ Team Pool</button>
   <button type="button" class="btn btn-secondary entry-tab" id="openPlayerPoolBtn" role="tab" aria-selected="false" onclick="switchEntryTab('pool')">➕ Player Pool</button>
 </div>
-<div id="addTeamPanel" class="entry-tab-panel">
+<div style="margin-top:12px">
+  <button type="button" class="btn btn-secondary manual-team-entry-btn" id="manualTeamEntryBtn" onclick="openManualTeamEntry()">➕ Verify / Add</button>
+</div>
+<div id="teamPoolPanel" class="entry-tab-panel">
   <div class="entry-card">
+    <div class="entry-card-title">Team Pool</div>
+    <div style="margin-top:10px">
+      <div class="entry-line">
+        <button type="button" class="btn btn-secondary btn-small" id="teamPoolTeamName" aria-label="Team name">Team 1</button>
+        <input id="teamPoolPlayer1" placeholder="Player 1" aria-label="Player 1">
+        <input id="teamPoolPlayer2" placeholder="Player 2" aria-label="Player 2">
+        <button class="btn btn-primary btn-small" id="teamPoolAddBtn">Submit</button>
+      </div>
+    </div>
+    <div id="teamPoolList" style="margin-top:12px"></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+      <button type="button" class="btn btn-primary btn-small" id="teamPoolLotteryBtn">🎲 Lottery / Distribute</button>
+    </div>
+    <div id="teamPoolSummary" class="muted" style="margin-top:7px"></div>
+  </div>
+</div>
+<div id="addTeamPanel" class="entry-tab-panel" hidden>
+  <div class="entry-card">
+    <div class="entry-card-title">Enter team manually</div>
 <div style="margin-top:10px">
 <div class="entry-line">
   <select id="entryGroup" aria-label="Group" onclick="if(!tournament.groups.length){openTournamentSettings();event.preventDefault();}" onchange="handleDirectionalEntryGroup(this);renderTeamList()"></select>
@@ -749,18 +773,13 @@ details.card>summary>strong{flex:1 1 auto;text-align:left}
   </div>
 </div>
 <div id="playerPoolPanel" class="entry-tab-panel" hidden>
-  <div id="specialTeamEntryOptions" class="entry-card">
-    <div id="specialTeamPools" style="margin-top:10px"></div>
-    <div id="specialTeamBuildArea" style="margin-top:12px;display:none">
-      <button type="button" class="btn btn-primary btn-small" id="buildSpecialTeamsBtn" onclick="buildSpecialTeams()" style="font-size:15px">🎲 Build Teams</button>
-      <div id="specialTeamBuildSummary" class="muted special-team-build-summary" style="margin-top:6px"></div>
-      <div id="specialTeamGeneratedPreview" style="margin-top:8px"></div>
-      <div id="specialTeamDistribution" style="margin-top:10px;display:none">
-        <strong>Distribute generated teams</strong>
-        <div id="specialTeamDistributionGroups" style="margin-top:6px"></div>
-        <div id="specialTeamDistributionSummary" class="muted" style="margin-top:6px"></div>
-        <button type="button" class="btn btn-primary btn-small" id="distributeSpecialTeamsBtn" style="font-size:15px;margin-top:8px">Distribute Teams</button>
-      </div>
+  <div id="playerPoolOptions" class="entry-card">
+    <div class="entry-card-title">Player Pool</div>
+    <div id="playerPools" style="margin-top:10px"></div>
+    <div id="playerPoolBuildArea" style="margin-top:12px;display:none">
+      <button type="button" class="btn btn-primary btn-small" id="playerPoolLotteryBtn" onclick="runPlayerPoolLottery()" style="font-size:15px">🎲 Lottery / Build Teams / Distribute Teams</button>
+      <div id="playerPoolBuildSummary" class="muted player-pool-build-summary" style="margin-top:6px"></div>
+      <div id="playerPoolGeneratedPreview" style="margin-top:8px"></div>
     </div>
   </div>
 </div>
@@ -888,6 +907,7 @@ details.card>summary>strong{flex:1 1 auto;text-align:left}
   <button class="btn btn-primary btn-small group-create-btn" id="createGroupsBtn">Create</button>
 </div>
 <div class="muted" style="margin-top:5px">New groups use this default. Change an individual group to override it.</div>
+<div id="groupCreateFeedback" class="muted" style="display:none;margin-top:5px"></div>
 <div class="row" style="margin-top:10px;align-items:end">
   <div class="field" style="margin:0">
     <label for="playerPoolCountSetting">Player pools</label>
@@ -897,11 +917,6 @@ details.card>summary>strong{flex:1 1 auto;text-align:left}
 </div>
 <div class="muted" style="margin-top:5px">Declare how many player pools are available.</div>
 <div id="playerPoolCreateFeedback" class="muted" style="display:none;margin-top:5px"></div>
-<div class="special-team-settings" style="margin-top:10px">
-  <input type="checkbox" id="specialTeamEntry" hidden>
-  <input type="hidden" id="specialTeamEntryActiveState" value="0">
-
-</div>
 <div class="row" style="margin-top:8px;align-items:center">
 <div class="field" style="margin:0">
 <label for="groupSort">Sort groups</label>
@@ -950,7 +965,7 @@ details.card>summary>strong{flex:1 1 auto;text-align:left}
 <input id="importFile" type="file" accept=".json,application/json" class="hidden">
 
 <script>
-const APP_VERSION = '5.0.0';
+const APP_VERSION = '4.0.58';
 
 "use strict";
 
@@ -976,7 +991,7 @@ function id(prefix){
 
 function blankTournament(){
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: id("tournament"),
     clubName: "",
     date: "",
@@ -986,9 +1001,19 @@ function blankTournament(){
       allowedFormats:["doubles"],
       defaultQualifiers: 2,
       playerPoolCount: 2,
+      playerPoolBuildInputSignature:'',
+      teamPoolEntries:[],
+      teamPoolCommittedIds:[],
+      teamPoolDistributionComplete:false,
+      teamPoolLotteryInputSignature:'',
       bestOf:1,
       pointsTarget:21
     },
+    playerPoolPlayers: [],
+    playerPoolGeneratedTeams: [],
+    playerPoolDistributionComplete: false,
+    playerPoolDistributionCounts: {},
+    playerPoolDistributionGroups: [],
     players: [],
     teams: [],
     groups: [],
@@ -1213,8 +1238,71 @@ function migrateTournamentData(data){
   if(!data || typeof data!=="object" || Array.isArray(data)) throw new Error("Invalid tournament data");
   const migrated=JSON.parse(JSON.stringify(data));
   const version=Number(migrated.schemaVersion||1);
-  if(!Number.isInteger(version) || version<1 || version>2) throw new Error("Unsupported schema version");
+  if(!Number.isInteger(version) || version<1 || version>3) throw new Error("Unsupported schema version");
   migrated.settings=(migrated.settings&&typeof migrated.settings==="object"&&!Array.isArray(migrated.settings))?migrated.settings:{};
+
+  // Convert pre-Player-Pool field names once when loading older saved data.
+  if(migrated.playerPoolPlayers===undefined && Array.isArray(migrated.specialTeamEntryPlayers))
+    migrated.playerPoolPlayers=migrated.specialTeamEntryPlayers;
+  if(migrated.playerPoolGeneratedTeams===undefined && Array.isArray(migrated.specialGeneratedTeams))
+    migrated.playerPoolGeneratedTeams=migrated.specialGeneratedTeams;
+  if(migrated.playerPoolDistributionComplete===undefined && migrated.specialTeamDistributionComplete!==undefined)
+    migrated.playerPoolDistributionComplete=!!migrated.specialTeamDistributionComplete;
+  if(migrated.playerPoolDistributionCounts===undefined && migrated.specialTeamDistributionCounts!==undefined)
+    migrated.playerPoolDistributionCounts=migrated.specialTeamDistributionCounts;
+  if(migrated.playerPoolDistributionGroups===undefined && migrated.specialTeamDistributionGroups!==undefined)
+    migrated.playerPoolDistributionGroups=migrated.specialTeamDistributionGroups;
+
+  // v3: Player Pool entries use persistent IDs. Names are display data only;
+  // duplicate real-world names are valid and must remain distinct.
+  if(!Array.isArray(migrated.playerPoolPlayers))migrated.playerPoolPlayers=[];
+  migrated.playerPoolPlayers=migrated.playerPoolPlayers.map(pool=>
+    (Array.isArray(pool)?pool:[]).map(entry=>{
+      if(entry && typeof entry === "object" && !Array.isArray(entry))
+        return {id:String(entry.id||id("playerPoolEntry")),name:String(entry.name??"").trim()};
+      return {id:id("playerPoolEntry"),name:String(entry??"").trim()};
+    })
+  );
+
+  // Upgrade generated Player Pool source references from pool/index to the
+  // persistent entry ID.
+  if(Array.isArray(migrated.teams) && Array.isArray(migrated.players)){
+    migrated.teams.forEach(team=>{
+      if(!team || !Array.isArray(team.playerIds))return;
+      team.playerIds.forEach(playerId=>{
+        const player=migrated.players.find(p=>String(p?.id)===String(playerId));
+        const source=player?.playerPoolSource;
+        if(!player || !source || source.entryId)return;
+        const pool=Number(source.pool);
+        const index=Number(source.index);
+        const entry=migrated.playerPoolPlayers?.[pool]?.[index];
+        if(entry?.id){
+          source.entryId=entry.id;
+          source.pool=pool;
+          delete source.index;
+        }
+      });
+    });
+  }
+
+  migrated.teams=(Array.isArray(migrated.teams)?migrated.teams:[]).map(team=>{
+    if(team && team.playerPoolGenerated===undefined && team.specialTeamEntry!==undefined)
+      team.playerPoolGenerated=!!team.specialTeamEntry;
+    if(team && team.specialTeamEntry!==undefined)delete team.specialTeamEntry;
+    return team;
+  });
+  migrated.groups=(Array.isArray(migrated.groups)?migrated.groups:[]).map(group=>{
+    if(group && group.specialTeamEntry!==undefined)delete group.specialTeamEntry;
+    if(group && group.specialTeamPoolCount!==undefined)delete group.specialTeamPoolCount;
+    return group;
+  });
+  delete migrated.specialTeamEntryPlayers;
+  delete migrated.specialGeneratedTeams;
+  delete migrated.specialTeamDistributionComplete;
+  delete migrated.specialTeamDistributionCounts;
+  delete migrated.specialTeamDistributionGroups;
+  delete migrated.specialTeamEntryActive;
+  delete migrated.specialTeamPoolCount;
   if(migrated.clubName===undefined)migrated.clubName=typeof migrated.name==="string"?migrated.name:"";
   delete migrated.name;
   const defaults=blankTournament();
@@ -1250,15 +1338,24 @@ function migrateTournamentData(data){
     if(migrated.mainKnockoutEntries===undefined)migrated.mainKnockoutEntries=[];
     if(migrated.mainKnockoutEntriesUpdatedAt===undefined)migrated.mainKnockoutEntriesUpdatedAt=null;
     if(migrated.mainKnockoutDraw===undefined)migrated.mainKnockoutDraw=null;
-    if(migrated.specialGeneratedTeams===undefined)migrated.specialGeneratedTeams=[];
-    if(migrated.specialTeamDistributionComplete===undefined)migrated.specialTeamDistributionComplete=false;
-    if(migrated.specialTeamDistributionCounts===undefined)migrated.specialTeamDistributionCounts=[];
-    if(migrated.specialTeamDistributionGroups===undefined)migrated.specialTeamDistributionGroups=[];
-    if(migrated.specialTeamEntryActive===undefined)migrated.specialTeamEntryActive=false;
-    if(migrated.specialTeamEntryPlayers===undefined)migrated.specialTeamEntryPlayers=[];
-    if(migrated.specialTeamPoolCount===undefined)migrated.specialTeamPoolCount=null;
   }
-  migrated.schemaVersion=2;
+  if(!Array.isArray(migrated.settings.teamPoolEntries))migrated.settings.teamPoolEntries=[];
+  if(!Array.isArray(migrated.settings.teamPoolNames))migrated.settings.teamPoolNames=[];
+  if(!Array.isArray(migrated.settings.teamPoolCommittedIds))migrated.settings.teamPoolCommittedIds=[];
+  if(migrated.settings.teamPoolDistributionComplete===undefined)migrated.settings.teamPoolDistributionComplete=false;
+  if(migrated.settings.teamPoolLotteryInputSignature===undefined)migrated.settings.teamPoolLotteryInputSignature='';
+  if(migrated.settings.playerPoolBuildInputSignature===undefined)migrated.settings.playerPoolBuildInputSignature='';
+  if(migrated.settings.teamPoolDistributionComplete && !migrated.settings.teamPoolLotteryInputSignature){
+    migrated.settings.teamPoolLotteryInputSignature=JSON.stringify({
+      teams:(migrated.settings.teamPoolEntries||[]).map(entry=>({
+        id:String(entry.id||''),player1:String(entry.player1||'').trim(),player2:String(entry.player2||'').trim()
+      })),
+      groups:(migrated.groups||[]).map(group=>({
+        id:String(group.id||''),name:String(group.name||''),teamCount:Number(group.teamCount)||0
+      }))
+    });
+  }
+  migrated.schemaVersion=3;
   return migrated;
 }
 
@@ -2221,7 +2318,7 @@ function renderTournamentRanking(){
           <span>Rank</span>
           <span title="Source">From</span>
           <span>Players Name</span>
-          <span>Metric</span>
+          <span>Points</span>
           <span title="Tie-break">TB</span>
         </div>
         ${rows.map(r=>{
@@ -2681,10 +2778,10 @@ function refreshAfterThirdPlaceResult(){
 
 function renderAll(){
   clearCalculationCache();
-  // renderAll is the central UI refresh pipeline. Keep state normalization
-  // before controls are populated, then render each current feature from the
-  // authoritative tournament state. Do not add legacy rendering paths here.
-  renderSpecialTeamEntrySettings();
+  // renderAll is the central UI refresh pipeline. Normalize state before
+  // controls are populated, then render each feature from authoritative state.
+  renderPlayerPool();
+  renderTeamPool();
   const fixturesCardOpen=$("fixturesCard")?.open ?? false;
   const knockoutCardOpen=$("knockoutCard")?.open ?? false;
   renderHeaderClubName();
@@ -2744,52 +2841,89 @@ function groupLabel(index){
 
 
 
-function renderSpecialTeamEntrySettings(){
-  const enabled=$("specialTeamEntry");
-  const options=$("specialTeamEntryOptions");
-  if(!enabled||!options)return;
-
-  const active=!!tournament.specialTeamEntryActive;
-  enabled.checked=active;
-  options.style.display=active?"block":"none";
+function renderPlayerPool(){
+  const options=$("playerPoolOptions");
+  if(!options)return;
+  options.style.display="block";
 
   if(!tournament.settings)tournament.settings={};
   if(!Number.isFinite(Number(tournament.settings.playerPoolCount)))
     tournament.settings.playerPoolCount=2;
 
-  renderSpecialTeamPools();
-  renderSpecialTeamBuildArea();
-  renderSpecialTeamDistribution();
-  renderSpecialGeneratedPreview();
+  renderPlayerPools();
+  renderPlayerPoolBuildArea();
+  renderPlayerPoolGeneratedPreview();
 }
 
 function ensurePlayerPoolState(count){
   count=Math.max(2,Math.min(52,Number(count)||2));
   if(!tournament.settings)tournament.settings={};
   tournament.settings.playerPoolCount=count;
-  tournament.specialTeamPoolCount=count;
-  if(!Array.isArray(tournament.specialTeamEntryPlayers))
-    tournament.specialTeamEntryPlayers=[];
-  while(tournament.specialTeamEntryPlayers.length<count)
-    tournament.specialTeamEntryPlayers.push([]);
-  if(tournament.specialTeamEntryPlayers.length>count)
-    tournament.specialTeamEntryPlayers.length=count;
+  if(!Array.isArray(tournament.playerPoolPlayers))
+    tournament.playerPoolPlayers=[];
+  while(tournament.playerPoolPlayers.length<count)
+    tournament.playerPoolPlayers.push([]);
+  if(tournament.playerPoolPlayers.length>count)
+    tournament.playerPoolPlayers.length=count;
   return count;
 }
 
-function renderSpecialTeamPools(){
-  const wrap=$("specialTeamPools");
-  const enabled=$("specialTeamEntry");
-  if(!wrap||!enabled)return;
-  if(!enabled.checked){
-    wrap.innerHTML="";
-    return;
+function playerPoolBuildInputSignature(){
+  ensurePlayerPoolState(Number(tournament.settings?.playerPoolCount)||2);
+  const count=Math.max(2,Math.min(52,Number(tournament.settings?.playerPoolCount)||2));
+  const pools=Array.from({length:count},(_,i)=>
+    (Array.isArray(tournament.playerPoolPlayers?.[i])
+      ? tournament.playerPoolPlayers[i]
+      : []).map(entry=>String(entry?.name??entry??"").trim())
+  );
+  return JSON.stringify({count,pools});
+}
+
+function invalidatePlayerPoolBuild(){
+  ensurePlayerPoolState(Number(tournament.settings?.playerPoolCount)||2);
+  const generatedIds=new Set((Array.isArray(tournament.playerPoolGeneratedTeams)
+    ? tournament.playerPoolGeneratedTeams : []).map(String));
+
+  if(generatedIds.size){
+    const removedTeams=tournament.teams.filter(t=>generatedIds.has(String(t.id)));
+    const removedPlayerIds=new Set(removedTeams.flatMap(t=>Array.isArray(t.playerIds)?t.playerIds:[]).map(String));
+
+    tournament.teams=tournament.teams.filter(t=>!generatedIds.has(String(t.id)));
+    tournament.players=tournament.players.filter(p=>!removedPlayerIds.has(String(p.id)));
+
+    (tournament.groups||[]).forEach(group=>{
+      if(Array.isArray(group.teamIds))
+        group.teamIds=group.teamIds.filter(id=>!generatedIds.has(String(id)));
+      if(Array.isArray(group.teams))
+        group.teams=group.teams.filter(id=>!generatedIds.has(String(id)));
+      group.teamCount=tournament.teams.filter(t=>String(t.groupId)===String(group.id)).length;
+      group.updatedAt=Date.now();
+    });
+
+    // Generated teams may already have reached fixtures/results. Those records
+    // are derived from the invalidated teams and must not survive the rebuild.
+    const affectedFixtures=new Set((tournament.fixtures||[])
+      .filter(f=>generatedIds.has(String(f.teamAId))||generatedIds.has(String(f.teamBId)))
+      .map(f=>String(f.id)));
+    tournament.fixtures=(tournament.fixtures||[]).filter(f=>!affectedFixtures.has(String(f.id)));
+    tournament.results=(tournament.results||[]).filter(r=>!affectedFixtures.has(String(r.fixtureId)));
   }
 
+  tournament.playerPoolGeneratedTeams=[];
+  tournament.playerPoolDistributionComplete=false;
+  tournament.playerPoolDistributionCounts={};
+  tournament.playerPoolDistributionGroups=[];
+  tournament.settings.playerPoolBuildInputSignature='';
+}
+
+function renderPlayerPools(){
+  const wrap=$("playerPools");
+  if(!wrap)return;
+
   const count=Math.max(2,Math.min(52,Number(tournament.settings?.playerPoolCount)||2));
-  const pools=Array.isArray(tournament.specialTeamEntryPlayers)?tournament.specialTeamEntryPlayers:[];
+  const pools=Array.isArray(tournament.playerPoolPlayers)?tournament.playerPoolPlayers:[];
   const poolsCreated=!!tournament.settings?.playerPoolsCreated ||
-    pools.some(pool=>Array.isArray(pool)&&pool.some(x=>String(x||"").trim()));
+    pools.some(pool=>Array.isArray(pool)&&pool.some(x=>String(x?.name??x??"").trim()));
 
   if(!poolsCreated){
     wrap.innerHTML='<div class="empty directional-message" role="button" tabindex="0" onclick="openTournamentSettings()" onkeydown="handleDirectionalKey(event,openTournamentSettings)">Create player pools first.</div>';
@@ -2798,7 +2932,7 @@ function renderSpecialTeamPools(){
 
   while(pools.length<count)pools.push([]);
   if(pools.length>count)pools.length=count;
-  tournament.specialTeamEntryPlayers=pools;
+  tournament.playerPoolPlayers=pools;
 
   let current=Number($("playerPoolEntrySelect")?.value);
   if(!Number.isInteger(current)||current<0||current>=count)current=0;
@@ -2820,36 +2954,26 @@ function renderSpecialTeamPools(){
         return `<option value="${i}" ${i===current?"selected":""}>Pool ${l}</option>`;
       }).join("")}
     </select>
-    <input id="playerPoolPlayerName" type="text" autocomplete="off" placeholder="Player name" aria-label="Player name">
+    <input id="playerPoolPlayerName" type="text" autocomplete="off" placeholder="Player name" aria-label="Player name" class="player-pool-player-name">
     <button type="button" class="btn btn-primary btn-small" id="addPoolPlayerBtn">+ Add Player</button>
   </div>
-  <div class="special-team-entry-list" style="margin-top:8px">
-    <div class="muted" style="margin-bottom:4px">Players in Pool ${letter}</div>
+  <div class="player-pool-entry-list" style="margin-top:8px">
+    <div class="muted" style="margin-bottom:4px">Players in Pool ${letter} · ${players.length}</div>
     ${players.length
-      ? players.slice().reverse().map((name,displayIndex)=>{
+      ? players.slice().reverse().map((entry,displayIndex)=>{
           const originalIndex=players.length-1-displayIndex;
-          return `<div class="special-team-entry-player" style="display:flex;align-items:center;gap:6px;margin-top:4px">
-          <span style="width:24px;min-width:24px;font-weight:700;text-align:right">${originalIndex+1}.</span>
-          <span class="special-team-entry-player-name" style="min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(name)}</span>
-          <button type="button" class="btn btn-danger btn-small special-team-entry-remove" data-pool="${current}" data-index="${originalIndex}" aria-label="Remove player">×</button>
-        </div>`;
+          const name=String(entry?.name??entry??"");
+          return `<div class="player-pool-entry-player" style="display:flex;align-items:center;gap:6px;margin-top:4px">
+            <span style="width:24px;min-width:24px;font-weight:700;text-align:right">${originalIndex+1}.</span>
+            <span class="player-pool-entry-player-name" style="min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(name)}</span>
+            <button type="button" class="btn btn-secondary btn-small" onclick="editPlayerPoolEntry(${current},${originalIndex})">Edit</button>
+            <button type="button" class="btn btn-danger btn-small" onclick="removePlayerPoolEntry(${current},${originalIndex})" aria-label="Remove player">×</button>
+          </div>`;
         }).join("")
       : '<div class="muted">No players added yet.</div>'}
   </div>`;
 
   bindPlayerPoolEntry();
-  document.querySelectorAll(".special-team-entry-remove").forEach(btn=>{
-    btn.onclick=()=>{
-      const pool=Number(btn.dataset.pool);
-      const index=Number(btn.dataset.index);
-      if(!Array.isArray(tournament.specialTeamEntryPlayers?.[pool]))return;
-      tournament.specialTeamEntryPlayers[pool].splice(index,1);
-      saveLocal(true);
-      renderSpecialTeamPools();
-      renderSpecialTeamBuildArea();
-      $("playerPoolPlayerName")?.focus();
-    };
-  });
 }
 
 function bindPlayerPoolEntry(){
@@ -2858,9 +2982,21 @@ function bindPlayerPoolEntry(){
   if(!add||!select)return;
   add.onclick=addPoolPlayerFromEntry;
   select.onchange=()=>{
-    renderSpecialTeamPools();
+    renderPlayerPools();
     $("playerPoolPlayerName")?.focus();
   };
+}
+
+function createPlayerPoolEntry(name){
+  // Player names are display data only. Duplicate names are explicitly allowed.
+  // Identity belongs to the persistent entry ID, which must be unique even when
+  // two real-world players have exactly the same name.
+  let entryId;
+  do{ entryId=id("playerPoolEntry"); }
+  while((tournament.playerPoolPlayers||[]).some(pool=>
+    Array.isArray(pool)&&pool.some(entry=>String(entry?.id||"")===entryId)
+  ));
+  return {id:entryId,name:String(name||"").trim()};
 }
 
 function addPoolPlayerFromEntry(){
@@ -2875,70 +3011,440 @@ function addPoolPlayerFromEntry(){
   }
 
   const count=Math.max(2,Math.min(52,Number(tournament.settings?.playerPoolCount)||2));
-  if(!Array.isArray(tournament.specialTeamEntryPlayers))
-    tournament.specialTeamEntryPlayers=[];
-  while(tournament.specialTeamEntryPlayers.length<count)
-    tournament.specialTeamEntryPlayers.push([]);
+  if(!Array.isArray(tournament.playerPoolPlayers))
+    tournament.playerPoolPlayers=[];
+  while(tournament.playerPoolPlayers.length<count)
+    tournament.playerPoolPlayers.push([]);
 
-  tournament.specialTeamEntryPlayers[pool].push(name);
+  // Do NOT check the name for uniqueness. The same name may legitimately occur
+  // multiple times in one pool or across different pools.
+  invalidatePlayerPoolBuild();
+  tournament.playerPoolPlayers[pool].push(createPlayerPoolEntry(name));
   tournament.settings.playerPoolsCreated=true;
   saveLocal(true);
   input.value="";
-  renderSpecialTeamPools();
+  renderPlayerPools();
+  renderPlayerPoolBuildArea();
   $("playerPoolPlayerName")?.focus();
 }
 
-function saveSpecialTeamPoolNames(){
+function editPlayerPoolEntry(pool,index){
+  const players=tournament.playerPoolPlayers?.[pool];
+  if(!Array.isArray(players)||index<0||index>=players.length)return;
+
+  const entry=players[index];
+  const current=String(entry?.name??entry??"").trim();
+  const next=prompt("Edit player name.",current);
+  if(next===null)return;
+
+  const name=String(next).trim();
+  if(!name){
+    showMessage("Player name cannot be empty.","warning");
+    return;
+  }
+  if(name===current)return;
+
+  invalidatePlayerPoolBuild();
+  if(entry && typeof entry === "object" && !Array.isArray(entry)) entry.name=name;
+  else players[index]={id:id("playerPoolEntry"),name};
   saveLocal(true);
+  renderPlayerPools();
+  renderPlayerPoolBuildArea();
+  $("playerPoolPlayerName")?.focus();
+}
+
+function removePlayerPoolEntry(pool,index){
+  const players=tournament.playerPoolPlayers?.[pool];
+  if(!Array.isArray(players)||index<0||index>=players.length)return;
+
+  const name=String(players[index]?.name??players[index]??"").trim();
+  if(!confirm(`Remove "${name}" from this player pool?`))return;
+
+  invalidatePlayerPoolBuild();
+  players.splice(index,1);
+  saveLocal(true);
+  renderPlayerPools();
+  renderPlayerPoolBuildArea();
+  $("playerPoolPlayerName")?.focus();
+}
+
+function ensureTeamPoolState(){
+  if(!tournament.settings)tournament.settings={};
+  if(!Array.isArray(tournament.settings.teamPoolEntries))tournament.settings.teamPoolEntries=[];
+  if(!Array.isArray(tournament.settings.teamPoolCommittedIds))tournament.settings.teamPoolCommittedIds=[];
+  if(tournament.settings.teamPoolDistributionComplete===undefined)tournament.settings.teamPoolDistributionComplete=false;
+  if(tournament.settings.teamPoolLotteryInputSignature===undefined)tournament.settings.teamPoolLotteryInputSignature='';
+}
+
+function teamPoolInputSignature(){
+  ensureTeamPoolState();
+  return JSON.stringify({
+    teams:tournament.settings.teamPoolEntries.map(entry=>({
+      id:String(entry.id||''),
+      player1:String(entry.player1||'').trim(),
+      player2:String(entry.player2||'').trim()
+    })),
+    groups:(tournament.groups||[]).map(group=>({
+      id:String(group.id||''),
+      name:String(group.name||'')
+    }))
+  });
+}
+
+function invalidateTeamPoolLottery(){
+  ensureTeamPoolState();
+  const committedIds=new Set(tournament.settings.teamPoolCommittedIds.map(String));
+  if(committedIds.size){
+    const removedTeams=tournament.teams.filter(team=>committedIds.has(String(team.id)));
+    const removedPlayerIds=new Set(removedTeams.flatMap(team=>Array.isArray(team.playerIds)?team.playerIds:[]).map(String));
+    tournament.teams=tournament.teams.filter(team=>!committedIds.has(String(team.id)));
+    tournament.players=tournament.players.filter(player=>!removedPlayerIds.has(String(player.id)));
+    (tournament.groups||[]).forEach(group=>{
+      if(Array.isArray(group.teamIds))group.teamIds=group.teamIds.filter(id=>!committedIds.has(String(id)));
+      if(Array.isArray(group.teams))group.teams=group.teams.filter(id=>!committedIds.has(String(id)));
+      group.teamCount=tournament.teams.filter(team=>String(team.groupId)===String(group.id)).length;
+      group.updatedAt=Date.now();
+    });
+  }
+  tournament.settings.teamPoolCommittedIds=[];
+  tournament.settings.teamPoolDistributionComplete=false;
+  tournament.settings.teamPoolDistributionCounts={};
+  tournament.settings.teamPoolLotteryInputSignature='';
+}
+
+function renderTeamPool(){
+  const list=$("teamPoolList");
+  const summary=$("teamPoolSummary");
+  if(!list||!summary)return;
+  ensureTeamPoolState();
+  const entries=tournament.settings.teamPoolEntries;
+  const displayEntries=[...entries].reverse();
+  const nextTeamNumber=entries.length+1;
+  const teamName=$('teamPoolTeamName');
+  if(teamName)teamName.textContent='Team '+nextTeamNumber;
+  if(!entries.length){
+    list.innerHTML="";
+    summary.textContent="";
+    return;
+  }
+  list.innerHTML=displayEntries.map((entry,index)=>{
+    const players=[entry.player1,entry.player2].filter(Boolean).join(", ");
+    return `<div class="live-team">
+      <div class="live-team-number">${escapeHtml(entry.name||"Team "+(index+1))}</div>
+      <div class="live-team-players">${players?escapeHtml(players):'<span class="muted">No players</span>'}</div>
+      <div class="live-actions">
+        <button type="button" class="btn btn-secondary btn-small" onclick="editTeamPoolEntry('${escapeHtml(entry.id)}')">Edit</button>
+        <button type="button" class="btn btn-danger btn-small" onclick="removeTeamPoolEntry('${escapeHtml(entry.id)}')">×</button>
+      </div>
+    </div>`;
+  }).join("");
+  const distributionComplete=!!tournament.settings.teamPoolDistributionComplete && tournament.settings.teamPoolLotteryInputSignature===teamPoolInputSignature();
+  const distributionCounts=tournament.settings.teamPoolDistributionCounts||{};
+  const lotteryBtn=$("teamPoolLotteryBtn");
+  if(lotteryBtn){
+    lotteryBtn.disabled=distributionComplete;
+    lotteryBtn.textContent=distributionComplete?"✓ Lottery completed":"🎲 Lottery / Distribute";
+  }
+  if(distributionComplete){
+    const distributed=tournament.groups
+      .map(group=>`${group.name||"Group"}: ${Number(distributionCounts[String(group.id)])||0}`)
+      .filter((_,i)=>Number(distributionCounts[String(tournament.groups[i]?.id)])>0);
+    summary.textContent=`Distributed · ${distributed.join(" · ")}`;
+  }else{
+    summary.textContent=`${entries.length} team${entries.length===1?"":"s"} in Team Pool.`;
+  }
+}
+
+function addTeamPoolEntry(){
+  ensureTeamPoolState();
+  const player1=$('teamPoolPlayer1')?.value.trim()||'';
+  const player2=$('teamPoolPlayer2')?.value.trim()||'';
+  if(!player1){
+    showMessage('Enter Player 1.','warning');
+    $('teamPoolPlayer1')?.focus();
+    return;
+  }
+  if(!player2){
+    showMessage('Enter Player 2.','warning');
+    $('teamPoolPlayer2')?.focus();
+    return;
+  }
+  invalidateTeamPoolLottery();
+  const number=tournament.settings.teamPoolEntries.length+1;
+  tournament.settings.teamPoolEntries.push({
+    id:id('teamPoolEntry'),
+    number,
+    name:'Team '+number,
+    player1,
+    player2,
+    createdAt:Date.now(),
+    updatedAt:Date.now()
+  });
+  tournament.settings.teamPoolDistributionComplete=false;
+  saveLocal(true);
+
+  const p1=$('teamPoolPlayer1');
+  const p2=$('teamPoolPlayer2');
+  if(p1)p1.value='';
+  if(p2)p2.value='';
+  const nextNumber=tournament.settings.teamPoolEntries.length+1;
+  const teamName=$('teamPoolTeamName');
+  if(teamName)teamName.textContent='Team '+nextNumber;
+  renderTeamPool();
+  p1?.focus();
+}
+
+function editTeamPoolEntry(entryId){
+  ensureTeamPoolState();
+  const entry=tournament.settings.teamPoolEntries.find(x=>String(x.id)===String(entryId));
+  if(!entry)return;
+
+  const current=[entry.player1,entry.player2].filter(Boolean).join(", ");
+  const entered=prompt(`Edit player names for ${entry.name||("Team "+entry.number)}. Separate names with commas.`,current);
+  if(entered===null)return;
+
+  const names=entered.split(",").map(x=>x.trim()).filter(Boolean);
+  const name1=names[0]||"";
+  const name2=names[1]||"";
+  if(names.length!==2){showMessage("Doubles requires exactly two player names separated by commas.","warning");return;}
+  if(!name1){showMessage("Player 1 cannot be empty.","warning");return;}
+  if(!name2){showMessage("Player 2 cannot be empty.","warning");return;}
+  const changed=entry.player1!==name1 || entry.player2!==name2;
+  if(changed)invalidateTeamPoolLottery();
+  entry.player1=name1;
+  entry.player2=name2;
+  entry.updatedAt=Date.now();
+  tournament.settings.teamPoolDistributionComplete=false;
+  addHistory("Team Pool entry edited",entry.name||("Team "+entry.number));
+  saveLocal(true);
+  renderTeamPool();
+}
+
+function removeTeamPoolEntry(entryId){
+  ensureTeamPoolState();
+  const entries=tournament.settings.teamPoolEntries;
+  const index=entries.findIndex(x=>String(x.id)===String(entryId));
+  if(index<0)return;
+  const entry=entries[index];
+  if(!confirm(`Remove ${entry.name||("Team "+(index+1))} from Team Pool?`))return;
+
+  invalidateTeamPoolLottery();
+  entries.splice(index,1);
+  entries.forEach((item,i)=>{
+    item.number=i+1;
+    item.name="Team "+(i+1);
+    item.updatedAt=Date.now();
+  });
+  tournament.settings.teamPoolDistributionComplete=false;
+  addHistory("Team Pool entry removed",entry.name||("Team "+(index+1)));
+  saveLocal(true);
+  renderTeamPool();
+}
+
+function runTeamPoolLottery(){
+  ensureTeamPoolState();
+  const entries=tournament.settings.teamPoolEntries;
+  const groups=tournament.groups||[];
+
+  if(!entries.length){
+    showMessage("Add at least one team to Team Pool first.","warning");
+    return;
+  }
+  if(!groups.length){
+    showMessage("Create groups first.","warning");
+    openTournamentSettings();
+    return;
+  }
+
+  const currentSignature=teamPoolInputSignature();
+  const lotteryLocked=!!tournament.settings.teamPoolDistributionComplete && tournament.settings.teamPoolLotteryInputSignature===currentSignature;
+  if(lotteryLocked){
+    showMessage("Lottery already completed. Change the Team Pool input data to run the lottery again.","warning");
+    renderTeamPool();
+    return;
+  }
+
+  // If the input changed after a previous lottery, invalidate its old
+  // distribution before creating a fresh set of tournament teams.
+  const hasCommittedTeams=Array.isArray(tournament.settings.teamPoolCommittedIds) && tournament.settings.teamPoolCommittedIds.length>0;
+  if(tournament.settings.teamPoolDistributionComplete || hasCommittedTeams){
+    invalidateTeamPoolLottery();
+  }
+
+  const committedIds=Array.isArray(tournament.settings.teamPoolCommittedIds)
+    ? tournament.settings.teamPoolCommittedIds
+    : [];
+  const committedTeams=committedIds
+    .map(teamId=>tournament.teams.find(t=>String(t.id)===String(teamId)))
+    .filter(Boolean);
+  const entryById=new Map(entries.map(entry=>[String(entry.id),entry]));
+  let poolTeams=committedTeams.filter(team=>entryById.has(String(team.teamPoolEntryId)));
+
+  // Create normal tournament teams for entries that have not yet been committed.
+  const now=Date.now();
+  entries.forEach(entry=>{
+    if(poolTeams.some(team=>String(team.teamPoolEntryId)===String(entry.id)))return;
+    const player1={id:id("player"),name:entry.player1};
+    const player2={id:id("player"),name:entry.player2};
+    tournament.players.push(player1,player2);
+    const team={
+      id:id("team"),
+      number:null,
+      name:entry.name||("Team "+entry.number),
+      displayName:"",
+      format:"doubles",
+      playerIds:[player1.id,player2.id],
+      groupId:null,
+      teamPoolEntry:true,
+      teamPoolEntryId:entry.id,
+      createdAt:now,
+      updatedAt:now
+    };
+    tournament.teams.push(team);
+    poolTeams.push(team);
+  });
+
+  // Remove any stale committed references left by older data.
+  tournament.settings.teamPoolCommittedIds=poolTeams.map(team=>team.id);
+
+  // Clear previous group membership for Team Pool teams before the new lottery.
+  poolTeams.forEach(team=>{
+    (tournament.groups||[]).forEach(group=>{
+      if(Array.isArray(group.teamIds))
+        group.teamIds=group.teamIds.filter(id=>String(id)!==String(team.id));
+      if(Array.isArray(group.teams))
+        group.teams=group.teams.filter(id=>String(id)!==String(team.id));
+    });
+    team.groupId=null;
+    team.number=null;
+  });
+
+  // Lottery: shuffle the Team Pool, then deal round-robin across all existing
+  // groups. This keeps the allocation random while keeping group counts balanced.
+  const shuffled=shuffleArray(poolTeams);
+  const allocations=groups.map(group=>({group,teams:[]}));
+  shuffled.forEach((team,index)=>{
+    allocations[index%allocations.length].teams.push(team);
+  });
+
+  allocations.forEach(({group,teams})=>{
+    const existingNumbers=tournament.teams
+      .filter(team=>String(team.groupId)===String(group.id)&&!poolTeams.some(poolTeam=>String(poolTeam.id)===String(team.id)))
+      .map(team=>Number(team.number))
+      .filter(Number.isFinite);
+    let nextNumber=existingNumbers.length?Math.max(...existingNumbers)+1:1;
+    if(!Array.isArray(group.teamIds))group.teamIds=[];
+    if(!Array.isArray(group.teams))group.teams=[];
+
+    teams.forEach(team=>{
+      team.groupId=group.id;
+      team.number=nextNumber++;
+      team.name=`Team ${team.number}`;
+      team.updatedAt=Date.now();
+      if(!group.teamIds.some(id=>String(id)===String(team.id)))group.teamIds.push(team.id);
+      if(!group.teams.some(id=>String(id)===String(team.id)))group.teams.push(team.id);
+    });
+
+    group.teamCount=tournament.teams.filter(team=>String(team.groupId)===String(group.id)).length;
+    group.updatedAt=Date.now();
+  });
+
+  tournament.settings.teamPoolDistributionComplete=true;
+  tournament.settings.teamPoolLotteryInputSignature=currentSignature;
+  tournament.settings.teamPoolDistributionCounts={};
+  allocations.forEach(({group,teams})=>{
+    tournament.settings.teamPoolDistributionCounts[String(group.id)]=teams.length;
+  });
+
+  addHistory(
+    "Team Pool distributed",
+    `${poolTeams.length} team${poolTeams.length===1?"":"s"} across ${groups.length} group${groups.length===1?"":"s"}`
+  );
+  saveLocal(true);
+  refreshControlled("team-change");
+  renderTeamPool();
+
+  const counts=allocations
+    .filter(x=>x.teams.length)
+    .map(x=>`${x.group.name||"Group"}: ${x.teams.length}`);
+  showMessage(`Team Pool distributed. ${counts.join(" · ")}`);
 }
 
 function switchEntryTab(tab){
-  const teamPanel=$("addTeamPanel");
-  const poolPanel=$("playerPoolPanel");
-  const teamBtn=$("addTeamTabBtn");
-  const poolBtn=$("openPlayerPoolBtn");
-  const isTeam=tab==="team";
+  const teamPoolPanel=$("teamPoolPanel");
+  const playerPoolPanel=$("playerPoolPanel");
+  const manualPanel=$("addTeamPanel");
+  const teamPoolBtn=$("teamPoolTabBtn");
+  const playerPoolBtn=$("openPlayerPoolBtn");
+  const manualBtn=$("manualTeamEntryBtn");
+  const isTeamPool=tab==="teamPool";
+  const isPlayerPool=tab==="pool";
 
-  if(teamPanel)teamPanel.hidden=!isTeam;
-  if(poolPanel)poolPanel.hidden=isTeam;
+  if(teamPoolPanel)teamPoolPanel.hidden=!isTeamPool;
+  if(playerPoolPanel)playerPoolPanel.hidden=!isPlayerPool;
+  if(manualPanel)manualPanel.hidden=true;
 
-  if(teamBtn){
-    teamBtn.classList.toggle("active",isTeam);
-    teamBtn.setAttribute("aria-selected",isTeam?"true":"false");
+  if(teamPoolBtn){
+    teamPoolBtn.classList.toggle("active",isTeamPool);
+    teamPoolBtn.setAttribute("aria-selected",isTeamPool?"true":"false");
   }
-  if(poolBtn){
-    poolBtn.classList.toggle("active",!isTeam);
-    poolBtn.setAttribute("aria-selected",!isTeam?"true":"false");
+  if(playerPoolBtn){
+    playerPoolBtn.classList.toggle("active",isPlayerPool);
+    playerPoolBtn.setAttribute("aria-selected",isPlayerPool?"true":"false");
+  }
+  if(manualBtn){
+    manualBtn.classList.remove("active");
+    manualBtn.classList.remove("btn-primary");
+    manualBtn.classList.add("btn-secondary");
+    manualBtn.setAttribute("aria-selected","false");
   }
 
-  tournament.specialTeamEntryActive=!isTeam;
-
-  const checkbox=$("specialTeamEntry");
-  if(checkbox)checkbox.checked=!isTeam;
-
-  if(!isTeam){
-    renderSpecialTeamEntrySettings();
-  }
 }
 
+function openManualTeamEntry(){
+  const teamPoolPanel=$("teamPoolPanel");
+  const playerPoolPanel=$("playerPoolPanel");
+  const manualPanel=$("addTeamPanel");
+  const teamPoolBtn=$("teamPoolTabBtn");
+  const playerPoolBtn=$("openPlayerPoolBtn");
+  const manualBtn=$("manualTeamEntryBtn");
+
+  if(teamPoolPanel)teamPoolPanel.hidden=true;
+  if(playerPoolPanel)playerPoolPanel.hidden=true;
+  if(manualPanel)manualPanel.hidden=false;
+  if(teamPoolBtn){
+    teamPoolBtn.classList.remove("active");
+    teamPoolBtn.setAttribute("aria-selected","false");
+  }
+  if(playerPoolBtn){
+    playerPoolBtn.classList.remove("active");
+    playerPoolBtn.setAttribute("aria-selected","false");
+  }
+  if(manualBtn){
+    manualBtn.classList.add("active");
+    manualBtn.classList.remove("btn-secondary");
+    manualBtn.classList.add("btn-primary");
+    manualBtn.setAttribute("aria-selected","true");
+  }
+
+  requestAnimationFrame(()=>{
+    scrollToPlayerTeamEntryHeader();
+    const entryGroup=$("entryGroup");
+    if(entryGroup)entryGroup.focus({preventScroll:true});
+  });
+}
 
 function initEntryTabs(){
-  const teamBtn=$("addTeamTabBtn");
-  const poolBtn=$("openPlayerPoolBtn");
-  if(!teamBtn||!poolBtn)return;
-  teamBtn.onclick=()=>switchEntryTab("team");
-  poolBtn.onclick=()=>switchEntryTab("pool");
-  switchEntryTab("team");
+  const teamPoolBtn=$("teamPoolTabBtn");
+  const playerPoolBtn=$("openPlayerPoolBtn");
+  const manualBtn=$("manualTeamEntryBtn");
+  if(!teamPoolBtn||!playerPoolBtn||!manualBtn)return;
+  teamPoolBtn.onclick=()=>switchEntryTab("teamPool");
+  playerPoolBtn.onclick=()=>switchEntryTab("pool");
+  manualBtn.onclick=openManualTeamEntry;
+  switchEntryTab("teamPool");
 }
 
-
-function openSpecialTeamEntry(){
-  const checkbox=$("specialTeamEntry");
-  if(!checkbox)return;
-  checkbox.checked=true;
-  checkbox.dispatchEvent(new Event("change",{bubbles:true}));
-  $("specialTeamEntryOptions")?.scrollIntoView({behavior:"smooth",block:"nearest"});
-}
 
 function shuffleArray(arr){
   const a=[...arr];
@@ -2949,300 +3455,251 @@ function shuffleArray(arr){
   return a;
 }
 
-function distributeSpecialTeams(){
-  let generatedIds=Array.isArray(tournament.specialGeneratedTeams)?tournament.specialGeneratedTeams:[];
-  const selectedIds=Array.isArray(tournament.specialTeamDistributionGroups)?tournament.specialTeamDistributionGroups:[];
-  let generated=generatedIds.map(gid=>
-    tournament.teams.find(t=>String(t.id)===String(gid))
-  ).filter(t=>t&&t.specialTeamEntry);
+function distributePlayerPoolTeams(generated){
+  const groups=tournament.groups||[];
+  if(!groups.length)return [];
 
-  if(!generated.length){
-    generated=(tournament.teams||[]).filter(t=>t&&t.specialTeamEntry&&!t.groupId);
-    if(generated.length){
-      generatedIds=generated.map(t=>t.id);
-      tournament.specialGeneratedTeams=generatedIds;
-    }else{
-      tournament.specialGeneratedTeams=[];
-      tournament.specialTeamDistributionComplete=false;
-    }
-  }
-
-  const groups=(tournament.groups||[]).filter(g=>
-    selectedIds.some(id=>String(id)===String(g.id))
-  );
-
-  if(!generated.length){
-    showMessage("Build the special teams first.","warning");
-    return;
-  }
-  if(!groups.length){
-    showMessage("Select at least one existing group.","warning");
-    return;
-  }
-
-  const allocations=groups.map(g=>{
-    const row=[...document.querySelectorAll(".special-team-distribution-row")]
-      .find(el=>String(el.dataset.groupId)===String(g.id));
-    const input=row?.querySelector(".special-team-distribution-count");
-    return {group:g,count:Math.max(0,Number(input?.value)||0)};
-  });
-  const allocated=allocations.reduce((sum,x)=>sum+x.count,0);
-
-  if(allocated!==generated.length){
-    showMessage(`Allocate exactly ${generated.length} generated team${generated.length===1?"":"s"}. Currently allocated: ${allocated}.`,"warning");
-    return;
-  }
-
-  // Preserve the established lottery distribution mechanism.
-  const shuffled=shuffleArray(generated);
-
-  // Remove generated teams from any previous group membership.
+  // The lottery already randomized the generated-team order. Distribution is
+  // deterministic from that lottery result; do not perform a second shuffle.
   generated.forEach(team=>{
-    (tournament.groups||[]).forEach(g=>{
-      if(Array.isArray(g.teamIds))
-        g.teamIds=g.teamIds.filter(id=>String(id)!==String(team.id));
+    (tournament.groups||[]).forEach(group=>{
+      if(Array.isArray(group.teamIds))
+        group.teamIds=group.teamIds.filter(id=>String(id)!==String(team.id));
+      if(Array.isArray(group.teams))
+        group.teams=group.teams.filter(id=>String(id)!==String(team.id));
     });
     team.groupId=null;
+    team.number=null;
   });
 
-  let offset=0;
-  allocations.forEach(({group,count})=>{
-    const existingNumbers=tournament.teams
-      .filter(t=>String(t.groupId)===String(group.id)&&!generatedIds.some(id=>String(id)===String(t.id))&&Number.isFinite(Number(t.number)))
-      .map(t=>Number(t.number));
+  const allocations=groups.map(group=>({group,teams:[]}));
+  generated.forEach((team,index)=>{
+    allocations[index%allocations.length].teams.push(team);
+  });
 
+  allocations.forEach(({group,teams})=>{
+    const existingNumbers=tournament.teams
+      .filter(team=>String(team.groupId)===String(group.id)&&!generated.some(g=>String(g.id)===String(team.id)))
+      .map(team=>Number(team.number))
+      .filter(Number.isFinite);
     let nextNumber=existingNumbers.length?Math.max(...existingNumbers)+1:1;
 
     if(!Array.isArray(group.teamIds))group.teamIds=[];
+    if(!Array.isArray(group.teams))group.teams=[];
 
-    shuffled.slice(offset,offset+count).forEach(team=>{
+    teams.forEach(team=>{
       team.groupId=group.id;
       team.number=nextNumber++;
       team.name=`Team ${team.number}`;
-      if(!group.teamIds.some(id=>String(id)===String(team.id)))
-        group.teamIds.push(team.id);
-      group.teamCount=Math.max(Number(group.teamCount)||0,existingNumbers.length+count);
-      group.updatedAt=Date.now();
       team.updatedAt=Date.now();
+      if(!group.teamIds.some(id=>String(id)===String(team.id)))group.teamIds.push(team.id);
+      if(!group.teams.some(id=>String(id)===String(team.id)))group.teams.push(team.id);
     });
-    offset+=count;
+
+    group.teamCount=tournament.teams.filter(team=>String(team.groupId)===String(group.id)).length;
+    group.updatedAt=Date.now();
   });
 
-  tournament.specialTeamDistributionComplete=true;
-  tournament.specialTeamDistributionCounts={};
-  allocations.forEach(x=>tournament.specialTeamDistributionCounts[String(x.group.id)]=x.count);
+  tournament.playerPoolDistributionComplete=true;
+  tournament.playerPoolDistributionCounts={};
+  tournament.playerPoolDistributionGroups=groups.map(group=>group.id);
+  allocations.forEach(({group,teams})=>{
+    tournament.playerPoolDistributionCounts[String(group.id)]=teams.length;
+  });
 
-  addHistory(
-    "Special teams distributed",
-    `${generated.length} team${generated.length===1?"":"s"} across ${groups.length} group${groups.length===1?"":"s"}`
-  );
-  saveLocal(true);
-  renderAll();
-  renderSpecialTeamDistribution();
-
-  const counts=allocations.map(x=>`${x.group.name||"Group"}: ${x.count}`);
-  showMessage(`Special teams distributed. ${counts.join(" · ")}`);
+  return allocations;
 }
-function renderSpecialTeamDistribution(){
-  const box=$("specialTeamDistribution");
-  const list=$("specialTeamDistributionGroups");
-  const summary=$("specialTeamDistributionSummary");
-  if(!box||!list||!summary)return;
 
-  const generatedIds=Array.isArray(tournament.specialGeneratedTeams)?tournament.specialGeneratedTeams:[];
-  const generated=generatedIds.map(gid=>tournament.teams.find(t=>String(t.id)===String(gid))).filter(t=>t&&t.specialTeamEntry);
-  if(!generated.length){
-    box.style.display="none";
-    list.innerHTML="";
-    summary.textContent="";
-    return;
-  }
-
-  box.style.display="block";
-  if(!Array.isArray(tournament.specialTeamDistributionGroups))
-    tournament.specialTeamDistributionGroups=[];
-
-  const selected=new Set(tournament.specialTeamDistributionGroups.map(String));
-  const groups=tournament.groups||[];
-
-  if(!tournament.specialTeamDistributionCounts)
-    tournament.specialTeamDistributionCounts={};
-
-  const selectedGroups=groups.filter(g=>selected.has(String(g.id)));
-  const base=selectedGroups.length?Math.floor(generated.length/selectedGroups.length):0;
-  const remainder=selectedGroups.length?generated.length%selectedGroups.length:0;
-
-  list.innerHTML=groups.map((g,i)=>{
-    const gid=String(g.id||i);
-    const checked=selected.has(gid);
-    let count=tournament.specialTeamDistributionCounts[gid];
-
-    if(count==null){
-      const pos=selectedGroups.findIndex(x=>String(x.id)===gid);
-      count=pos>=0 ? base+(pos<remainder?1:0) : 0;
-    }
-
-    return `<div class="special-team-distribution-row" data-group-id="${escapeHtml(gid)}" style="display:grid;grid-template-columns:44px minmax(0,1fr) 70px;align-items:center;column-gap:10px;margin-top:7px"> <input type="checkbox" class="special-team-distribution-check" data-group-id="${escapeHtml(gid)}" ${checked?"checked":""} style="width:22px;height:22px;justify-self:center;margin:0"> <span style="min-width:0;font-weight:600">${escapeHtml(g.name||String.fromCharCode(65+i))}</span> <input type="number" class="special-team-distribution-count" data-group-id="${escapeHtml(gid)}" min="0" step="1" value="${count}" ${checked?"":"disabled"} style="width:70px;box-sizing:border-box;padding:8px 9px;text-align:center;margin:0" aria-label="Teams for ${escapeHtml(g.name||"group")}"> </div>`;
-  }).join("");
-
-  const total=selectedGroups.reduce((sum,g)=>{
-    const row=[...list.querySelectorAll(".special-team-distribution-row")]
-      .find(el=>String(el.dataset.groupId)===String(g.id));
-    return sum+(Number(row?.querySelector(".special-team-distribution-count")?.value)||0);
-  },0);
-
-  const complete=!!tournament.specialTeamDistributionComplete;
-
-  if(!groups.length){
-    summary.innerHTML='<div class="empty directional-message" role="button" tabindex="0" onclick="openTournamentSettings()" onkeydown="handleDirectionalKey(event,openTournamentSettings)">Create groups first.</div>';
-  }else if(!selectedGroups.length){
-    summary.textContent="Select one or more existing groups.";
-  }else if(complete){
-    summary.textContent=`Distributed · ${selectedGroups.map(g=>`${g.name||"Group"}: ${generated.filter(t=>String(t.groupId)===String(g.id)).length}`).join(" · ")}`;
-  }else{
-    summary.textContent=`Allocate ${generated.length} generated team${generated.length===1?"":"s"} · ${total} assigned`;
-  }
-
-  const btn=$("distributeSpecialTeamsBtn");
-  if(btn){
-    btn.disabled=!selectedGroups.length||complete||total!==generated.length;
-    btn.textContent=complete?"✓ Teams Distributed":"Distribute Teams";
-  }
-}
-function renderSpecialTeamBuildArea(){
-  const area=$("specialTeamBuildArea");
+function renderPlayerPoolBuildArea(){
+  const area=$("playerPoolBuildArea");
   if(!area)return;
-  const enabled=$("specialTeamEntry")?.checked;
-  area.style.display=enabled?"block":"none";
-  if(!enabled)return;
-  const pools=Array.isArray(tournament.specialTeamEntryPlayers)?tournament.specialTeamEntryPlayers:[];
+  area.style.display="block";
+
+  const pools=Array.isArray(tournament.playerPoolPlayers)?tournament.playerPoolPlayers:[];
   const count=Math.max(2,Number(tournament.settings?.playerPoolCount)||2);
   const completeCount=Math.min(...Array.from({length:count},(_,i)=>
-    Array.isArray(pools[i])?pools[i].filter(Boolean).length:0
+    Array.isArray(pools[i])?pools[i].filter(entry=>String(entry?.name??entry??"").trim()).length:0
   ));
-  const generatedIds=Array.isArray(tournament.specialGeneratedTeams)?tournament.specialGeneratedTeams:[];
+  const generatedIds=Array.isArray(tournament.playerPoolGeneratedTeams)?tournament.playerPoolGeneratedTeams:[];
   let generated=generatedIds.map(gid=>
     tournament.teams.find(t=>String(t.id)===String(gid))
-  ).filter(t=>t&&t.specialTeamEntry);
+  ).filter(t=>t&&t.playerPoolGenerated);
 
   if(!generated.length){
-    generated=(tournament.teams||[]).filter(t=>t&&t.specialTeamEntry&&!t.groupId);
+    generated=(tournament.teams||[]).filter(t=>t&&t.playerPoolGenerated&&!t.groupId);
     if(generated.length){
-      tournament.specialGeneratedTeams=generated.map(t=>t.id);
+      tournament.playerPoolGeneratedTeams=generated.map(t=>t.id);
     }else{
-      tournament.specialGeneratedTeams=[];
-      tournament.specialTeamDistributionComplete=false;
+      tournament.playerPoolGeneratedTeams=[];
+      tournament.playerPoolDistributionComplete=false;
     }
   }else if(generated.length!==generatedIds.length){
-    tournament.specialGeneratedTeams=generated.map(t=>t.id);
+    tournament.playerPoolGeneratedTeams=generated.map(t=>t.id);
   }
 
-  const alreadyBuilt=generated.length>0;
-  const summary=$("specialTeamBuildSummary");
+  const currentSignature=playerPoolBuildInputSignature();
+  const buildLocked=generated.length>0 && tournament.settings.playerPoolBuildInputSignature===currentSignature && !!tournament.playerPoolDistributionComplete;
+  const staleBuild=generated.length>0 && tournament.settings.playerPoolBuildInputSignature!==currentSignature;
+  const summary=$("playerPoolBuildSummary");
+
   if(summary){
-    summary.textContent=alreadyBuilt
-      ? `${generated.length} special team${generated.length===1?"":"s"} built. Ready for group distribution.`
-      : completeCount
-        ? `${completeCount} complete team${completeCount===1?"":"s"} can be built.`
-        : "Enter players in every pool to build teams.";
+    if(buildLocked && tournament.playerPoolDistributionComplete){
+      const groups=tournament.groups||[];
+      const counts=groups
+        .map(group=>({group,count:generated.filter(t=>String(t.groupId)===String(group.id)).length}))
+        .filter(x=>x.count>0)
+        .map(x=>`${x.group.name||"Group"}: ${x.count}`);
+      summary.textContent=`${generated.length} team${generated.length===1?"":"s"} built and distributed${counts.length?" · "+counts.join(" · "):""}.`;
+    }else if(buildLocked){
+      summary.textContent=`${generated.length} team${generated.length===1?"":"s"} built. Ready for distribution.`;
+    }else if(staleBuild){
+      summary.textContent="Player Pool changed. Run the lottery again.";
+    }else if(completeCount){
+      summary.textContent=`${completeCount} complete team${completeCount===1?"":"s"} can be built.`;
+    }else{
+      summary.textContent="Enter players in every pool to build teams.";
+    }
   }
-  const btn=$("buildSpecialTeamsBtn");
+
+  const btn=$("playerPoolLotteryBtn");
   if(btn){
-    btn.disabled=alreadyBuilt;
-    btn.textContent=alreadyBuilt?"✓ Teams Built":"🎲 Build Teams";
+    btn.disabled=buildLocked;
+    btn.textContent=buildLocked?"✓ Lottery completed":"🎲 Lottery / Build Teams / Distribute Teams";
   }
 }
-function renderSpecialGeneratedPreview(){
-  const el=$("specialTeamGeneratedPreview");
+function renderPlayerPoolGeneratedPreview(){
+  const el=$("playerPoolGeneratedPreview");
   if(!el)return;
-  const ids=Array.isArray(tournament.specialGeneratedTeams)?tournament.specialGeneratedTeams:[];
+  const ids=Array.isArray(tournament.playerPoolGeneratedTeams)?tournament.playerPoolGeneratedTeams:[];
   const teams=ids.map(tid=>tournament.teams.find(t=>t.id===tid)).filter(Boolean);
   if(!teams.length){
     el.innerHTML="";
     return;
   }
-  el.innerHTML=`<div class="special-team-build-summary"><strong>Generated Teams</strong></div>`+
+  el.innerHTML=`<div class="player-pool-build-summary"><strong>Generated Teams</strong></div>`+
     teams.map((t,i)=>{
       const names=(t.playerIds||[]).map(pid=>tournament.players.find(p=>p.id===pid)?.name||"").filter(Boolean);
-      return `<div class="special-generated-team" style="padding:5px 0;border-top:1px solid #e5e7eb"><strong class="special-generated-team-number">${i+1}.</strong>${escapeHtml(names.join(" + "))}</div>`;
+      return `<div class="player-pool-generated-team" style="padding:5px 0;border-top:1px solid #e5e7eb"><strong class="player-pool-generated-team-number">${i+1}.</strong>${escapeHtml(names.join(" + "))}</div>`;
     }).join("");
 }
-function buildSpecialTeams(){
-  if(!$("specialTeamEntry")?.checked)return;
+function runPlayerPoolLottery(){
+  // Player Pool is an atomic workflow: lottery, build, then automatic
+  // distribution across every existing group. A group setup is therefore
+  // required before the lottery starts.
+  try{
+    const groups=tournament.groups||[];
+    if(!groups.length){
+      showMessage("Create groups first.","warning");
+      openTournamentSettings();
+      return;
+    }
 
-  if(Array.isArray(tournament.specialGeneratedTeams) && tournament.specialGeneratedTeams.length){
-    showMessage("Special teams have already been built. Distribute or reset them before building again.","warning");
-    return;
-  }
+    const currentSignature=playerPoolBuildInputSignature();
+    const generatedIds=Array.isArray(tournament.playerPoolGeneratedTeams)?tournament.playerPoolGeneratedTeams:[];
+    const sameInput=generatedIds.length>0 && tournament.settings.playerPoolBuildInputSignature===currentSignature;
+    const buildLocked=sameInput && !!tournament.playerPoolDistributionComplete;
+    if(buildLocked){
+      showMessage("Lottery already completed. Change the Player Pool input data to run the lottery again.","warning");
+      return;
+    }
 
-  saveSpecialTeamPoolNames();
-
-  const count=Math.max(2,Math.min(52,Number(tournament.settings?.playerPoolCount)||2));
-  const pools=Array.from({length:count},(_,i)=>
-    (Array.isArray(tournament.specialTeamEntryPlayers?.[i])
-      ? tournament.specialTeamEntryPlayers[i]
-      : []).map(x=>String(x||"").trim()).filter(Boolean)
-  );
-
-  if(pools.some(p=>p.length===0)){
-    showMessage("Every player pool must contain at least one player.","warning");
-    return;
-  }
-
-  // Build Teams requires each player name to belong to only one pool.
-  // Comparison is case-insensitive and ignores repeated whitespace.
-  const playerPoolNames=new Map();
-  for(let poolIndex=0;poolIndex<pools.length;poolIndex++){
-    for(const rawName of pools[poolIndex]){
-      const normalized=rawName.toLowerCase().replace(/\s+/g," ").trim();
-      const previousPool=playerPoolNames.get(normalized);
-      if(previousPool!==undefined && previousPool!==poolIndex){
-        showMessage(`Player "${rawName}" appears in more than one player pool.`,"warning");
+    // If a previous build was interrupted after team creation, finish its
+    // distribution instead of drawing a new lottery. Only changed input can
+    // invalidate the existing result.
+    if(sameInput && generatedIds.length){
+      const existingGenerated=generatedIds.map(gid=>
+        tournament.teams.find(t=>String(t.id)===String(gid))
+      ).filter(t=>t&&t.playerPoolGenerated);
+      if(existingGenerated.length===generatedIds.length){
+        const allocations=distributePlayerPoolTeams(existingGenerated);
+        tournament.settings.playerPoolBuildInputSignature=currentSignature;
+        addHistory("Player Pool teams distributed",`${existingGenerated.length} team${existingGenerated.length===1?"":"s"} across ${(tournament.groups||[]).length} groups`);
+        saveLocal(true);
+        renderPlayerPools();
+        renderPlayerPoolBuildArea();
+        renderPlayerPoolGeneratedPreview();
+        const counts=allocations.map(x=>`${x.group.name||"Group"}: ${x.teams.length}`);
+        showMessage(`Teams built and distributed. ${counts.join(" · ")}`);
+        refreshControlled("team-change");
         return;
       }
-      playerPoolNames.set(normalized,poolIndex);
     }
+
+    if(generatedIds.length)invalidatePlayerPoolBuild();
+
+    const count=Math.max(2,Math.min(52,Number(tournament.settings?.playerPoolCount)||2));
+    const pools=Array.from({length:count},(_,i)=>(
+      Array.isArray(tournament.playerPoolPlayers?.[i])
+        ? tournament.playerPoolPlayers[i]
+        : []
+    ).map(entry=>({id:String(entry?.id||""),name:String(entry?.name??entry??"").trim()})).filter(entry=>entry.name));
+
+    if(pools.some(p=>p.length===0)){
+      showMessage("Every player pool must contain at least one player.","warning");
+      return;
+    }
+
+    const teamCount=Math.min(...pools.map(p=>p.length));
+    // This is the single lottery. The resulting order is then dealt
+    // round-robin across all existing groups without another random shuffle.
+    // Keep each shuffled player paired with its persistent Player Pool entry.
+    // Player names are display data only; duplicate names are valid.
+    const shuffled=pools.map(pool=>shuffleArray(pool));
+    const generated=[];
+    const now=Date.now();
+
+    for(let i=0;i<teamCount;i++){
+      const selections=shuffled.map(pool=>pool[i]);
+      const playerIds=selections.map(selection=>{
+        const p={
+          id:id("player"),
+          name:selection.name,
+          playerPoolSource:{
+            entryId:selection.id
+          }
+        };
+        tournament.players.push(p);
+        return p.id;
+      });
+      generated.push({
+        id:id("team"),
+        number:null,
+        name:`Team ${i+1}`,
+        displayName:"",
+        format:"team",
+        playerIds,
+        groupId:null,
+        playerPoolGenerated:true,
+        createdAt:now,
+        updatedAt:now
+      });
+    }
+
+    tournament.playerPoolGeneratedTeams=generated.map(t=>t.id);
+    tournament.settings.playerPoolBuildInputSignature=currentSignature;
+    tournament.teams.push(...generated);
+
+    const allocations=distributePlayerPoolTeams(generated);
+    const counts=allocations.map(x=>`${x.group.name||"Group"}: ${x.teams.length}`);
+
+    addHistory("Player Pool teams built and distributed",`${teamCount} team${teamCount===1?"":"s"} across ${groups.length} group${groups.length===1?"":"s"}`);
+    saveLocal(true);
+    renderPlayerPools();
+    renderPlayerPoolBuildArea();
+    renderPlayerPoolGeneratedPreview();
+
+    const btn=$("playerPoolLotteryBtn");
+    if(btn){
+      btn.disabled=true;
+      btn.textContent="✓ Lottery completed";
+    }
+
+    showMessage(`Lottery completed. ${teamCount} team${teamCount===1?"":"s"} built and distributed. ${counts.join(" · ")}`);
+    refreshControlled("team-change");
+  }catch(error){
+    console.error("Player Pool lottery/build/distribute failed:",error);
+    showMessage(`Could not complete lottery: ${error?.message||"Unexpected error."}`,"warning");
   }
-
-  const teamCount=Math.min(...pools.map(p=>p.length));
-  const shuffled=pools.map(shuffleArray);
-
-  const generated=[];
-  for(let i=0;i<teamCount;i++){
-    const names=shuffled.map(pool=>pool[i]);
-    const playerIds=names.map(name=>{
-      const p={id:id("player"),name};
-      tournament.players.push(p);
-      return p.id;
-    });
-    generated.push({
-      id:id("team"),
-      number:null,
-      name:`Special Team ${i+1}`,
-      displayName:"",
-      format:"team",
-      playerIds,
-      groupId:null,
-      specialTeamEntry:true,
-      createdAt:Date.now(),
-      updatedAt:Date.now()
-    });
-  }
-
-  tournament.specialGeneratedTeams=generated.map(t=>t.id);
-  tournament.teams.push(...generated);
-  addHistory("Special teams built",`${teamCount} team${teamCount===1?"":"s"} from ${count} player pools`);
-  saveLocal(true);
-  renderAll();
-  renderSpecialGeneratedPreview();
-
-  const btn=$("buildSpecialTeamsBtn");
-  if(btn){
-    btn.disabled=true;
-    btn.textContent="✓ Teams Built";
-  }
-
-  showMessage(`${teamCount} special team${teamCount===1?"":"s"} built. They are ready for group distribution.`);
 }
 
 
@@ -3311,12 +3768,7 @@ function openGroupTable(){
 }
 
 function openAddTeam(){
-  if(typeof switchEntryTab==="function"){
-    switchEntryTab("team");
-    requestAnimationFrame(()=>{
-      $("addTeamPanel")?.scrollIntoView({behavior:"smooth",block:"start"});
-    });
-  }
+  if(typeof openManualTeamEntry==="function")openManualTeamEntry();
 }
 
 function renderGroupSelect(){
@@ -4175,7 +4627,7 @@ function renderStandings(){
   const q=Math.max(0,Number(group.directQualifiers||0));
   el.innerHTML=`<div class="standings-table">
     <div class="standing-row standing-head">
-      <span>Group Rank</span><span>Team</span><span>W</span><span>L</span><span>Lost</span><span>Metrics</span>
+      <span>Group Rank</span><span>Team</span><span>W</span><span>L</span><span>Lost</span><span>Points</span>
     </div>
     ${rows.map(r=>{
       const names=(r.team.playerIds||[]).map(pid=>tournament.players.find(p=>String(p.id)===String(pid))?.name||"").filter(Boolean);
@@ -4242,7 +4694,7 @@ function renderQualification(){
   if(help)help.textContent="Top teams qualify automatically according to each group’s qualifier setting.";
   el.innerHTML=`<div class="standings-table group-ranking-table">
     <div class="standing-row standing-head">
-      <span>Pos</span><span>Team</span><span>W</span><span>L</span><span>Lost</span><span>Qualify</span><span class="group-metric-head">Metrics</span>
+      <span>Pos</span><span>Team</span><span>W</span><span>L</span><span>Lost</span><span>Qualify</span><span class="group-metric-head">Points</span>
     </div>
     ${rows.map(r=>`<div class="standing-row ${r.qualifier?'qualifier-row':''}">
       <span>${r.position}</span><span class="standing-team">${qualificationTeamLabel(r.team)}</span>
@@ -5110,6 +5562,12 @@ function resetCompetitionState(){
   tournament.mainKnockoutEntriesUpdatedAt=null;
   tournament.mainKnockoutDraw=null;
   tournament.thirdPlacePlayoff=null;
+  // Team Pool entries are setup input and must survive group creation/rebuild.
+  // Rebuilding groups invalidates only the committed distribution into those groups.
+  tournament.settings.teamPoolCommittedIds=[];
+  tournament.settings.teamPoolDistributionComplete=false;
+  tournament.settings.teamPoolDistributionCounts={};
+  tournament.settings.teamPoolLotteryInputSignature='';
   tournament.stageBuildState={
     groupFixtures:{},
     preliminary:null,
@@ -5141,6 +5599,13 @@ function createGroups(){
   addHistory("Groups created",String(count));
   saveLocal(true);
   refreshControlled("group-change");
+
+  // Keep the confirmation inline, matching the existing Player Pool creation UX.
+  const feedback=$("groupCreateFeedback");
+  if(feedback){
+    feedback.textContent=`${count} group${count===1?"":"s"} created.`;
+    feedback.style.display="block";
+  }
 }
 
 function changeGroupTeamCount(groupId,value){
@@ -5268,6 +5733,10 @@ function addTeam(){
 function editTeam(teamId){
   const t=tournament.teams.find(x=>x.id===teamId);
   if(!t)return;
+
+  // All tournament teams use the same player-editing UX, regardless of origin.
+  // Team Pool teams are synchronised back to their source entry below so there
+  // is only one logical set of player names for the team.
   const current=t.playerIds.map(pid=>tournament.players.find(p=>p.id===pid)?.name||"").filter(Boolean).join(", ");
   const entered=prompt("Edit player names for Team "+t.number+". Separate names with commas.",current);
   if(entered===null)return;
@@ -5277,6 +5746,56 @@ function editTeam(teamId){
   if(t.format==="team" && names.length<1){showMessage("A team needs at least one player.","warning");return;}
 
   const oldIds=new Set(t.playerIds);
+  const oldPlayers=t.playerIds.map(pid=>tournament.players.find(p=>p.id===pid)).filter(Boolean);
+  const oldNames=oldPlayers.map(p=>p.name||"");
+  const changed=names.length!==oldNames.length || names.some((name,i)=>name!==oldNames[i]);
+
+  // Player Pool is the source of truth. If a generated team is edited,
+  // synchronize the exact source entry by persistent ID first, then invalidate
+  // the generated teams so the next lottery uses the edited input. Never match
+  // by player name because duplicate names are valid.
+  if(changed && t.playerPoolGenerated){
+    const sources=oldPlayers.map(p=>p.playerPoolSource);
+    const validSources=sources.length===oldPlayers.length && sources.every(source=>{
+      if(!source?.entryId)return false;
+      return (tournament.playerPoolPlayers||[]).some(pool=>
+        Array.isArray(pool)&&pool.some(entry=>String(entry?.id)===String(source.entryId))
+      );
+    });
+    if(!validSources){
+      showMessage("This Player Pool team has no valid source mapping. Edit the Player Pool entry directly before running the lottery again.","warning");
+      return;
+    }
+
+    sources.forEach((source,index)=>{
+      for(const pool of (tournament.playerPoolPlayers||[])){
+        const entry=Array.isArray(pool)?pool.find(item=>String(item?.id)===String(source.entryId)):null;
+        if(entry){entry.name=names[index];break;}
+      }
+    });
+
+    invalidatePlayerPoolBuild();
+    addHistory("Player Pool team edited",t.name);
+    saveLocal(true);
+    refreshControlled("team-change");
+    renderPlayerPools();
+    renderPlayerPoolBuildArea();
+    return;
+  }
+
+  if(changed && t.teamPoolEntry){
+    ensureTeamPoolState();
+    const entry=tournament.settings.teamPoolEntries.find(x=>String(x.id)===String(t.teamPoolEntryId));
+    if(entry){
+      entry.player1=names[0]||"";
+      entry.player2=names[1]||"";
+      entry.updatedAt=Date.now();
+    }
+    // Editing a Team Pool-derived team changes the lottery input dataset.
+    // Invalidate the previous distribution so the lottery must be run again.
+    invalidateTeamPoolLottery();
+  }
+
   tournament.players=tournament.players.filter(p=>!oldIds.has(p.id));
   t.playerIds=names.map(name=>{
     const p={id:id("player"),name};
@@ -5287,7 +5806,9 @@ function editTeam(teamId){
   const editedGroup=tournament.groups.find(g=>g.id===t.groupId);
   if(editedGroup)editedGroup.updatedAt=Date.now();
   addHistory("Team players edited",t.name);
-  saveLocal(true);refreshControlled("team-change");
+  saveLocal(true);
+  refreshControlled("team-change");
+  renderTeamPool();
 }
 
 function removeTeam(teamId){
@@ -5297,6 +5818,14 @@ function removeTeam(teamId){
   const ids=new Set(t.playerIds);
   tournament.players=tournament.players.filter(p=>!ids.has(p.id));
   tournament.teams=tournament.teams.filter(x=>x.id!==teamId);
+  ensureTeamPoolState();
+  if(t.teamPoolEntry){
+    tournament.settings.teamPoolCommittedIds=tournament.settings.teamPoolCommittedIds.filter(id=>String(id)!==String(teamId));
+    tournament.settings.teamPoolNames=tournament.settings.teamPoolNames.filter(name=>String(name).trim().toLowerCase().replace(/\s+/g," ")!==String(t.name||"").trim().toLowerCase().replace(/\s+/g," "));
+    if(!tournament.settings.teamPoolCommittedIds.length){
+      tournament.settings.teamPoolDistributionComplete=false;
+    }
+  }
   const g=tournament.groups.find(x=>x.id===t.groupId);
   if(g){
     const remaining=tournament.teams
@@ -5304,7 +5833,7 @@ function removeTeam(teamId){
       .sort((a,b)=>a.number-b.number);
     remaining.forEach((team,index)=>{
       team.number=index+1;
-      team.name="Team "+team.number;
+      if(!team.teamPoolEntry)team.name="Team "+team.number;
       team.updatedAt=Date.now();
     });
     g.teamCount=remaining.length;
@@ -5378,108 +5907,45 @@ function exportJson(){
   showMessage("Tournament JSON exported.");
 }
 
-// Global UI event bindings are installed once when the application script loads.
-// Render functions may rebuild their own dynamic DOM, so bindings for rebuilt
-// controls belong inside those render functions and must be guarded where needed.
-// Some controls intentionally retain inline handlers; delegated listeners are used
-// where dynamic DOM is recreated frequently. This mixed approach is kept for now.
-$("specialTeamEntry").addEventListener("change",()=>{
-  const g=tournament.groups[0];
-  if(!g)return;
-  g.specialTeamEntry=$("specialTeamEntry").checked;
-  g.specialTeamPoolCount=Math.max(2,Number(tournament.settings?.playerPoolCount)||2);
-  saveLocal(true);
-  renderAll();
-});
+// Global event bindings are installed once when the application script loads.
+// Dynamic Player Pool controls use delegated keyboard handlers because their
+// entry row is recreated when the selected pool changes.
 $("createPlayerPoolsBtn").addEventListener("click",()=>{
   const input=$("playerPoolCountSetting");
   const feedback=$("playerPoolCreateFeedback");
   const count=Math.max(2,Math.min(52,Number(input?.value)||2));
+  const previousCount=Math.max(2,Math.min(52,Number(tournament.settings?.playerPoolCount)||2));
+  if(previousCount!==count)invalidatePlayerPoolBuild();
   ensurePlayerPoolState(count);
   tournament.settings.playerPoolsCreated=true;
   if(input)input.value=String(count);
   saveLocal(true);
-  renderSpecialTeamPools();
-  renderSpecialTeamBuildArea();
+  renderPlayerPools();
+  renderPlayerPoolBuildArea();
   if(feedback){
     feedback.textContent=`${count} pools created.`;
     feedback.style.display="block";
   }
 });
-$("specialTeamDistributionGroups").addEventListener("change",e=>{
-  if(e.target.classList.contains("special-team-distribution-check")){
-    const gid=String(e.target.dataset.groupId);
-    if(!Array.isArray(tournament.specialTeamDistributionGroups))
-      tournament.specialTeamDistributionGroups=[];
-    if(e.target.checked){
-      if(!tournament.specialTeamDistributionGroups.map(String).includes(gid))
-        tournament.specialTeamDistributionGroups.push(gid);
-    }else{
-      tournament.specialTeamDistributionGroups=
-        tournament.specialTeamDistributionGroups.filter(x=>String(x)!==gid);
-    }
-    if(!tournament.specialTeamDistributionCounts)
-      tournament.specialTeamDistributionCounts={};
-    saveLocal(true);
-    renderSpecialTeamDistribution();
-    return;
-  }
-
-  if(e.target.classList.contains("special-team-distribution-count")){
-    const gid=String(e.target.dataset.groupId);
-    if(!tournament.specialTeamDistributionCounts)
-      tournament.specialTeamDistributionCounts={};
-    tournament.specialTeamDistributionCounts[gid]=Math.max(0,Number(e.target.value)||0);
-    saveLocal(true);
-    renderSpecialTeamDistribution();
-  }
-});
-
 // Player Pool uses delegated Enter handling because the entry input is
-// recreated by renderSpecialTeamPools(). The blur fallback is retained for
+// recreated by renderPlayerPools(). The blur fallback is retained for
 // mobile keyboards that complete the IME action without emitting a detectable Enter.
-$("specialTeamPools").addEventListener("keydown",e=>{
+$("playerPools").addEventListener("keydown",e=>{
   if(e.key!=="Enter")return;
   if(e.target.id!=="playerPoolPlayerName")return;
   e.preventDefault();
   e.stopImmediatePropagation();
   addPoolPlayerFromEntry();
 });
-$("specialTeamPools").addEventListener("blur",e=>{
+$("playerPools").addEventListener("blur",e=>{
   if(e.target.id!=="playerPoolPlayerName")return;
   if(!e.target.value.trim())return;
   addPoolPlayerFromEntry();
 },true);
 
-// Player Pool add/remove controls use delegated click handling because the
-// pool rows are recreated by renderSpecialTeamPools().
-$("specialTeamPools").addEventListener("click",e=>{
-  const add=e.target.closest(".special-team-add-player");
-  const remove=e.target.closest(".special-team-remove-player");
-  if(!add&&!remove)return;
-  const pool=Number((add||remove).dataset.pool);
-  if(!Array.isArray(tournament.specialTeamDistributionGroups))tournament.specialTeamDistributionGroups=[];
-if(!Array.isArray(tournament.specialTeamEntryPlayers))tournament.specialTeamEntryPlayers=[];
-  while(tournament.specialTeamEntryPlayers.length<Number(tournament.settings?.playerPoolCount)||2)tournament.specialTeamEntryPlayers.push([]);
-  if(add){
-    tournament.specialTeamEntryPlayers[pool].push("");
-  }else{
-    const index=Number(remove.dataset.index);
-    tournament.specialTeamEntryPlayers[pool].splice(index,1);
-  }
-  saveLocal(true);
-  renderSpecialTeamPools();
-});
-$("specialTeamPools").addEventListener("input",e=>{
-  if(!e.target.classList.contains("special-team-player-input"))return;
-  const pool=Number(e.target.dataset.pool),index=Number(e.target.dataset.index);
-  if(!Array.isArray(tournament.specialTeamEntryPlayers))tournament.specialTeamEntryPlayers=[];
-  while(tournament.specialTeamEntryPlayers.length<=pool)tournament.specialTeamEntryPlayers.push([]);
-  tournament.specialTeamEntryPlayers[pool][index]=e.target.value;
-  saveLocal(true);
-});
-
-$("distributeSpecialTeamsBtn").addEventListener("click",distributeSpecialTeams); $("createGroupsBtn").addEventListener("click",createGroups);
+$("teamPoolAddBtn")?.addEventListener("click",addTeamPoolEntry);
+$("teamPoolLotteryBtn")?.addEventListener("click",runTeamPoolLottery);
+$("createGroupsBtn").addEventListener("click",createGroups);
 $("groupSort").addEventListener("change",renderGroups);
 $("addTeamBtn").addEventListener("click",addTeam);
 $("generateFixturesBtn").addEventListener("click",()=>{
@@ -5526,6 +5992,19 @@ $("playerEntryFields").addEventListener("keydown",e=>{
 
   addTeam();
 });
+$("teamPoolPanel").addEventListener("keydown",e=>{
+  if(e.key!=="Enter")return;
+  const target=e.target;
+  if(target.id!=="teamPoolPlayer1"&&target.id!=="teamPoolPlayer2")return;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  if(target.id==="teamPoolPlayer1"){
+    const next=$("teamPoolPlayer2");
+    if(next){next.focus();if(typeof next.select==="function")next.select();}
+    return;
+  }
+  addTeamPoolEntry();
+});
 $("saveBtn").addEventListener("click",()=>saveLocal());
 $("newBtn").addEventListener("click",newTournament);
 $("exportBtn").addEventListener("click",exportJson);
@@ -5541,26 +6020,48 @@ $("defaultQualifiers").addEventListener("change",()=>{
   $(key).addEventListener("change",()=>{syncSettings();saveLocal(true);});
 });
 
-if(!Array.isArray(tournament.specialTeamEntryPlayers))tournament.specialTeamEntryPlayers=[];
 loadLocal();
 if(!tournament.settings)tournament.settings={};
-if(!Number.isFinite(Number(tournament.settings.playerPoolCount)))
-  tournament.settings.playerPoolCount=Math.max(2,Math.min(52,Number(tournament.specialTeamPoolCount)||2));
+if(tournament.settings.playerPoolBuildInputSignature===undefined)tournament.settings.playerPoolBuildInputSignature='';
 if(!tournament.settings.playerPoolsCreated &&
-   Array.isArray(tournament.specialTeamEntryPlayers) &&
-   tournament.specialTeamEntryPlayers.some(pool=>Array.isArray(pool)&&pool.some(x=>String(x||"").trim())))
+   Array.isArray(tournament.playerPoolPlayers) &&
+   tournament.playerPoolPlayers.some(pool=>Array.isArray(pool)&&pool.some(x=>String(x?.name??x??"").trim())))
   tournament.settings.playerPoolsCreated=true;
-if(!tournament.settings)tournament.settings={};
-if(!Number.isFinite(Number(tournament.settings.playerPoolCount)))
-  tournament.settings.playerPoolCount=Math.max(2,Math.min(52,Number(tournament.specialTeamPoolCount)||2));
 ensurePlayerPoolState(tournament.settings.playerPoolCount);
 renderAll();
+
+function scrollToPlayerTeamEntryHeader(){
+  const card=$("playerTeamEntryCard");
+  const header=card?.querySelector(":scope > summary");
+  if(!header)return;
+
+  const stickyHeader=document.querySelector("body > header, .app > header, header");
+  const headerHeight=stickyHeader?.getBoundingClientRect().height||0;
+  const targetY=window.scrollY+header.getBoundingClientRect().top-headerHeight-8;
+  window.scrollTo({top:Math.max(0,targetY),behavior:"smooth"});
+}
 
 function openDashboardSection(id){
   const el=document.getElementById(id);
   if(!el)return;
+
+  // Tournament Ranking is rendered inside its own <details> element.
+  // Open that section before scrolling so the dashboard card behaves like
+  // the other expandable sections instead of landing on a collapsed container.
+  if(id==="tournamentRanking"){
+    const rankingDetails=el.querySelector("details.tournament-ranking-card") || el.querySelector("details");
+    if(rankingDetails)rankingDetails.open=true;
+    requestAnimationFrame(()=>{
+      (rankingDetails||el).scrollIntoView({behavior:"smooth",block:"start"});
+    });
+    return;
+  }
+
   if(el.tagName.toLowerCase()==="details")el.open=true;
-  el.scrollIntoView({behavior:"smooth",block:"start"});
+  requestAnimationFrame(()=>{
+    if(id==="playerTeamEntryCard")scrollToPlayerTeamEntryHeader();
+    else el.scrollIntoView({behavior:"smooth",block:"start"});
+  });
 }
 
 function renderWorkspaceStatusIndicators(){
