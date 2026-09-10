@@ -414,7 +414,7 @@ details.card>summary select{margin-left:auto;width:auto;min-width:125px;padding:
 
 @media(max-width:420px){
 #playerPoolOptions{max-width:100%;box-sizing:border-box}
-@media(min-width:600px){}
+}
 
 .entry-tabs{display:flex;gap:6px;margin-bottom:8px}
 .entry-tab{flex:1;min-width:0}
@@ -622,7 +622,7 @@ main{padding-bottom:82px}
 /* DARK THEME — Application palette and collapsible section headers. */
 details.card>summary{position:relative}
 details.card>summary>strong{flex:1 1 auto;text-align:left}
-@media(prefers-color-scheme:dark){
+@media(prefers-color-scheme:dark), (min-width:701px){
   :root{color:#f3f4f6;background:#111315}
   body{background:#111315;color:#f3f4f6}
   .app{background:#17191b}
@@ -969,7 +969,7 @@ details.card>summary>strong{flex:1 1 auto;text-align:left}
 <input id="importFile" type="file" accept=".json,application/json" class="hidden">
 
 <script>
-const APP_VERSION = '5.0.8';
+const APP_VERSION = '5.0.11';
 
 "use strict";
 
