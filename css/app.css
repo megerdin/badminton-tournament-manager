@@ -1,0 +1,1339 @@
+
+/* v5.0.43: standardise Save / Correct & Save action colour */
+.prelim-save-btn,.group-result-actions .btn-primary,.ko-result-actions .btn-primary,.result-actions .btn-primary{background:#1e3a8a!important;color:#fff!important;border-color:#1e3a8a!important}
+.prelim-save-btn:hover,.group-result-actions .btn-primary:hover,.ko-result-actions .btn-primary:hover,.result-actions .btn-primary:hover{background:#1e40af!important;color:#fff!important;border-color:#1e40af!important}
+*{box-sizing:border-box}
+:root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111827;background:#f3f4f6}
+body{margin:0;background:#f3f4f6}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.app{max-width:760px;margin:0 auto;min-height:100vh;background:#f9fafb}
+header{position:sticky;top:8px;z-index:10;background:#d1d1d1;color:#111827;padding:16px;border-radius:10px;margin:0 8px}
+header h1{font-size:20px;margin:0}
+header p{margin:4px 0 0;font-size:13px;color:#d1d5db}
+main{padding:6px 16px 90px}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.card h2{font-size:17px;margin:0 0 12px}
+.card h3{font-size:15px;margin:16px 0 8px}
+label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+input,select{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:11px 12px;background:#fff}
+.field{margin-bottom:12px}
+.row{display:flex;gap:8px;align-items:end}
+.row>*{flex:1}
+.btn{border:0;border-radius:10px;padding:11px 14px;font-weight:700}
+.btn-primary{background:#111827;color:#fff}
+.btn-secondary{background:#e5e7eb;color:#111827}
+.btn-danger{background:#fee2e2;color:#991b1b}
+.btn-small{padding:8px 10px;font-size:13px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.group{border:1px solid #e5e7eb;border-radius:12px;padding:12px;margin-top:10px}
+.group-head{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.group-head strong{font-size:15px}
+.team-list{margin:10px 0 0;padding:0;list-style:none}
+.team-item{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid #f0f0f0}
+.muted{color:#6b7280;font-size:13px}
+.notice{padding:11px 12px;border-radius:10px;background:#eff6ff;color:#1e40af;font-size:13px;margin-bottom:12px}
+.warning{padding:11px 12px;border-radius:10px;background:#fffbeb;color:#92400e;font-size:13px;margin-bottom:12px}
+.empty{padding:18px;text-align:center;color:#6b7280;border:1px dashed #d1d5db;border-radius:10px}
+.badge{display:inline-block;padding:3px 8px;border-radius:999px;background:#e5e7eb;font-size:11px;font-weight:700}
+.bottom{position:fixed;bottom:0;left:0;right:0;background:rgba(20,22,24,.97);border-top:1px solid #30353b;padding:8px max(12px,env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom));z-index:20}
+.bottom-inner{max-width:760px;margin:auto;display:flex;gap:8px}
+.bottom .btn{flex:1}
+.bottom .btn-primary{background:#343a40;border-color:#3f464d;color:#fff}
+#newBtn{background:#7f1d1d!important;border-color:#991b1b!important;color:#fff!important}
+#newBtn:hover{background:#991b1b!important;border-color:#b91c1c!important;color:#fff!important}
+#exportBtn{background:#166534!important;border-color:#15803d!important;color:#fff!important}
+#exportBtn:hover{background:#15803d!important;border-color:#16a34a!important;color:#fff!important}
+#importBtn{background:#6b21a8!important;border-color:#7e22ce!important;color:#fff!important}
+#importBtn:hover{background:#7e22ce!important;border-color:#9333ea!important;color:#fff!important}
+.hidden{display:none!important}
+.small-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+hr{border:0;border-top:1px solid #e5e7eb;margin:16px 0}
+@media(max-width:420px){.small-grid{grid-template-columns:1fr}.row{flex-wrap:wrap}.row button{width:100%}}
+summary{cursor:pointer;list-style:none}summary::-webkit-details-marker{display:none}
+.live-group{margin-bottom:14px}.live-group:last-child{margin-bottom:0}
+.live-group .live-team:first-of-type{margin-top:6px}
+.live-team{display:grid;grid-template-columns:68px 1fr auto;gap:6px;align-items:center;padding:2px 4px;border-top:0;font-size:13px}
+.live-team:first-child{border-top:0}.live-team-number{font-weight:700;white-space:nowrap}.live-team-players{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:20px}
+.team-pool-player-list{min-width:0;white-space:normal;overflow-wrap:anywhere;word-break:normal}
+.manual-team-player-list{min-width:0;white-space:normal;overflow-wrap:anywhere;word-break:normal}.live-actions{white-space:nowrap}
+/* v5.0.72: all lottery/build/distribute action controls use one standard dark-blue colour. */
+#teamPoolLotteryBtn,#playerPoolLotteryBtn{background:#243b7a;border-color:#314d9b;color:#fff}
+#teamPoolLotteryBtn:hover,#playerPoolLotteryBtn:hover{background:#2f4d96}
+
+
+.entry-line{display:flex;gap:6px;align-items:center;overflow-x:auto}
+.entry-line>#entryGroup{width:112px;min-width:112px;padding:9px 8px}
+.entry-line>#playerEntryFields{flex:1 1 0;min-width:0}
+.entry-line>#addTeamBtn{white-space:nowrap;min-width:86px}
+.entry-line>#teamPoolTeamName{flex:0 0 92px;min-width:92px}
+.entry-line>.team-pool-player-input{flex:1 1 0;min-width:0;padding:9px 8px;box-sizing:border-box}
+.entry-line>#teamPoolAddBtn{white-space:nowrap;min-width:86px}
+.entry-line>#playerPoolPlayerName{flex:0 1 236px;width:236px;min-width:105px;padding:9px 8px;box-sizing:border-box}
+.player-entry-row{display:flex;gap:6px;align-items:center}
+.player-entry-row input{flex:1 1 0;width:0;min-width:0;padding:9px 8px}
+.player-entry-row .add-player{padding:8px 10px;white-space:nowrap}
+.format-options{display:flex;gap:12px;flex-wrap:wrap}
+.format-options label{font-weight:500;margin:0}
+.format-options input{width:auto;margin-right:4px}
+details.card>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;margin:-16px -16px 0;padding:10px 16px;border-radius:14px 14px 0 0;font-weight:700}
+details.card:not([open]){padding:0}
+details.card:not([open])>summary{margin:0;border-radius:14px}
+details.card>summary::-webkit-details-marker{display:none}
+details.card>summary:after{content:"＋";font-size:16px}
+details.card[open]>summary:after{content:"−"}
+#playerTeamEntryCard>summary{background:#eef8f0}
+#fixturesCard>summary{background:#eef6ff}
+#qualificationCard>summary{background:#f5f0ff}
+#knockoutCard>summary{background:#eef8f0}
+#tournamentSettingsCard>summary{background:#fff7e6}
+.tournament-status-card>summary{background:#f3f4f6}
+.tournament-ranking-card>summary{background:#f5f0ff}
+.preliminary-round-card>summary{background:#fff7e6}
+.main-ko-allocation-card>summary{background:#eef6ff}
+details.card[open]>summary{margin-bottom:2px}
+
+details.card>summary select{margin-left:auto;width:auto;min-width:125px;padding:5px 7px;font-size:12px}
+
+.fixture-row{display:flex;gap:8px;align-items:center;padding:8px 7px;border-top:1px solid var(--border);white-space:nowrap}
+.fixture-number{width:24px;flex:0 0 24px;font-size:11px;opacity:.7}
+.fixture-teams{display:flex;gap:7px;align-items:center;flex:1;min-width:0}
+.fixture-teams strong{flex:1 1 0;min-width:0;white-space:normal;overflow-wrap:anywhere;word-break:normal}
+.fixture-teams span{opacity:.65;flex:0 0 auto}
+.group-fixture-selectable .match-vs,.main-ko-match .match-vs{color:#38bdf8;font-weight:700}
+
+.result-box{padding:9px;border:1px solid var(--border);border-radius:10px}
+/* v5.2.12: unified floating scorecard — one scorecard surface for every stage. */
+#floatingScorecard{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);width:min(680px,calc(100vw - 40px));max-height:min(78vh,680px);overflow:auto;z-index:10000;display:none;box-sizing:border-box;filter:drop-shadow(0 10px 28px rgba(0,0,0,.35));}
+#floatingScorecard.is-open{display:block}
+#floatingScorecard .floating-scorecard-shell{position:relative;width:100%;box-sizing:border-box}
+#floatingScorecard .floating-scorecard-close{position:absolute;right:7px;top:7px;z-index:2;width:30px;height:30px;border:0;border-radius:50%;background:rgba(0,0,0,.18);color:inherit;font-size:20px;line-height:30px;cursor:pointer}
+#floatingScorecard .floating-scorecard-close:hover{background:rgba(0,0,0,.28)}
+#floatingScorecard .floating-scorecard-close:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+@media(max-width:700px){#floatingScorecard{bottom:8px;width:calc(100vw - 40px);max-height:82vh}}
+
+/* v5.2.12: scorecards are rendered only in the floating host. */
+.merged-match-score,.preliminary-scoring-heading,#knockoutResultEditor{display:none!important}
+
+/* The legacy inline editor hosts remain in the DOM for compatibility; the active scoreboard is floating. */
+.merged-match-score #resultEditor,.preliminary-round-card #preliminaryResultEditor,#knockoutResultEditor{display:none!important}
+
+.result-game input{width:72px;padding:8px}
+
+.result-match-line{white-space:nowrap;overflow-x:auto}
+.winner-team{color:#16833b}.match-vs{opacity:.65}.prelim-vs{opacity:.65}
+.participant-label{font-size:0.9em}
+.loser-team{opacity:.78}
+.compact-result{overflow-x:auto}
+.result-match-line{display:flex;align-items:center;gap:7px;min-width:max-content}
+.score-games{display:flex;gap:5px;align-items:center}
+.game-score{display:flex;align-items:center;gap:3px}
+.game-score input{width:48px;padding:7px 5px}
+.result-meta{margin-top:5px;text-align:center}
+.result-actions{display:flex;gap:5px;align-items:center;margin-top:7px;flex-wrap:nowrap}
+.compact-notice{margin-top:6px;padding:5px 7px}
+
+.standings-table{width:100%;overflow-x:auto}
+.standing-row{display:grid;grid-template-columns:72px minmax(200px,1fr) 32px 32px 48px 76px;gap:5px;align-items:center;padding:7px 5px;border-top:1px solid var(--border);white-space:nowrap}
+.standing-head{font-size:10px;opacity:.7;border-top:0}
+.standing-team{overflow:hidden;text-overflow:ellipsis}
+.qualifier-row{font-weight:600}
+
+.ko-round{margin-top:9px;overflow-x:auto}
+.ko-round-title{font-weight:700;font-size:12px;padding:5px 0}
+.ko-match{display:flex;align-items:center;gap:6px;min-width:max-content;padding:7px 5px;border-top:1px solid var(--border);white-space:nowrap}
+.ko-match-no{width:20px;opacity:.65;font-size:10px}
+.ko-match span:nth-child(2),.ko-match span:nth-child(4){min-width:145px}
+.ko-vs{opacity:.65}
+.ko-match-select{width:100%;margin-bottom:7px}
+.group-settings-inline{display:grid;grid-template-columns:minmax(80px,1fr) minmax(110px,1fr) auto;gap:8px;align-items:end}
+.group-settings-inline .field{min-width:0}.group-create-btn{white-space:nowrap;align-self:flex-end;height:44px;min-height:44px;box-sizing:border-box;background:#243b7a!important;color:#fff!important}.settings-entry-row{display:grid;grid-template-columns:92px minmax(0,1fr);gap:8px;align-items:end;margin-bottom:10px}.settings-entry-row label{display:flex;align-items:center;justify-content:center;height:44px;margin:0;padding:8px 10px;border-radius:10px;background:#343a40;color:#fff;font-size:13px;font-weight:700;box-sizing:border-box}.settings-entry-row input{height:44px;min-width:0;box-sizing:border-box}
+.merged-match-score{margin:6px 0 8px}
+.merged-match-score-title{font-weight:700;margin-bottom:5px}
+.merged-score-fixture-row .field{min-width:0}
+.merged-score-fixture-row select{width:100%;box-sizing:border-box}
+.merged-match-score #resultEditor{margin-top:6px!important}
+@media(max-width:480px){.merged-score-fixture-row{margin:0}.merged-match-score .result-actions{gap:5px}}
+@media(max-width:600px){.entry-line{gap:3px}.entry-line>#entryGroup{width:84px;min-width:84px;padding:9px 2px}.entry-line>#playerEntryFields{flex:1 1 0;min-width:0}.entry-line>#addTeamBtn{min-width:70px;padding:8px 7px}.entry-line>#teamPoolTeamName{flex-basis:78px;min-width:78px}.entry-line>.team-pool-player-input{min-width:0;padding:9px 6px;box-sizing:border-box}.entry-line>#teamPoolAddBtn{min-width:70px;padding:8px 7px}.entry-line>#playerPoolPlayerName{flex-basis:92px;width:92px;min-width:92px;padding:9px 6px;box-sizing:border-box}.player-entry-row{gap:3px}.player-entry-row input{padding:9px 6px}.entry-card-title{font-size:14px;font-weight:700;margin-bottom:6px}
+.entry-card{padding:10px 8px}#addTeamPanel>.entry-card{background:#fff;border-color:#e5e7eb;color:#111827}}
+.compact-group-row,.compact-fixture-row{display:flex;align-items:center;gap:6px;margin:5px 0}
+.compact-group-row label,.compact-fixture-row label{font-weight:600;white-space:nowrap}
+.compact-group-row select{flex:1;min-width:0}
+.compact-fixture-row select{flex:1;min-width:0}
+.merged-match-score-title{display:inline;font-weight:700;margin-right:5px}
+.merged-match-score .result-match-line{display:flex;align-items:center;justify-content:flex-start;gap:6px;flex-wrap:nowrap}
+.merged-match-score .result-match-line strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.merged-match-score .result-match-line input{width:48px;min-width:48px}
+.merged-match-score .result-meta{display:inline;margin-left:6px}
+.merged-match-score .result-actions{display:flex;align-items:center;gap:5px;flex-wrap:nowrap;margin-top:5px}
+.merged-match-score .result-actions .btn{white-space:nowrap}
+@media(max-width:480px){
+  .compact-group-row,.compact-fixture-row{gap:4px}
+  .compact-group-row label,.compact-fixture-row label{font-size:12px}
+  .merged-match-score .result-match-line{gap:4px}
+  .merged-match-score .result-match-line strong{font-size:12px}
+  .merged-match-score .result-match-line input{width:42px;min-width:42px;padding-left:3px;padding-right:3px}
+  .merged-match-score .result-meta{font-size:11px;margin-left:3px}
+  .merged-match-score .result-actions{gap:3px}
+  .merged-match-score .result-actions .btn{font-size:11px;padding-left:6px;padding-right:6px}
+}
+
+/* v37 compact match-entry layout */
+.merged-match-score{margin:4px 0 6px}
+.merged-match-score-title{display:inline;font-weight:700;margin:0}
+.merged-score-fixture-row{display:flex;align-items:center;gap:5px;margin:3px 0}
+.merged-score-fixture-row label{font-weight:600;white-space:nowrap}
+.merged-score-fixture-row .field{flex:1;min-width:0}
+
+.merged-match-score #resultEditor{margin-top:3px!important}
+.merged-match-score #resultEditor .result-match-line{
+  display:flex!important;
+  align-items:center!important;
+  gap:5px!important;
+  flex-wrap:nowrap!important;
+  width:100%!important;
+}
+.merged-match-score #resultEditor .result-match-line strong{
+  flex:0 1 auto!important;
+  min-width:0!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+.merged-match-score #resultEditor .result-match-line input{
+  flex:0 0 44px!important;
+  width:44px!important;
+  min-width:44px!important;
+  box-sizing:border-box!important;
+}
+.merged-match-score #resultEditor .result-match-line span{
+  flex:0 0 auto!important;
+}
+.merged-match-score #resultEditor .result-meta{
+  display:inline!important;
+  margin:0 0 0 5px!important;
+  white-space:nowrap!important;
+}
+.merged-match-score #resultEditor .result-actions{
+  display:flex!important;
+  align-items:center!important;
+  gap:4px!important;
+  flex-wrap:nowrap!important;
+  margin-top:4px!important;
+}
+.merged-match-score #resultEditor .result-actions .btn{
+  white-space:nowrap!important;
+  flex:0 1 auto!important;
+  padding:5px 7px!important;
+}
+@media(max-width:480px){
+  .merged-score-fixture-row{gap:4px}
+  .merged-score-fixture-row label{font-size:12px}
+  .merged-match-score #resultEditor .result-match-line{gap:3px!important}
+  .merged-match-score #resultEditor .result-match-line strong{font-size:11px!important}
+  .merged-match-score #resultEditor .result-match-line input{
+    flex-basis:40px!important;width:40px!important;min-width:40px!important;
+    padding:5px 3px!important;
+  }
+  .merged-match-score #resultEditor .result-meta{font-size:10px!important;margin-left:3px!important}
+  .merged-match-score #resultEditor .result-actions{gap:2px!important}
+  .merged-match-score #resultEditor .result-actions .btn{
+    font-size:10px!important;padding:5px 5px!important;
+  }
+}
+
+/* v38-inline-match-score: inline labels; no standalone keyword/title rows */
+.inline-control-row{display:flex;align-items:center;gap:5px;margin:3px 0;min-width:0}
+.inline-control-row label{font-weight:600;white-space:nowrap;flex:0 0 auto}
+.inline-control-row select{flex:1;min-width:0;width:auto}
+.group-control-row #generateFixturesBtn{flex:1 1 0;min-width:0;white-space:nowrap;background:#2563eb;color:#fff;border:1px solid #3b82f6}
+.group-control-row #generateFixturesBtn:hover{background:#1d4ed8}
+.group-control-row select{flex:0 0 50%;min-width:0;width:50%}
+
+.merged-match-score .merged-match-score-title{
+  font-size:16px!important;
+  display:inline!important;
+  font-weight:600!important;
+  margin:0 4px 0 0!important;
+}
+.merged-match-score .result-match-line{
+  display:inline-flex!important;
+  vertical-align:middle!important;
+  align-items:center!important;
+  gap:4px!important;
+  flex-wrap:nowrap!important;
+  width:auto!important;
+}
+.merged-match-score #resultEditor{
+  margin-top:2px!important;
+}
+.merged-match-score #resultEditor .result-match-line strong{
+  flex:0 1 auto!important;
+  min-width:0!important;
+  max-width:42vw!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+.merged-match-score #resultEditor .result-match-line input{
+  flex:0 0 42px!important;
+  width:42px!important;
+  min-width:42px!important;
+  box-sizing:border-box!important;
+}
+.merged-match-score #resultEditor .result-meta{
+  display:inline!important;
+  vertical-align:middle!important;
+  margin:0 0 0 5px!important;
+  white-space:nowrap!important;
+}
+.merged-match-score #resultEditor .result-actions .btn{
+  white-space:nowrap!important;
+  flex:0 1 auto!important;
+  padding:5px 6px!important;
+}
+@media(max-width:480px){
+  .inline-control-row{gap:4px;margin:2px 0}
+  .inline-control-row label{font-size:12px}
+  .group-control-row #generateFixturesBtn{font-size:13px;padding:8px 10px}
+  .merged-match-score .merged-match-score-title{font-size:16px!important}
+  .merged-match-score #resultEditor .result-match-line strong{font-size:11px!important;max-width:34vw!important}
+  .merged-match-score #resultEditor .result-match-line input{width:40px!important;min-width:40px!important}
+  .merged-match-score #resultEditor .result-actions{gap:3px!important;margin-top:3px!important}
+  .merged-match-score #resultEditor .result-actions .btn{font-size:10px!important;padding:4px 5px!important}
+}
+
+.ko-bye-resolution{margin:7px 0;padding:7px;border:1px solid #ccc;border-radius:6px}
+.ko-bye-item{margin-top:6px}
+.ko-bye-match{margin-bottom:5px}
+.ko-bye-actions,.ko-bye-picker{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.ko-bye-picker{margin-top:7px}
+
+.ko-prelim-list{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+
+
+.ko-prelim-status{margin-top:5px}
+.prelim-score-row{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:8px}
+.prelim-score-input{width:70px}
+.prelim-wo-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+
+#preliminaryRound{margin-top:10px}
+#buildPreliminaryRoundBtn{background:#374151;color:#fff;border-color:#374151}
+#buildPreliminaryRoundBtn:hover{background:#4b5563;color:#fff;border-color:#4b5563}
+#preliminaryRound .card{margin-bottom:10px}
+
+.ko-prelim-direct{margin-top:10px}.ko-prelim-direct-title{font-weight:700;margin-bottom:8px}.ko-prelim-direct-table{display:flex;flex-direction:column;gap:3px;margin-top:2px}.ko-prelim-direct-row{display:grid;grid-template-columns:48px 70px minmax(160px,1fr);gap:8px;align-items:center}.ko-prelim-direct-head{font-weight:600}.ko-prelim-direct-row>span{min-width:0}.ko-prelim-direct-row>span:last-child{min-width:0;overflow-wrap:anywhere;word-break:normal;white-space:normal}.ko-prelim-direct-row .prelim-source{font-weight:600}.ko-prelim-direct-row .prelim-players{font-size:calc(.9em + 1px)}
+
+
+.ko-prelim-match{cursor:pointer}
+.ko-prelim-match:hover,.ko-prelim-match.selected-prelim-match{background:var(--surface-2,#f3f4f6)}
+.ko-prelim-match-number{font-weight:700;white-space:nowrap}
+.ko-prelim-team{display:flex;flex-direction:column;align-items:flex-start;flex:1 1 0;flex-basis:0;width:auto;max-width:100%;min-width:0;overflow-wrap:anywhere;word-break:normal;white-space:normal;font-size:.9em}.fixture-teams .ko-prelim-team{flex:1 1 0;min-width:0;opacity:1}.ko-prelim-team .prelim-source,.ko-prelim-team .prelim-player{display:block;min-width:0;width:100%;white-space:normal;overflow-wrap:anywhere;word-break:normal;opacity:1}
+.ko-prelim-team .prelim-source{font-weight:600;margin-right:5px}.ko-prelim-team .prelim-player{font-size:calc(.9em + 1px)}
+.ko-prelim-vs{white-space:nowrap;opacity:.65;text-align:center}.ko-prelim-match .match-vs{color:#38bdf8;font-weight:700}
+.ko-prelim-status{width:20px;text-align:center;white-space:nowrap;overflow:hidden}
+.group-metric{font-variant-numeric:tabular-nums;font-weight:600}
+.match-participant-compact{font-size:0.9em}
+.tournament-ranking-card{margin-bottom:10px}
+.tournament-ranking-table{display:flex;flex-direction:column;gap:3px;margin-top:6px}
+.tournament-ranking-row{display:grid;grid-template-columns:2.75rem 3rem minmax(0,1fr) 4.4rem 3.2rem;gap:.35rem;align-items:center;min-width:0}
+.tournament-ranking-head{font-weight:600}
+.tournament-ranking-row > span:nth-child(1){
+  padding-left:0;
+  box-sizing:border-box;
+}
+.tournament-ranking-row > span{
+  min-width:0;
+  text-align:left;
+  justify-self:start;
+}
+.tournament-ranking-row > span:nth-child(3){
+  min-width:0;
+  overflow-wrap:anywhere;
+  word-break:normal;
+  white-space:normal;
+}
+.tournament-ranking-row > span:nth-child(4){
+  white-space:nowrap;
+}
+.tournament-ranking-row > span:nth-child(5){
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.tournament-source,.tournament-metric{font-weight:600}
+@media(max-width:480px){
+  .tournament-ranking-row{
+    grid-template-columns:2.7rem 2.9rem minmax(0,1fr) 4.3rem 3.1rem;
+    gap:.2rem;
+    padding-left:4px;
+    padding-right:4px;
+    font-size:.92em;
+  }
+  .tournament-ranking-row > span{
+    text-align:left;
+    justify-self:start;
+  }
+}
+.tournament-metric{font-variant-numeric:tabular-nums}
+#podiumSection>summary{background:#fff4d6}
+.podium-content{width:max-content;max-width:100%;margin:0 auto}.podium-title{font-size:26px;font-weight:700;text-align:center}.podium-club-category{font-size:14px;font-weight:700;text-align:left;margin-bottom:2px;padding-left:12px}.category-reflective{font-weight:700;color:#f5a623!important}
+.podium-list{margin-top:7px;text-align:left}.podium-item{display:grid;grid-template-columns:1.7rem minmax(0,1fr);column-gap:.2rem;align-items:start}.podium-medal{display:block;text-align:left}
+.podium-item{font-size:18px;line-height:1.35;margin-top:4px}
+.podium-item:first-child{margin-top:0}
+.tournament-ranking-head span{padding-bottom:3px}.tournament-ranking-row>span{min-width:0}
+.preliminary-scoring-heading{margin-top:14px;font-size:16px}.prelim-scoring-help{margin:4px 0 8px}.compact-result{margin-top:8px}
+.header-subtitle{color:#4b5563;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:24px}\n.tournament-ranking-card>summary{cursor:pointer;font-weight:700;font-size:1.1rem;list-style:none;padding:0}.tournament-ranking-card>summary::-webkit-details-marker{display:none}.tournament-ranking-card[open]>summary{margin-bottom:12px}
+
+.prelim-score-row{display:grid;grid-template-columns:64px minmax(0,1fr) 64px;align-items:center}.prelim-match-number{font-weight:700;white-space:nowrap;text-align:left}.prelim-score-center{display:flex;align-items:center;justify-content:center;gap:7px;min-width:0}.prelim-score-center strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.prelim-score-center input.prelim-score-input{width:56px;min-width:56px;box-sizing:border-box;text-align:center}.prelim-result-actions{display:flex;align-items:center;justify-content:flex-start;gap:8px;flex-wrap:nowrap;margin-top:7px}.prelim-result-actions .btn{height:32px;box-sizing:border-box;line-height:20px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;padding:6px 9px}.prelim-wo-row{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;margin-top:0}@media(max-width:700px){.prelim-score-row{display:block}.prelim-match-number{margin-bottom:5px}.prelim-score-center{justify-content:flex-start;flex-wrap:wrap}.prelim-result-actions{flex-wrap:wrap}}
+.prelim-result-editor-card{padding-top:8px}
+.prelim-result-actions .btn{height:32px;box-sizing:border-box;padding:6px 10px;font-size:13px;line-height:20px;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center}.prelim-result-actions .prelim-wo-row{margin-top:0}
+.group-fixtures-heading{font-weight:700;margin-top:8px}.group-fixture-selectable{cursor:pointer}.group-fixture-selectable:hover{filter:brightness(.98)}.group-fixture-selectable.selected-fixture{outline:2px solid #9ca3af;outline-offset:-2px}
+.score-game-heading{display:flex;align-items:baseline;justify-content:space-between;gap:10px;width:100%;box-sizing:border-box}.score-game-heading .result-meta{margin:0;text-align:right;white-space:nowrap;flex:0 0 auto}.score-game-heading .score-stage-label{color:#38bdf8}.group-score-game-row,.ko-score-game-row{grid-template-columns:minmax(0,1fr);align-items:start}.group-game-number,.ko-game-number{display:flex;align-items:baseline;justify-content:space-between;gap:10px;width:100%;box-sizing:border-box}.group-score-center,.ko-score-center{grid-column:1;justify-content:center}
+.group-result-editor-card{padding:14px 14px 9px;border:1px solid #dfe3e8;border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.04);margin-top:5px}.group-score-games{display:flex;flex-direction:column;gap:8px}.group-score-game-row{display:grid;grid-template-columns:64px minmax(0,1fr) 64px;align-items:center}.group-game-number{font-weight:700;white-space:nowrap;text-align:left}.score-stage-label{color:#38bdf8}.group-score-center{display:flex;align-items:center;justify-content:center;gap:7px;min-width:0}.group-score-center strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.group-score-center input.result-score{width:48px;min-width:48px;box-sizing:border-box}.group-result-editor-card .result-meta{margin-top:6px}.group-result-actions{display:flex;align-items:center;justify-content:flex-start;gap:8px;flex-wrap:nowrap;margin-top:7px}.group-result-actions .btn{height:32px;box-sizing:border-box;line-height:20px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;padding:6px 9px}.group-result-editor-card .result-actions{margin-bottom:0}@media(max-width:700px){.group-score-game-row{display:block}.group-game-number{margin-bottom:5px}.group-score-center{justify-content:flex-start;flex-wrap:wrap}.group-result-actions{flex-wrap:wrap}}
+.group-result-actions .btn-primary{background:#374151;color:#fff}.group-result-actions .btn-primary:hover{background:#4b5563}
+.group-score-center input.result-score{width:56px;min-width:56px;box-sizing:border-box;text-align:center}
+.ko-result-editor-card{padding:14px 14px 9px;border:1px solid #dfe3e8;border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.04);margin-top:5px}.ko-match-heading{font-weight:700;margin-bottom:7px;text-align:left}.ko-score-games{display:flex;flex-direction:column;gap:8px}.ko-score-game-row{display:grid;grid-template-columns:64px minmax(0,1fr) 64px;align-items:center}.ko-game-number{font-weight:700;white-space:nowrap;text-align:left}.ko-score-center{display:flex;align-items:center;justify-content:center;gap:7px;min-width:0}.ko-score-center strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ko-score-center input.ko-result-score{width:48px;min-width:48px;box-sizing:border-box}.ko-result-editor-card .result-meta{margin-top:6px}.ko-result-actions{display:flex;align-items:center;justify-content:flex-start;gap:8px;flex-wrap:nowrap;margin-top:7px}.ko-result-actions .btn{height:32px;box-sizing:border-box;line-height:20px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;padding:6px 9px}.ko-result-actions .btn-primary{background:#374151;color:#fff}.ko-result-actions .btn-primary:hover{background:#4b5563}@media(max-width:700px){.ko-score-game-row{display:block}.ko-game-number{margin-bottom:5px}.ko-score-center{justify-content:flex-start;flex-wrap:wrap}.ko-result-actions{flex-wrap:wrap}}
+.ko-result-context{margin:2px 0 7px}.ko-result-context-title{font-weight:700;font-size:16px;margin-bottom:2px}.ko-result-context .muted{margin:0}.ko-result-editor-card{margin-top:0}.main-ko-round h4{margin:12px 0 4px}.main-ko-match{cursor:pointer}.main-ko-match:last-child{border-bottom:0}.main-ko-match-selectable:hover{background:var(--surface-2,#f3f4f6)}.main-ko-match-selected{outline:2px solid rgba(55,65,81,.25);outline-offset:-2px}.main-ko-match-number{font-weight:700;white-space:nowrap}.main-ko-status{width:20px;text-align:center;white-space:nowrap;overflow:hidden}
+@media(max-width:700px){
+  .group-result-editor-card,.prelim-result-editor-card,.ko-result-editor-card{width:100%;box-sizing:border-box;padding:4px 4px 0}
+  .group-result-editor-card{background:#202a23;border-color:#365844}
+  .prelim-result-editor-card{background:#252331;border-color:#4a435f}
+  .ko-result-editor-card{background:#232a34;border-color:#3d4b5f}
+}
+@media(max-width:480px){
+  .merged-match-score #resultEditor .result-meta{font-size:13px!important}
+  .merged-match-score #resultEditor .result-actions .btn{font-size:12px!important;padding:5px 6px!important}
+  .prelim-result-editor-card .result-meta,.ko-result-editor-card .result-meta{font-size:16px!important}
+  .prelim-result-editor-card .result-actions .btn,.ko-result-editor-card .result-actions .btn{font-size:15px!important}
+}
+.prelim-result-actions .btn-primary{background:#374151;color:#fff}.prelim-result-actions .btn-primary:hover{background:#4b5563}
+.prelim-result-actions .btn-primary{background:#374151!important;color:#fff!important;border-color:#374151!important}.prelim-result-actions .btn-primary:hover{background:#4b5563!important;color:#fff!important;border-color:#4b5563!important}
+
+.preliminary-round-card>summary{font-weight:700}.preliminary-round-content{margin-top:10px}
+.main-ko-allocation-card{margin-top:10px}.main-ko-allocation-content{margin-top:10px}.main-ko-allocation-section{margin-top:10px}.main-ko-allocation-list{margin-top:6px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden}.main-ko-allocation-row{display:grid;grid-template-columns:38px minmax(0,1fr) 90px;gap:8px;align-items:center;padding:7px 9px;border-bottom:1px solid #eef0f2}.main-ko-allocation-row:last-child{border-bottom:0}.main-ko-slot{font-weight:700}.main-ko-team{min-width:0;overflow-wrap:anywhere;word-break:normal;white-space:normal}.main-ko-source{font-size:.88em;text-align:right;color:#6b7280}.main-ko-allocation-row.waiting .main-ko-team{color:#6b7280}.main-ko-allocation-note{margin-top:9px}
+.preliminary-regenerate-warning{margin-top:8px;padding:9px 10px;border:1px solid #e0b44c;border-radius:9px;background:#fff8e1;color:#5b4308}.preliminary-regenerate-warning strong{display:block;margin-bottom:3px;color:#8a6200}.preliminary-regenerate-warning .muted{color:#6f5a2a}.preliminary-regenerate-warning .btn{margin-top:7px}
+
+.group-ranking-table .standing-row{
+  display:grid;
+  grid-template-columns:1.8rem minmax(0,2.5fr) 1.3rem 1.3rem 2.1rem 3rem minmax(4rem,1fr);
+  align-items:center;
+  gap:.25rem;
+}
+.group-ranking-table .standing-team{
+  min-width:0;
+  overflow-wrap:anywhere;
+  word-break:normal;
+  white-space:normal;
+  font-size:17px;
+}
+.group-ranking-table .group-metric,
+.group-ranking-table .group-metric-head{
+  text-align:right;
+  justify-self:end;
+  white-space:nowrap;
+}
+@media(max-width:480px){
+  .group-ranking-table .standing-row{
+    grid-template-columns:1.65rem minmax(0,2.2fr) 1.15rem 1.15rem 1.9rem 2.7rem minmax(3.9rem,1fr);
+    gap:.16rem;
+    padding-left:2px;
+    padding-right:2px;
+    font-size:.9em;
+  }
+  .group-ranking-table .standing-team{font-size:calc(.9em + 1px)}
+  .group-ranking-table .standing-head{font-size:9px}
+}
+
+
+#playerPoolOptions{display:block}
+#playerPools{display:grid;grid-template-columns:1fr;gap:8px}
+
+.player-pool-build-summary{font-size:12px}.player-pool-entry-player-name{font-size:20px;min-width:0;flex:1;white-space:normal;overflow-wrap:anywhere;word-break:normal}.player-pool-generated-team{font-size:20px}.player-pool-generated-team-number{display:inline-block;margin-right:10px}
+@media(min-width:600px){
+  #playerPools{grid-template-columns:1fr 1fr}
+  #playerPools>.entry-line{align-self:start}
+}
+
+@media(max-width:420px){
+#playerPoolOptions{max-width:100%;box-sizing:border-box}
+}
+
+.entry-tabs{display:flex;gap:6px;margin-bottom:8px}
+.entry-tab{flex:1;min-width:0}
+.manual-team-entry-btn{width:100%;box-sizing:border-box;text-align:center}
+#playerTeamEntryCard{scroll-margin-top:84px}
+.entry-tab.active{font-weight:700}
+.entry-tab-panel{width:100%;margin-top:6px}
+
+.entry-tabs{display:flex;gap:8px;margin:0 0 10px}
+.entry-card{background:var(--card-bg,#111);border:1px solid var(--border,#333);border-radius:14px;padding:12px;box-sizing:border-box}
+
+.directional-message{cursor:pointer;text-align:center;display:block;width:100%;box-sizing:border-box}
+#playerPools>.directional-message{grid-column:1 / -1}
+.directional-message:hover{text-decoration:underline;text-underline-offset:3px}
+
+.entry-tabs .entry-tab{
+  background:#30343b;
+  color:#f3f4f6;
+  border:1px solid #454a52;
+  transition:background-color .15s ease,border-color .15s ease,box-shadow .15s ease;
+}
+.entry-tabs .entry-tab.active{
+  background:#214c35;
+  color:#fff;
+  border-color:#2f6548;
+  box-shadow:0 0 0 1px rgba(47,101,72,.25);
+}
+.entry-tabs .entry-tab:not(.active):hover{
+  background:#3b4048;
+}
+.manual-team-entry-btn.active{
+  background:#214c35!important;
+  color:#fff!important;
+  border:1px solid #2f6548;
+  box-shadow:0 0 0 1px rgba(47,101,72,.25);
+}
+
+.settings-subsection{margin-top:10px;padding-top:0;border-top:0}
+.settings-subsection-title{font-weight:700;font-size:1.05em;margin-bottom:8px}
+.settings-category-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px;align-items:center;padding:6px 0;border-top:1px solid rgba(255,255,255,.08)}
+.settings-category-row strong{font-size:.9em;white-space:nowrap}
+.settings-category-row input{min-width:0}
+.settings-category-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 100px;gap:8px;align-items:stretch}
+.settings-group-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 100px;gap:8px;align-items:stretch}.settings-group-controls input{min-width:0;width:100%;box-sizing:border-box}.settings-group-controls .group-create-btn{height:100%;min-height:42px;width:100px}
+.settings-category-label{display:flex;align-items:center;justify-content:center;min-width:0;padding:0 10px;border:1px solid #454a52;border-radius:10px;background:#30343b;color:#f3f4f6;font-weight:700;white-space:nowrap}.settings-group-controls label[for="defaultQualifiers"]{border:0;background:transparent;color:#9ca3af;padding:0;justify-content:flex-start}
+.settings-category-controls input{min-width:0;width:100%;box-sizing:border-box}
+.settings-category-controls .group-create-btn{height:100%;min-height:42px;width:100px}
+
+#playerPoolLotteryBtn{
+  font-size:15px!important;
+  font-weight:600;
+  min-height:42px;
+  padding:9px 14px;
+  border-radius:10px;
+  background:#243b7a!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+}
+/* v5.0.100: Team Pool lottery action uses the same full-width size and typography as Player Pool. */
+/* v5.0.103: Main Knockout waits for qualification without an extra validation warning. */
+#teamPoolLotteryBtn{
+  width:100%;
+  font-size:15px!important;
+  font-weight:600;
+  min-height:42px;
+  padding:9px 14px;
+  border-radius:10px;
+  box-sizing:border-box;
+}
+#playerPoolLotteryBtn:not(:disabled):hover{
+  background:#2f4d96!important;
+}
+
+
+.header-subtitle{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;width:100%;min-height:2.2em;padding-bottom:1.1em;box-sizing:border-box;column-gap:16px}
+.header-subtitle .header-club-info{min-width:0;line-height:1.2;color:#4f7d52;overflow:visible}
+.header-subtitle .header-tournament-name{display:inline;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:break-word}
+.header-subtitle .header-club-icon{display:inline-block;margin:0;font-size:1.7em;line-height:1;white-space:nowrap;vertical-align:middle}
+.header-subtitle .header-team-group{align-self:start;white-space:nowrap}
+.header-subtitle .app-version{position:absolute;right:0;bottom:0;white-space:nowrap;font-size:.62em;font-weight:400;color:#6b7280}
+
+/* SCORING UI — Stage title and participant fields retain priority in compact layouts. */
+.group-score-game-row{display:block!important}
+.group-game-number,.prelim-match-number,.ko-game-number{display:block;margin-bottom:7px;white-space:nowrap}
+.group-score-center,.prelim-score-center,.ko-score-center{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 46px 14px 46px minmax(0,1fr);
+  align-items:center;
+  gap:6px;
+  width:100%;
+  min-width:0;
+}
+.group-score-center strong,.prelim-score-center strong,.ko-score-center strong{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.group-score-center input.result-score,.prelim-score-center input.prelim-score-input,.ko-score-center input.ko-result-score{
+  width:46px!important;
+  min-width:46px!important;
+  max-width:46px!important;
+  padding-left:3px!important;
+  padding-right:3px!important;
+  box-sizing:border-box;
+  text-align:center;
+}
+.group-score-center span,.prelim-score-center span,.ko-score-center span{text-align:center}
+@media(max-width:700px){
+  .group-score-center,.prelim-score-center,.ko-score-center{
+    grid-template-columns:minmax(0,1fr) 44px 12px 44px minmax(0,1fr);
+    gap:3px;
+  }
+  .group-score-center input.result-score,.prelim-score-center input.prelim-score-input,.ko-score-center input.ko-result-score{
+    width:44px!important;
+    min-width:44px!important;
+    max-width:44px!important;
+    padding-left:2px!important;
+    padding-right:2px!important;
+  }
+}
+/* SCORING UI — Participant fields use content-aware widths around fixed score inputs. */
+.group-score-game-row,.prelim-score-row,.ko-score-game-row{display:block!important}
+.group-game-number,.prelim-match-number,.ko-game-number{margin-bottom:7px!important}
+.group-score-center,.prelim-score-center,.ko-score-center{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:6px!important;
+  width:100%!important;
+  min-width:0!important;
+  flex-wrap:nowrap!important;
+}
+.group-score-center strong,.prelim-score-center strong,.ko-score-center strong{
+  flex:0 1 auto!important;
+  min-width:0!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+.group-score-center input.result-score,.prelim-score-center input.prelim-score-input,.ko-score-center input.ko-result-score{
+  flex:0 0 46px!important;
+  width:46px!important;min-width:46px!important;max-width:46px!important;
+  padding-left:3px!important;padding-right:3px!important;
+  box-sizing:border-box!important;text-align:center!important;
+}
+.group-score-center span,.prelim-score-center span,.ko-score-center span{
+  flex:0 0 14px!important;
+  width:14px!important;
+  min-width:14px!important;
+}
+@media(max-width:700px){
+  .group-score-center,.prelim-score-center,.ko-score-center{gap:3px!important}
+  .group-score-center input.result-score,.prelim-score-center input.prelim-score-input,.ko-score-center input.ko-result-score{
+    flex-basis:44px!important;width:44px!important;min-width:44px!important;max-width:44px!important;padding-left:2px!important;padding-right:2px!important
+  }
+  .group-score-center span,.prelim-score-center span,.ko-score-center span{flex-basis:12px!important;width:12px!important;min-width:12px!important}
+}
+
+/* LANDING DASHBOARD — mobile-first tournament control surface. */
+.app-header{background:linear-gradient(145deg,#263a2c 0%,#18251d 100%);color:#fff;padding:18px 18px 8px;border-radius:18px;margin:10px 10px 0;box-shadow:0 8px 24px rgba(0,0,0,.18);position:sticky;top:8px;z-index:10}
+.header-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.header-title-row h1{font-size:20px;line-height:1.12;margin:2px 0 0;letter-spacing:-.3px}
+.eyebrow{font-size:10px;letter-spacing:.14em;font-weight:800;opacity:.68}
+.header-racket{font-size:30px;line-height:1}
+.app-header .header-subtitle{margin-top:0;min-height:0;padding:0;display:flex;flex-direction:column;align-items:stretch;gap:0;line-height:1;font-size:15px}
+.app-header .header-club-info{color:#a9d3ae;font-size:14px;font-weight:700;line-height:1.25}
+.app-header .app-version{display:block;text-align:right;font-size:10px;color:#9ca9a0;margin-top:6px;line-height:1.1}
+.landing-dashboard{margin:0 0 20px}
+.dashboard-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 2px 10px}
+.dashboard-kicker,.dashboard-section-label{font-size:10px;letter-spacing:.14em;font-weight:800;color:#8b949e}
+.dashboard-heading h2{font-size:20px;line-height:1.15;margin:3px 0 0;color:#f3f4f6}
+.phase-badge{font-size:10px;font-weight:800;letter-spacing:.08em;padding:6px 9px;border-radius:999px;background:#24352a;color:#9fd0a7;border:1px solid #34523c;white-space:nowrap}
+.dashboard-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px}
+.dashboard-stat{background:#202428;border:1px solid #30353b;border-radius:13px;padding:11px 8px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.dashboard-stat strong{display:block;font-size:21px;line-height:1.05;color:#fff}
+.dashboard-stat span{display:block;margin-top:4px;font-size:10px;font-weight:700;color:#aeb6c0}
+/* v5.0.53: subtle stage colours for dashboard statistics */
+.dashboard-stats .dashboard-stat:nth-child(1){background:linear-gradient(135deg,#1d3328,#172a21);border-color:#2f5d43}
+.dashboard-stats .dashboard-stat:nth-child(2){background:linear-gradient(135deg,#1d2f42,#17283a);border-color:#3b5872}
+.dashboard-stats .dashboard-stat:nth-child(3){background:linear-gradient(135deg,#342e40,#2a2635);border-color:#594d6b}
+.dashboard-primary-action,.dashboard-knockout{display:flex;align-items:center;gap:12px;padding:14px 15px;border-radius:15px;cursor:pointer;user-select:none;transition:transform .12s ease,filter .12s ease;box-sizing:border-box;height:66px}
+.dashboard-primary-action{background:linear-gradient(135deg,#1d4330,#173528);border:1px solid #2f5d43;box-shadow:0 5px 14px rgba(24,54,38,.28);margin-top:6px;margin-bottom:6px;justify-content:flex-start;position:relative;gap:6px}
+.dashboard-knockout{background:linear-gradient(135deg,#332b19,#282114);border:1px solid #5a4925}.dashboard-knockout-card{background:#2a2534;border-color:#493f58}
+.dashboard-primary-action:active,.dashboard-knockout:active,.dashboard-card:active{transform:scale(.99);filter:brightness(.97)}
+.dashboard-action-icon,.dashboard-knockout-icon{font-size:23px;line-height:1;width:34px;height:34px;display:flex;align-items:center;justify-content:center;text-align:center;flex:0 0 34px}
+.dashboard-primary-action .dashboard-action-icon{align-self:center;transform:translateY(1px)}
+.dashboard-action-copy{min-width:0;flex:0 0 auto}
+.dashboard-action-copy strong{display:block;font-size:16px;color:#fff}
+.dashboard-action-copy span{display:block;margin-top:3px;font-size:11px;color:#aeb6c0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dashboard-primary-action .dashboard-action-copy span{color:#b7cdbb}
+.dashboard-arrow,.dashboard-card-arrow{font-size:27px;line-height:1;color:#aeb6c0;font-weight:300;position:absolute;right:15px;top:50%;transform:translateY(-50%)}
+.dashboard-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}
+.dashboard-card{position:relative;min-height:0;height:66px;padding:12px 13px;border-radius:15px;cursor:pointer;user-select:none;border:1px solid #30353b;box-shadow:0 3px 10px rgba(0,0,0,.12);box-sizing:border-box}
+.dashboard-blue{background:#203449;border-color:#3b5872;display:flex;align-items:center;gap:6px}
+.dashboard-shuttlecock-icon{width:34px;height:34px;min-width:34px;display:flex;align-items:center;justify-content:center;color:#dbe7f0;flex:0 0 34px}
+.dashboard-shuttlecock-icon svg{width:32px;height:32px;display:block}
+.dashboard-purple{background:#2a2534;border-color:#493f58}.dashboard-ranking-card{background:linear-gradient(135deg,#332b19,#282114);border-color:#5a4925}
+.dashboard-card-icon{display:inline-block;font-size:21px;line-height:1;vertical-align:middle;margin-right:6px}
+.dashboard-card-title{display:inline-block;font-size:15px;font-weight:800;color:#f3f4f6;vertical-align:middle}
+.dashboard-card-meta{font-size:10px;line-height:1.3;color:#aeb6c0;margin-top:7px;padding-right:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dashboard-grid .dashboard-card-meta{font-size:14px;color:#cbd5e1;font-weight:600}.dashboard-grid .dashboard-action-copy span{font-size:14px;color:#cbd5e1;font-weight:600}
+.dashboard-card-arrow{font-size:22px}
+.dashboard-ranking-card{display:flex;align-items:center;height:66px;gap:6px}.dashboard-grid .dashboard-knockout{min-width:0}.dashboard-grid .dashboard-action-copy{min-width:0}
+.dashboard-ranking-card .dashboard-action-copy{min-width:0;flex:1}
+.header-progress{margin-top:8px}
+.header-progress-label{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:5px;font-size:11px;letter-spacing:.12em;font-weight:800;color:#fff}
+.header-progress-label strong{font-size:10px;letter-spacing:0;color:#d6dfd8}
+.header-progress-track{width:100%;height:6px;background:#737a82;border-radius:999px;overflow:hidden}
+.header-progress-bar{height:100%;width:0%;background:#4d9a63;border-radius:999px;transition:width .2s ease}
+.dashboard-section-label{margin:4px 2px 8px}
+.section-icon{display:inline-flex;align-items:center;justify-content:center;line-height:1;vertical-align:middle;margin-right:6px}
+.workspace-summary-icon{display:inline-flex;align-items:center;justify-content:center;line-height:1;vertical-align:middle;margin-right:6px}
+.workspace-more-label{margin:20px 2px 8px;font-size:10px;letter-spacing:.12em;font-weight:800;color:#8b949e}
+.workspace-summary-status{width:22px;height:22px;min-width:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;margin-right:8px;background:#343a40;color:#d8dee4;font-size:12px;font-weight:800;line-height:1}
+.workspace-summary-status.done,.workspace-summary-status.active{background:#55c9a4;color:#10221b}
+details.card>summary .workspace-summary-status{order:-1}
+.admin-data-card{margin-top:12px}
+.admin-data-content{padding-top:11px}
+.admin-data-copy{font-size:12px;line-height:1.4;color:#aeb6c0;margin-bottom:10px}
+.admin-data-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.admin-data-actions .btn{min-height:42px}
+.bottom-save{position:fixed;bottom:0;left:0;right:0;background:rgba(23,25,27,.94);backdrop-filter:blur(10px);border-top:1px solid #34383d;padding:8px 12px calc(8px + env(safe-area-inset-bottom));z-index:20}
+.bottom-save-inner{max-width:760px;margin:auto}
+.bottom-save .btn{width:100%;min-height:42px}
+main{padding-bottom:82px}
+@media(max-width:420px){
+  .app-header{margin:8px 7px 0;padding:16px 15px 7px}
+  .header-title-row h1{font-size:19px}
+  .dashboard-heading h2{font-size:18px}
+  .dashboard-stat{padding:10px 6px}
+  .dashboard-stat strong{font-size:19px}
+  .dashboard-card{height:66px;min-height:0;padding:11px 12px}
+}
+
+/* DARK THEME — Application palette and collapsible section headers. */
+details.card>summary{position:relative}
+details.card>summary>strong{flex:1 1 auto;text-align:left}
+@media(prefers-color-scheme:dark), (min-width:701px){
+  :root{color:#f3f4f6;background:#111315}
+  body{background:#111315;color:#f3f4f6}
+  .app{background:#17191b}
+  header{background:#3b3d3f;color:#f8fafc}
+  header p{color:#cbd5e1}
+  .card{background:#1d2023;border-color:#34383d;color:#f3f4f6}
+  input,select{background:#25292d;color:#f3f4f6;border-color:#4a5057}
+  .group{border-color:#3b4147}
+  .team-item{border-top-color:#353a40}
+  .muted{color:#aeb6c0}
+  .notice{background:#17263a;color:#bfdbfe}
+  .warning{background:#332812;color:#fde68a}
+  .preliminary-regenerate-warning{background:#332b19;border-color:#8a6a25;color:#f3f4f6}
+  .preliminary-regenerate-warning strong{color:#fbbf24}
+  .preliminary-regenerate-warning .muted{color:#d6c28a}
+  .empty{color:#aeb6c0;border-color:#4a5057}
+  .badge{background:#343a40;color:#f3f4f6}
+  .bottom{background:#17191b;border-top-color:#34383d}
+  .btn-secondary{background:#343a40;color:#f3f4f6}
+  .btn-danger{background:#4a2528;color:#fecaca}
+  .entry-card{background:#202428;border-color:#3a4046}
+  #addTeamPanel>.entry-card{background:#202428!important;border-color:#3a4046!important;color:#f3f4f6!important}
+    #playerTeamEntryCard>summary{background:#1c3022}
+  #fixturesCard>summary{background:#1b2a3a}
+  #qualificationCard>summary{background:#2a2534}
+  #knockoutCard>summary{background:#1c3022}
+  #tournamentSettingsCard>summary{background:#332b19}
+  .tournament-status-card>summary{background:#25272a}
+  .tournament-ranking-card>summary{background:#2a2534}
+  .preliminary-round-card>summary{background:#332b19}
+  .main-ko-allocation-card>summary{background:#1b2a3a}
+  #podiumSection>summary{background:#3a2d14}
+  .ko-result-editor-card{background:#202428;border-color:#3a4046}
+  .main-ko-match-selectable:hover,.main-ko-match-selected{background:#252a2f}
+  .ko-prelim-match:hover,.ko-prelim-match.selected-prelim-match{background:#252a2f;color:#f3f4f6}
+  .main-ko-allocation-list{border-color:#3a4046}
+  .main-ko-allocation-row{border-bottom-color:#353a40}
+}
+
+
+/* v5.0.19: consistent dark-blue action buttons and row height */
+#generateFixturesBtn,
+#teamPoolAddBtn,
+#addTeamBtn,
+#addPoolPlayerBtn,
+#buildPreliminaryRoundBtn,
+#regeneratePreliminaryRoundBtn{
+  background:#1e3a8a!important;
+  color:#fff!important;
+  border:1px solid #2563eb!important;
+  height:48px;
+  min-height:48px;
+  box-sizing:border-box;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+#generateFixturesBtn:hover,
+#teamPoolAddBtn:hover,
+#addTeamBtn:hover,
+#addPoolPlayerBtn:hover,
+#buildPreliminaryRoundBtn:hover,
+#regeneratePreliminaryRoundBtn:hover{
+  background:#1e40af!important;
+  border-color:#1d4ed8!important;
+}
+.group-control-row #generateFixturesBtn{
+  height:48px;
+  min-height:48px;
+}
+@media(max-width:600px){
+  .entry-line>#teamPoolAddBtn,
+  .entry-line>#addTeamBtn{
+    height:48px;
+    min-height:48px;
+  }
+}
+
+/* v5.0.20: entry-row control consistency */
+.entry-line>#teamPoolTeamName,
+.entry-line>.team-pool-player-input,
+.entry-line>#teamPoolAddBtn,
+.entry-line>#addTeamBtn{
+  height:48px;
+  min-height:48px;
+  box-sizing:border-box;
+}
+.entry-line>#teamPoolTeamName{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.entry-line>#playerPoolEntrySelect{
+  flex:0 0 112px;
+  width:112px;
+  min-width:112px;
+  height:48px;
+  min-height:48px;
+  box-sizing:border-box;
+  padding:11px 12px;
+}
+.entry-line>#playerPoolPlayerName{
+  flex:1 1 0;
+  width:auto;
+  min-width:0;
+  height:48px;
+  min-height:48px;
+  box-sizing:border-box;
+}
+.entry-line>#addPoolPlayerBtn{
+  flex:0 0 auto;
+  min-width:86px;
+  height:48px;
+  min-height:48px;
+  box-sizing:border-box;
+}
+@media(max-width:600px){
+  .entry-line>#teamPoolTeamName{
+    flex-basis:78px;
+    min-width:78px;
+    width:78px;
+  }
+  .entry-line>#playerPoolEntrySelect{
+    flex-basis:84px;
+    width:84px;
+    min-width:84px;
+    padding:11px 6px;
+  }
+  .entry-line>#playerPoolPlayerName{
+    flex:1 1 0;
+    width:auto;
+    min-width:0;
+    padding:11px 6px;
+  }
+  .entry-line>#addPoolPlayerBtn{
+    min-width:70px;
+    padding:11px 7px;
+  }
+}
+
+
+/* v5.0.24: hard-code the existing manual-team Player 1 / Player 2 field height.
+   The current mobile field baseline is standardized at 39px. Group selector and
+   Submit use the same fixed height; Player 1 / Player 2 remain unchanged visually. */
+#addTeamPanel .entry-line > #entryGroup,
+#addTeamPanel .entry-line .player-entry,
+#addTeamPanel .entry-line > #addTeamBtn{
+  height:39px;
+  min-height:39px;
+  box-sizing:border-box;
+}
+/* v5.0.25: standardize Team Pool and Player Pool entry-row controls
+   to the same 39px height as the manual-team Player 1 / Player 2 fields.
+   Width/flex sizing remains unchanged. */
+.entry-line>#teamPoolTeamName,
+.entry-line>.team-pool-player-input,
+.entry-line>#teamPoolAddBtn,
+.entry-line>#playerPoolEntrySelect,
+.entry-line>#playerPoolPlayerName,
+.entry-line>#addPoolPlayerBtn{
+  height:39px;
+  min-height:39px;
+  box-sizing:border-box;
+}
+/* v5.0.27: entry/group table declutter and space allocation. */
+.entry-line>.team-pool-player-input{
+  flex:1 1 0;
+  min-width:0;
+}
+.entry-line>#teamPoolAddBtn{
+  flex:0 0 auto;
+}
+.group-control-row{
+  gap:5px;
+}
+.group-control-row select,
+.group-control-row #generateFixturesBtn{
+  flex:1 1 0;
+  width:auto;
+  min-width:0;
+}
+.group-control-row #generateFixturesBtn{
+  height:48px;
+  min-height:48px;
+}
+
+/* v5.0.32: 2px inset stage accents preserve zero content padding and full width */
+@media(max-width:700px){
+  /* v5.0.33: score cards run edge-to-edge with their parent card.
+     Outline gives a visible 2px stage boundary without consuming content width. */
+  .group-result-editor-card,.prelim-result-editor-card,.ko-result-editor-card{
+    width:calc(100% + 32px);
+    margin-left:-16px;
+    box-sizing:border-box;
+  }
+  .group-result-editor-card{outline:2px solid #3f8f5b;outline-offset:-2px;box-shadow:none}
+  .prelim-result-editor-card{outline:2px solid #66578a;outline-offset:-2px;box-shadow:none}
+  .ko-result-editor-card{outline:2px solid #4f6f96;outline-offset:-2px;box-shadow:none}
+}
+/* v5.0.44: final score-card save colour and top breathing */
+.group-result-editor-card,.prelim-result-editor-card,.ko-result-editor-card{padding-top:6px!important;padding-left:6px!important}
+.group-result-editor-card .group-result-actions .btn-primary,.prelim-result-editor-card .prelim-result-actions .btn-primary,.ko-result-editor-card .ko-result-actions .btn-primary{background:#1e3a8a!important;color:#fff!important;border-color:#1e3a8a!important}
+.group-result-editor-card .group-result-actions .btn-primary:hover,.prelim-result-editor-card .prelim-result-actions .btn-primary:hover,.ko-result-editor-card .ko-result-actions .btn-primary:hover{background:#1e40af!important;color:#fff!important;border-color:#1e40af!important}
+
+/* v5.0.46: refine WO/player-name and Clear action colours consistently across all scoreboards */
+.group-result-editor-card .group-result-actions .btn-secondary,.prelim-result-editor-card .prelim-result-actions .btn-secondary,.ko-result-editor-card .ko-result-actions .btn-secondary{background:linear-gradient(180deg,#3b4654,#303946)!important;color:#fff!important;border-color:#4b5969!important}
+.group-result-editor-card .group-result-actions .btn-secondary:hover,.prelim-result-editor-card .prelim-result-actions .btn-secondary:hover,.ko-result-editor-card .ko-result-actions .btn-secondary:hover{background:linear-gradient(180deg,#465466,#374352)!important;color:#fff!important;border-color:#596a7d!important}
+.group-result-editor-card .group-result-actions .btn-danger,.prelim-result-editor-card .prelim-result-actions .btn-danger,.ko-result-editor-card .ko-result-actions .btn-danger{background:linear-gradient(180deg,#65383d,#522b30)!important;color:#fff!important;border-color:#7a454b!important}
+.group-result-editor-card .group-result-actions .btn-danger:hover,.prelim-result-editor-card .prelim-result-actions .btn-danger:hover,.ko-result-editor-card .ko-result-actions .btn-danger:hover{background:linear-gradient(180deg,#754147,#603238)!important;color:#fff!important;border-color:#8d5359!important}
+
+/* v5.0.52 final score-header layout: keep stage/game and format info on one top row. */
+.score-game-heading{display:flex!important;align-items:baseline!important;justify-content:space-between!important;gap:10px!important;width:100%!important;box-sizing:border-box!important}
+.score-game-heading .result-meta{margin:0!important;text-align:right!important;white-space:nowrap!important;flex:0 0 auto!important}
+.group-score-game-row,.ko-score-game-row{grid-template-columns:minmax(0,1fr)!important;align-items:start!important}
+.group-game-number.score-game-heading,.ko-game-number.score-game-heading{display:flex!important;align-items:baseline!important;justify-content:space-between!important;width:100%!important;box-sizing:border-box!important}
+.group-score-center,.ko-score-center{grid-column:1!important;width:100%;box-sizing:border-box}
+/* v5.0.89: responsive scoreboards — equal breathing room and content-aware wrapping. */
+@media(max-width:700px){
+  .group-result-editor-card,
+  .prelim-result-editor-card,
+  .ko-result-editor-card{
+    width:100%!important;
+    margin-left:0!important;
+    margin-right:0!important;
+    padding:14px!important;
+    box-sizing:border-box!important;
+    overflow:visible!important;
+  }
+
+  .group-score-games{width:100%;min-width:0;}
+  .group-score-game-row,
+  .prelim-score-row,
+  .ko-score-game-row{
+    width:100%!important;
+    min-width:0!important;
+  }
+
+  .group-game-number,
+  .prelim-match-number,
+  .ko-game-number,
+  .score-game-heading{
+    width:100%!important;
+    min-width:0!important;
+    margin-bottom:10px!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+  }
+
+  .score-game-heading{
+    display:flex!important;
+    align-items:flex-start!important;
+    justify-content:space-between!important;
+    gap:10px!important;
+    flex-wrap:wrap!important;
+  }
+  .score-game-heading>span:first-child{
+    min-width:0;
+    flex:1 1 150px;
+    overflow-wrap:anywhere;
+  }
+  .score-game-heading .result-meta{
+    min-width:0;
+    flex:0 1 auto;
+    max-width:100%;
+    margin:0!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere;
+    text-align:right!important;
+  }
+
+  .group-score-center,
+  .prelim-score-center,
+  .ko-score-center{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) 44px 14px 44px minmax(0,1fr)!important;
+    align-items:center!important;
+    justify-content:normal!important;
+    gap:6px!important;
+    width:100%!important;
+    min-width:0!important;
+    flex-wrap:initial!important;
+  }
+
+  .group-score-center strong,
+  .prelim-score-center strong,
+  .ko-score-center strong{
+    display:block!important;
+    min-width:0!important;
+    width:100%!important;
+    max-width:100%!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+    word-break:break-word!important;
+    line-height:1.18!important;
+  }
+
+  .group-score-center input.result-score,
+  .prelim-score-center input.prelim-score-input,
+  .ko-score-center input.ko-result-score{
+    justify-self:center!important;
+    flex:none!important;
+    width:44px!important;
+    min-width:44px!important;
+    max-width:44px!important;
+    box-sizing:border-box!important;
+  }
+
+  .group-score-center span,
+  .prelim-score-center span,
+  .ko-score-center span{
+    width:auto!important;
+    min-width:0!important;
+    flex:none!important;
+    text-align:center!important;
+  }
+
+  .group-result-actions,
+  .prelim-result-actions,
+  .ko-result-actions,
+  .result-actions{
+    width:100%!important;
+    min-width:0!important;
+    margin-top:10px!important;
+    margin-bottom:0!important;
+    display:flex!important;
+    align-items:stretch!important;
+    justify-content:flex-start!important;
+    gap:7px!important;
+    flex-wrap:wrap!important;
+    overflow:visible!important;
+  }
+
+  /* v5.0.157: Group scoreboard buttons must override the merged-score nowrap rule. */
+  .merged-match-score #resultEditor .group-result-actions .btn{
+    flex:1 1 110px!important;
+    width:auto!important;
+    max-width:100%!important;
+    min-width:0!important;
+    height:auto!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+    word-break:break-word!important;
+    text-align:center!important;
+    box-sizing:border-box!important;
+  }
+
+  .group-result-actions .btn,
+  .prelim-result-actions .btn,
+  .ko-result-actions .btn{
+    max-width:100%!important;
+    min-width:0!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+    word-break:break-word!important;
+    height:auto!important;
+    min-height:36px!important;
+    line-height:1.2!important;
+  }
+
+  .prelim-wo-row{
+    display:contents!important;
+  }
+
+  .group-result-editor-card .result-actions,
+  .prelim-result-editor-card .result-actions,
+  .ko-result-editor-card .result-actions{
+    padding-bottom:0!important;
+  }
+}
+
+@media(min-width:701px){
+  .group-result-editor-card,
+  .prelim-result-editor-card,
+  .ko-result-editor-card{
+    box-sizing:border-box;
+  }
+
+  .group-score-center strong,
+  .prelim-score-center strong,
+  .ko-score-center strong{
+    min-width:0!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+    word-break:break-word!important;
+  }
+}
+
+/* v5.0.161: increase scoreboard screen-edge breathing by 4px.
+   Reduce the horizontal extension from 20px to 12px and center the
+   scoreboard with 6px negative side margins, giving 4px more breathing
+   space at both left and right edges while preserving internal padding. */
+@media(max-width:700px){
+  .group-result-editor-card,
+  .prelim-result-editor-card,
+  .ko-result-editor-card{
+    width:calc(100% + 20px)!important;
+    margin-left:-10px!important;
+    margin-right:0!important;
+    padding:4px!important;
+  }
+}
+@media(max-width:480px){
+  .group-result-editor-card .result-meta,
+  .prelim-result-editor-card .result-meta,
+  .ko-result-editor-card .result-meta{
+    font-size:12px!important;
+    line-height:1.15!important;
+  }
+}
+
+/* v5.0.94: the Group scoreboard is the canonical typography/layout reference.
+   Pre-Knockout and Main Knockout inherit the same sizing; only their stage
+   colour treatment remains different.  The Group editor historically used
+   13px result metadata and 12px action buttons, which is why its full action
+   row fits more efficiently than the larger stage-specific overrides. */
+.group-result-editor-card,
+.prelim-result-editor-card,
+.ko-result-editor-card{font-size:16px!important;}
+.group-result-editor-card .score-game-heading,
+.prelim-result-editor-card .score-game-heading,
+.ko-result-editor-card .score-game-heading{font-size:16px!important;}
+.group-result-editor-card .result-meta,
+.prelim-result-editor-card .result-meta,
+.ko-result-editor-card .result-meta{font-size:13px!important;line-height:1.15!important;}
+.group-result-editor-card .group-score-center strong,
+.prelim-result-editor-card .prelim-score-center strong,
+.ko-result-editor-card .ko-score-center strong{font-size:16px!important;}
+.group-result-editor-card .result-score,
+.prelim-result-editor-card .prelim-score-input,
+.ko-result-editor-card .ko-result-score{font-size:16px!important;}
+.group-result-editor-card .result-actions .btn,
+.prelim-result-editor-card .result-actions .btn,
+.ko-result-editor-card .result-actions .btn,
+.group-result-editor-card .group-result-actions .btn,
+.prelim-result-editor-card .prelim-result-actions .btn,
+.ko-result-editor-card .ko-result-actions .btn{font-size:12px!important;}
+
+@media(max-width:700px){
+  .group-result-editor-card .group-result-actions .btn,
+  .prelim-result-editor-card .prelim-result-actions .btn,
+  .ko-result-editor-card .ko-result-actions .btn{
+    padding:4px 6px!important;
+    min-height:26px!important;
+    line-height:1.15!important;
+  }
+}
+
+/* v5.0.157: all three scoreboards use content-aware wrapping in the final action row.
+   Keep this behaviour at every viewport width so long team/player labels never
+   overlap neighbouring actions; short labels remain compact. */
+.group-result-editor-card .group-result-actions,
+.prelim-result-editor-card .prelim-result-actions,
+.ko-result-editor-card .ko-result-actions{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  align-items:stretch!important;
+  gap:7px!important;
+}
+.group-result-editor-card .group-result-actions .btn,
+.prelim-result-editor-card .prelim-result-actions .btn,
+.ko-result-editor-card .ko-result-actions .btn{
+  flex:1 1 110px!important;
+  width:auto!important;
+  max-width:100%!important;
+  min-width:0!important;
+  height:auto!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+  text-align:center!important;
+}
+
+/* v5.0.157: force Group scoreboard action buttons to use the same
+   content-wrapping behaviour as the Pre-Knockout and Main Knockout scoreboards. */
+.group-result-editor-card .group-result-actions > .btn{
+  flex:1 1 110px!important;
+  min-width:0!important;
+  max-width:100%!important;
+  width:auto!important;
+  height:auto!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+  text-align:center!important;
+  box-sizing:border-box!important;
+}
+/* v5.0.159: Group match scoring action row matches the Knockout scoreboard at every viewport width.
+   The merged Group scoreboard has a legacy nowrap rule with ID specificity, so
+   these selectors intentionally match that specificity and are placed last. */
+.merged-match-score #resultEditor .group-result-actions{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  align-items:stretch!important;
+  justify-content:flex-start!important;
+  gap:7px!important;
+  width:100%!important;
+  min-width:0!important;
+  overflow:visible!important;
+}
+.merged-match-score #resultEditor .group-result-actions > .btn{
+  flex:1 1 110px!important;
+  width:auto!important;
+  max-width:100%!important;
+  min-width:0!important;
+  height:auto!important;
+  min-height:26px!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+  text-align:center!important;
+  box-sizing:border-box!important;
+  line-height:1.15!important;
+}
+
+
+/* V5.0.181: restore the V5.0.159 mobile action-row sizing.
+   Pre-Knockout and Main Knockout buttons were 36px high on mobile;
+   the merged Group scoreboard keeps its later 26px override. */
+@media(max-width:700px){
+  .group-result-actions,
+  .prelim-result-actions,
+  .ko-result-actions,
+  .result-actions{
+    width:100%!important;
+    min-width:0!important;
+    margin-top:10px!important;
+    margin-bottom:0!important;
+    display:flex!important;
+    align-items:stretch!important;
+    justify-content:flex-start!important;
+    gap:7px!important;
+    flex-wrap:wrap!important;
+    overflow:visible!important;
+  }
+
+  .merged-match-score #resultEditor .group-result-actions .btn{
+    flex:1 1 110px!important;
+    width:auto!important;
+    max-width:100%!important;
+    min-width:0!important;
+    height:auto!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+    word-break:break-word!important;
+    text-align:center!important;
+    box-sizing:border-box!important;
+  }
+
+  .group-result-actions .btn,
+  .prelim-result-actions .btn,
+  .ko-result-actions .btn{
+    max-width:100%!important;
+    min-width:0!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+    word-break:break-word!important;
+    height:auto!important;
+    min-height:36px!important;
+    line-height:1.2!important;
+  }
+
+  .prelim-wo-row{
+    display:contents!important;
+  }
+
+  .group-result-editor-card .result-actions,
+  .prelim-result-editor-card .result-actions,
+  .ko-result-editor-card .result-actions{
+    padding-bottom:0!important;
+  }
+}
+
+@media(min-width:701px){
+  .group-result-editor-card,
+  .prelim-result-editor-card,
+  .ko-result-editor-card{
+    box-sizing:border-box;
+  }
+
+  .group-score-center strong,
+  .prelim-score-center strong,
+  .ko-score-center strong{
+    min-width:0!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+    word-break:break-word!important;
+  }
+}
+
+
+/* v5.2.14: floating scorecard width containment. The legacy scoreboard rules
+   intentionally extend inline cards on mobile; the floating host must contain
+   the active card within its own screen-safe width instead. */
+#floatingScorecard .group-result-editor-card,
+#floatingScorecard .prelim-result-editor-card,
+#floatingScorecard .ko-result-editor-card{
+  width:100%!important;
+  margin-left:0!important;
+  margin-right:0!important;
+  box-sizing:border-box!important;
+}
+/* v5.2.16: standardise operational action buttons to the app dark-blue primary. */
+#buildKnockoutBtn,
+#generateFixturesBtn,
+#buildPreliminaryRoundBtn,
+#regeneratePreliminaryRoundBtn,
+#teamPoolLotteryBtn,
+#playerPoolLotteryBtn{
+  background:#1e3a8a!important;
+  color:#fff!important;
+  border-color:#1e3a8a!important;
+}
+#buildKnockoutBtn:hover,
+#generateFixturesBtn:hover,
+#buildPreliminaryRoundBtn:hover,
+#regeneratePreliminaryRoundBtn:hover,
+#teamPoolLotteryBtn:hover,
+#playerPoolLotteryBtn:hover{
+  background:#1e40af!important;
+  color:#fff!important;
+  border-color:#1e40af!important;
+}
+
+
+
+/* A4 GROUP FIXTURE PDF EXPORT */
+#printFixturesCard{margin-top:10px}
+.print-fixtures-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.print-fixtures-status{margin-top:6px}
+
+/* CLOUD AUTH GATE — v5.3.10 */
+#cloudAuthGate{position:fixed;inset:0;z-index:99999;background:var(--bg,#fff);display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto}
+#cloudAuthGate.hidden{display:none}.cloud-auth-card{width:min(430px,100%);border:1px solid var(--border,#ddd);border-radius:16px;padding:22px;box-shadow:0 8px 30px rgba(0,0,0,.08);background:var(--card-bg,#fff)}
+.cloud-auth-card h2{margin:0 0 6px;font-size:22px}.cloud-auth-card p{margin:6px 0 14px;line-height:1.45}.cloud-auth-card input{width:100%;box-sizing:border-box;margin:6px 0;padding:11px;border:1px solid var(--border,#ccc);border-radius:9px;font:inherit}.cloud-auth-actions{display:flex;gap:8px;margin-top:10px}.cloud-auth-actions button{flex:1;padding:11px;border:0;border-radius:9px;font:inherit;cursor:pointer}.cloud-auth-message{margin-top:12px;min-height:20px;font-size:14px}.cloud-auth-link{display:inline-block;margin-top:10px;padding:0;border:0;background:none;font:inherit;text-decoration:underline;cursor:pointer}.cloud-password-panel{margin-top:14px;border-top:1px solid var(--border,#ddd);padding-top:14px}.cloud-auth-admin{margin-top:20px;border-top:1px solid var(--border,#ddd);padding-top:15px}.cloud-auth-user{font-size:13px;opacity:.75;margin-bottom:12px}.cloud-pending-user{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid var(--border,#ddd);font-size:13px}.cloud-pending-user button{padding:6px 9px;border:0;border-radius:7px;cursor:pointer}
