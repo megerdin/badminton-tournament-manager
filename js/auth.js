@@ -8,6 +8,7 @@
   "use strict";
 
   const AUTH = {
+    APP_URL: "https://megerdin.github.io/badminton-tournament-manager/",
     async init(){
       const cloud=window.BADMINTON_CLOUD;
       if(!cloud?.configured?.() || !cloud.client){
@@ -119,9 +120,15 @@
       const name=document.getElementById('cloudDisplayName')?.value.trim();
       if(!email||!password)return this.message('Email and password are required.');
       this.message('Creating account…');
-      const r=await cloud.client.auth.signUp({email,password,options:{data:{display_name:name}}});
-      if(r.error)return this.message(r.error.message);
-      this.message(r.data.session?'Account created. Awaiting approval.':'Account created. Check email confirmation if required, then await approval.');
+      const r=await cloud.client.auth.signUp({email,password,options:{data:{display_name:name},emailRedirectTo:this.APP_URL}});
+      if(r.error){
+        const msg=String(r.error.message||r.error);
+        if(/rate limit|too many requests/i.test(msg))return this.message('Email service rate limit reached. Please wait before trying again.');
+        return this.message(msg);
+      }
+      this.message(r.data.session
+        ? 'Account created. Awaiting approval.'
+        : 'Account created. Check your email to confirm your account, then await approval.');
     },
 
     async login(){
@@ -139,8 +146,12 @@
       const email=document.getElementById('cloudEmail')?.value.trim();
       if(!email)return this.message('Enter your email address first.');
       this.message('Sending password reset email…');
-      const r=await cloud.client.auth.resetPasswordForEmail(email,{redirectTo:window.location.href});
-      if(r.error)return this.message(r.error.message);
+      const r=await cloud.client.auth.resetPasswordForEmail(email,{redirectTo:this.APP_URL});
+      if(r.error){
+        const msg=String(r.error.message||r.error);
+        if(/rate limit|too many requests/i.test(msg))return this.message('Email service rate limit reached. Please wait before trying again.');
+        return this.message(msg);
+      }
       this.message('If that email has an account, a password reset link has been sent.');
     },
 

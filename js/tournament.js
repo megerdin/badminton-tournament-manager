@@ -1,4 +1,4 @@
-const APP_VERSION = '5.3.31';
+const APP_VERSION = '5.3.37';
 
 "use strict";
 
