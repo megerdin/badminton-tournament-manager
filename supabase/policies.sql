@@ -71,6 +71,12 @@ revoke all on function private.is_approved_user() from public;
 revoke all on function private.is_master_admin() from public;
 revoke all on function private.is_tournament_owner(uuid) from public;
 revoke all on function private.has_tournament_role(uuid,text[]) from public;
+
+-- Authenticated clients must be able to resolve these protected helper functions
+-- from RLS policies and the administrator approval RPC. The functions remain
+-- explicitly restricted by EXECUTE grants; the schema itself is not exposed.
+grant usage on schema private to authenticated;
+
 grant execute on function private.is_approved_user() to authenticated;
 grant execute on function private.is_master_admin() to authenticated;
 grant execute on function private.is_tournament_owner(uuid) to authenticated;

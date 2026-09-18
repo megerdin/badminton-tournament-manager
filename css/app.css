@@ -1348,6 +1348,7 @@ details.card>summary>strong{flex:1 1 auto;text-align:left}
 .cloud-auth-primary:hover{background:#8bc994}
 .cloud-auth-secondary{border:1px solid #4b535b;background:#34383d;color:#f3f4f6}
 .cloud-auth-secondary:hover{background:#3e444a}
+.cloud-auth-mode-link{border:0;background:none;color:#e5e7eb;text-decoration:underline;padding:11px 8px!important;font-weight:600!important}.cloud-auth-mode-link:hover{color:#fff;background:transparent}.cloud-pending-actions{display:flex;gap:6px;align-items:center}.cloud-pending-actions button{min-width:76px}
 .cloud-auth-message{margin-top:12px;min-height:20px;font-size:13px;color:#cbd5e1}
 .cloud-auth-link{display:inline-block;margin-top:13px;padding:0;border:0;background:none;color:#d8dee4;font:inherit;font-size:13px;text-decoration:underline;cursor:pointer}
 .cloud-password-panel{margin-top:14px;border-top:1px solid #34383d;padding-top:14px}.cloud-auth-admin{margin-top:20px;border-top:1px solid #34383d;padding-top:15px}.cloud-auth-user{font-size:13px;opacity:.75;margin-bottom:12px}.cloud-pending-user{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid #34383d;font-size:13px}.cloud-pending-user button{padding:6px 9px;border:0;border-radius:7px;cursor:pointer}.cloud-pending-details{min-width:0;display:flex;flex-direction:column;gap:2px}.cloud-pending-details strong{font-size:13px}.cloud-pending-details span{font-size:12px;opacity:.75;overflow-wrap:anywhere}
