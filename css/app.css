@@ -1334,12 +1334,27 @@ details.card>summary>strong{flex:1 1 auto;text-align:left}
 .print-fixtures-status{margin-top:6px}
 
 /* CLOUD AUTH GATE — v5.3.10 */
-#cloudAuthGate{position:fixed;inset:0;z-index:99999;background:var(--bg,#fff);display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto}
-#cloudAuthGate.hidden{display:none}.cloud-auth-card{width:min(430px,100%);border:1px solid var(--border,#ddd);border-radius:16px;padding:22px;box-shadow:0 8px 30px rgba(0,0,0,.08);background:var(--card-bg,#fff)}
-.cloud-auth-card h2{margin:0 0 6px;font-size:22px}.cloud-auth-card p{margin:6px 0 14px;line-height:1.45}.cloud-auth-card input{width:100%;box-sizing:border-box;margin:6px 0;padding:11px;border:1px solid var(--border,#ccc);border-radius:9px;font:inherit}.cloud-auth-actions{display:flex;gap:8px;margin-top:10px}.cloud-auth-actions button{flex:1;padding:11px;border:0;border-radius:9px;font:inherit;cursor:pointer}.cloud-auth-message{margin-top:12px;min-height:20px;font-size:14px}.cloud-auth-link{display:inline-block;margin-top:10px;padding:0;border:0;background:none;font:inherit;text-decoration:underline;cursor:pointer}.cloud-password-panel{margin-top:14px;border-top:1px solid var(--border,#ddd);padding-top:14px}.cloud-auth-admin{margin-top:20px;border-top:1px solid var(--border,#ddd);padding-top:15px}.cloud-auth-user{font-size:13px;opacity:.75;margin-bottom:12px}.cloud-pending-user{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid var(--border,#ddd);font-size:13px}.cloud-pending-user button{padding:6px 9px;border:0;border-radius:7px;cursor:pointer}
+#cloudAuthGate{position:fixed;inset:0;z-index:99999;background:#111315;display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto}
+#cloudAuthGate.hidden{display:none}
+.cloud-auth-card{width:min(430px,100%);border:1px solid #34383d;border-radius:20px;padding:28px 22px 24px;box-shadow:0 18px 55px rgba(0,0,0,.38);background:linear-gradient(180deg,#171a1d 0%,#131517 100%);color:#f3f4f6}
+.cloud-auth-card h2{margin:0 0 6px;font-size:25px;line-height:1.2;letter-spacing:-.02em;color:#fff}
+.cloud-auth-card p{margin:0 0 18px;line-height:1.45;color:#b9c0c7;font-size:14px}
+.cloud-auth-card input{width:100%;box-sizing:border-box;margin:7px 0;padding:12px 13px;border:1px solid #4b535b;border-radius:10px;background:#25292d;color:#f3f4f6;font:inherit;outline:none}
+.cloud-auth-card input::placeholder{color:#8f98a2}
+.cloud-auth-card input:focus{border-color:#78b884;box-shadow:0 0 0 2px rgba(120,184,132,.16)}
+.cloud-auth-actions{display:flex;gap:8px;margin-top:12px}
+.cloud-auth-actions button{flex:1;min-width:0;padding:11px 12px;border-radius:10px;font:inherit;font-weight:700;cursor:pointer}
+.cloud-auth-primary{border:1px solid #78b884;background:#78b884;color:#102116}
+.cloud-auth-primary:hover{background:#8bc994}
+.cloud-auth-secondary{border:1px solid #4b535b;background:#34383d;color:#f3f4f6}
+.cloud-auth-secondary:hover{background:#3e444a}
+.cloud-auth-message{margin-top:12px;min-height:20px;font-size:13px;color:#cbd5e1}
+.cloud-auth-link{display:inline-block;margin-top:13px;padding:0;border:0;background:none;color:#d8dee4;font:inherit;font-size:13px;text-decoration:underline;cursor:pointer}
+.cloud-password-panel{margin-top:14px;border-top:1px solid #34383d;padding-top:14px}.cloud-auth-admin{margin-top:20px;border-top:1px solid #34383d;padding-top:15px}.cloud-auth-user{font-size:13px;opacity:.75;margin-bottom:12px}.cloud-pending-user{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid #34383d;font-size:13px}.cloud-pending-user button{padding:6px 9px;border:0;border-radius:7px;cursor:pointer}.cloud-pending-details{min-width:0;display:flex;flex-direction:column;gap:2px}.cloud-pending-details strong{font-size:13px}.cloud-pending-details span{font-size:12px;opacity:.75;overflow-wrap:anywhere}
 
 /* CLOUD ACCOUNT BAR — app-level controls */
 .cloud-account-bar{margin:8px 10px 10px;padding:10px 12px;border:1px solid var(--border,#ddd);border-radius:12px;background:var(--card-bg,#fff)}
 .cloud-account-main{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.cloud-account-main>div:first-child{min-width:0}.cloud-account-main strong{display:block;font-size:14px}.cloud-account-actions{display:flex;gap:6px;flex-wrap:wrap}.cloud-admin-panel{margin-top:9px;border-top:1px solid var(--border,#ddd);padding-top:9px}.cloud-admin-panel summary{cursor:pointer}.cloud-pending-users{margin-top:8px}.cloud-account-bar .cloud-password-panel{margin-top:10px}.cloud-account-bar input{width:100%;box-sizing:border-box;margin:6px 0;padding:9px;border:1px solid var(--border,#ccc);border-radius:8px;font:inherit}
+.cloud-profile-card{margin-top:14px}.cloud-profile-grid{display:grid;gap:0}.cloud-profile-row{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px;padding:8px 0;border-top:1px solid var(--border,#ddd);align-items:center}.cloud-profile-row:first-child{border-top:0}.cloud-profile-row>span{font-size:12px;color:#9ca3af}.cloud-profile-row>strong{font-size:13px;overflow-wrap:anywhere}
 
 .cloud-conflict-panel{margin-top:8px;padding:9px 10px;border:1px solid #d97706;border-radius:10px;background:#fff7e6}.cloud-conflict-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}

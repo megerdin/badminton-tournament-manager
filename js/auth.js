@@ -9,6 +9,11 @@
 
   const AUTH = {
     APP_URL: "https://megerdin.github.io/badminton-tournament-manager/",
+    INACTIVITY_MS: 30*60*1000,
+    activityTimer:null,
+    activityBound:false,
+    activityUserId:null,
+    activityKey(userId){ return "badmintonTournamentManager.lastActivity.v1."+String(userId||""); },
     async init(){
       const cloud=window.BADMINTON_CLOUD;
       if(!cloud?.configured?.() || !cloud.client){
@@ -18,6 +23,15 @@
 
       document.getElementById('cloudLoginBtn')?.addEventListener('click',()=>this.login());
       document.getElementById('cloudSignupBtn')?.addEventListener('click',()=>this.signup());
+      document.getElementById('cloudLoginModeBtn')?.addEventListener('click',()=>this.setAuthMode('login'));
+      document.getElementById('cloudSignupModeBtn')?.addEventListener('click',()=>this.setAuthMode('signup'));
+      // Keep the mode switch robust even if the auth shell is re-rendered.
+      document.getElementById('cloudAuthForm')?.addEventListener('click',(event)=>{
+        const id=event.target?.id;
+        if(id==='cloudLoginModeBtn')this.setAuthMode('login');
+        if(id==='cloudSignupModeBtn')this.setAuthMode('signup');
+      });
+      this.setAuthMode('login');
       document.getElementById('cloudSignoutBtn')?.addEventListener('click',()=>this.signout());
       document.getElementById('cloudSignoutApp')?.addEventListener('click',()=>this.signout());
       document.getElementById('cloudKeepLocalBtn')?.addEventListener('click',()=>window.BADMINTON_CLOUD?.resolveConflictKeepLocal?.());
@@ -35,6 +49,13 @@
       cloud.session=r.data.session;
 
       if(cloud.session){
+        if(this.sessionInactive(cloud.session.user.id)){
+          await this.expireInactiveSession(true);
+          this.gate(true);
+          this.message('Session expired after 30 minutes of inactivity. Please sign in again.');
+          return;
+        }
+        this.recordActivity();
         try{ await this.loadProfile(); }
         catch(e){
           const cached=cloud.profileCacheRead?.(cloud.session.user.id);
@@ -77,11 +98,37 @@
     },
 
     gate(v){ document.getElementById('cloudAuthGate')?.classList.toggle('hidden',!v); },
+
+    setAuthMode(mode){
+      const signup=mode==='signup';
+      const fields=document.getElementById('cloudSignupFields');
+      const loginBtn=document.getElementById('cloudLoginBtn');
+      const signupBtn=document.getElementById('cloudSignupBtn');
+      const forgot=document.getElementById('cloudForgotPasswordBtn');
+      const password=document.getElementById('cloudPassword');
+      const loginMode=document.getElementById('cloudLoginModeBtn');
+      const signupMode=document.getElementById('cloudSignupModeBtn');
+      if(fields)fields.hidden=!signup;
+      if(loginBtn)loginBtn.hidden=signup;
+      if(signupBtn)signupBtn.hidden=!signup;
+      if(forgot)forgot.hidden=signup;
+      if(password)password.autocomplete=signup?'new-password':'current-password';
+      if(loginMode)loginMode.hidden=!signup;
+      if(signupMode)signupMode.hidden=signup;
+      if(loginMode)loginMode.setAttribute('aria-hidden',String(!signup));
+      if(signupMode)signupMode.setAttribute('aria-hidden',String(signup));
+      const first=signup
+        ? document.getElementById('cloudDisplayName')
+        : document.getElementById('cloudEmail');
+      if(first)first.focus();
+    },
+
     message(t){ window.BADMINTON_CLOUD?.message?.(t); },
     getSession(){ return window.BADMINTON_CLOUD?.session || null; },
     getProfile(){ return window.BADMINTON_CLOUD?.profile || null; },
 
     renderSignedOut(){
+      this.stopInactivityMonitor();
       document.getElementById('cloudAuthForm')?.removeAttribute('hidden');
       document.getElementById('cloudSignedIn')?.setAttribute('hidden','');
       document.getElementById('cloudAuthAdmin')?.setAttribute('hidden','');
@@ -91,6 +138,8 @@
       if(admin)admin.hidden=true;
       const appUser=document.getElementById('cloudAccountUser');
       if(appUser)appUser.textContent='';
+      const profileCard=document.getElementById('cloudProfileCard');
+      if(profileCard)profileCard.hidden=true;
     },
 
     syncAppStatus(){
@@ -99,6 +148,105 @@
       if(el)el.textContent=source?.textContent||'Cloud connected';
       const panel=document.getElementById('cloudConflictPanel');
       if(panel)panel.hidden=!Boolean(window.BADMINTON_CLOUD?.syncConflict);
+    },
+
+    renderProfileCard(){
+      const cloud=window.BADMINTON_CLOUD;
+      const profile=cloud?.profile;
+      const card=document.getElementById('cloudProfileCard');
+      if(!card||!profile)return;
+      const user=cloud?.session?.user;
+      const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value||'—';};
+      set('cloudProfileName',profile.display_name||user?.user_metadata?.display_name);
+      set('cloudProfileClub',profile.club_name||user?.user_metadata?.club_name);
+      set('cloudProfileCity',profile.city||user?.user_metadata?.city);
+      set('cloudProfileEmail',profile.email||user?.email);
+      set('cloudProfileStatus',profile.approval_status||'—');
+      set('cloudProfileRole',profile.role||'user');
+      card.hidden=false;
+    },
+
+    recordActivity(){
+      const uid=window.BADMINTON_CLOUD?.session?.user?.id;
+      if(!uid)return;
+      const now=Date.now();
+      this.activityUserId=uid;
+      try{localStorage.setItem(this.activityKey(uid),String(now));}catch{}
+      this.scheduleInactivityCheck();
+    },
+
+    lastActivity(userId){
+      try{
+        const value=Number(localStorage.getItem(this.activityKey(userId))||0);
+        return Number.isFinite(value)&&value>0?value:0;
+      }catch{return 0;}
+    },
+
+    sessionInactive(userId){
+      const last=this.lastActivity(userId);
+      return Boolean(last&&Date.now()-last>=this.INACTIVITY_MS);
+    },
+
+    scheduleInactivityCheck(){
+      clearTimeout(this.activityTimer);
+      const uid=this.activityUserId;
+      if(!uid||!window.BADMINTON_CLOUD?.session)return;
+      const last=this.lastActivity(uid)||Date.now();
+      const remaining=Math.max(1000,this.INACTIVITY_MS-(Date.now()-last));
+      this.activityTimer=setTimeout(()=>this.checkInactivity(),Math.min(remaining,60*1000));
+    },
+
+    async checkInactivity(){
+      const cloud=window.BADMINTON_CLOUD;
+      const uid=cloud?.session?.user?.id;
+      if(!uid){this.stopInactivityMonitor();return;}
+      if(this.sessionInactive(uid)){
+        await this.expireInactiveSession(false);
+        return;
+      }
+      this.scheduleInactivityCheck();
+    },
+
+    async expireInactiveSession(initialCheck){
+      const cloud=window.BADMINTON_CLOUD;
+      this.stopInactivityMonitor();
+      try{localStorage.removeItem(this.activityKey(cloud?.session?.user?.id));}catch{}
+      const r=await cloud?.client?.auth.signOut({scope:'local'});
+      if(r?.error)console.error('Automatic inactivity sign-out failed:',r.error);
+      this.renderSignedOut();
+      this.gate(true);
+      if(!initialCheck)this.message('Session expired after 30 minutes of inactivity. Please sign in again.');
+    },
+
+    stopInactivityMonitor(){
+      clearTimeout(this.activityTimer);
+      this.activityTimer=null;
+      this.activityUserId=null;
+      if(!this.activityBound)return;
+      ['pointerdown','keydown','touchstart','scroll'].forEach(type=>
+        document.removeEventListener(type,this._activityHandler,{passive:true})
+      );
+      document.removeEventListener('visibilitychange',this._visibilityHandler);
+      this.activityBound=false;
+    },
+
+    startInactivityMonitor(){
+      const uid=window.BADMINTON_CLOUD?.session?.user?.id;
+      if(!uid)return;
+      this.activityUserId=uid;
+      if(!this.activityBound){
+        this._activityHandler=()=>this.recordActivity();
+        this._visibilityHandler=()=>{
+          if(document.visibilityState==='visible')this.checkInactivity();
+        };
+        ['pointerdown','keydown','touchstart','scroll'].forEach(type=>
+          document.addEventListener(type,this._activityHandler,{passive:true})
+        );
+        document.addEventListener('visibilitychange',this._visibilityHandler);
+        this.activityBound=true;
+      }
+      if(!this.lastActivity(uid))this.recordActivity();
+      this.scheduleInactivityCheck();
     },
 
     renderSignedIn(){
@@ -116,6 +264,8 @@
       if(appBar)appBar.hidden=false;
       const appUser=document.getElementById('cloudAccountUser');
       if(appUser)appUser.textContent=accountName;
+      this.renderProfileCard();
+      this.startInactivityMonitor();
     },
 
     async loadProfile(){
@@ -163,9 +313,11 @@
       const email=document.getElementById('cloudEmail')?.value.trim();
       const password=document.getElementById('cloudPassword')?.value;
       const name=document.getElementById('cloudDisplayName')?.value.trim();
-      if(!email||!password)return this.message('Email and password are required.');
+      const clubName=document.getElementById('cloudClubName')?.value.trim();
+      const city=document.getElementById('cloudCity')?.value.trim();
+      if(!name||!clubName||!city||!email||!password)return this.message('Name, club name, city, email and password are required.');
       this.message('Creating account…');
-      const r=await cloud.client.auth.signUp({email,password,options:{data:{display_name:name},emailRedirectTo:this.APP_URL}});
+      const r=await cloud.client.auth.signUp({email,password,options:{data:{display_name:name,club_name:clubName,city},emailRedirectTo:this.APP_URL}});
       if(r.error){
         const msg=String(r.error.message||r.error);
         if(/rate limit|too many requests/i.test(msg))return this.message('Email service rate limit reached. Please wait before trying again.');
@@ -270,36 +422,40 @@
       if(appBox)appBox.hidden=false;
       if(list)list.textContent='Loading…';
       if(appList)appList.textContent='Loading…';
-      const r=await cloud.client.from('profiles').select('id,email,display_name,approval_status').order('created_at',{ascending:true});
+      const r=await cloud.client.from('profiles').select('id,email,display_name,club_name,city,approval_status').order('created_at',{ascending:true});
       if(r.error){if(list)list.textContent=r.error.message;if(appList)appList.textContent=r.error.message;return;}
       if(list)list.textContent='';
       if(appList)appList.textContent='';
       const pending=(r.data||[]).filter(x=>x.approval_status==='pending');
       if(!pending.length){if(list)list.textContent='No pending users.';if(appList)appList.textContent='No pending signups.';return;}
+
       pending.forEach(u=>{
-        const row=document.createElement('div');
-        row.className='cloud-pending-user';
-        const label=document.createElement('span');
-        label.textContent=u.display_name||u.email||u.id;
-        const b=document.createElement('button');
-        b.textContent='Approve';
-        b.onclick=async()=>{
-          b.disabled=true;
-          const x=await cloud.client.rpc('admin_set_approval',{p_user_id:u.id,p_status:'approved'});
-          if(x.error){this.message(x.error.message);b.disabled=false;}
-          else await this.renderAdmin();
+        const makeRow=()=>{
+          const row=document.createElement('div');
+          row.className='cloud-pending-user';
+          const details=document.createElement('div');
+          details.className='cloud-pending-details';
+          const name=document.createElement('strong');
+          name.textContent=u.display_name||'Name not provided';
+          const meta=document.createElement('span');
+          meta.textContent=[u.club_name,u.city,u.email].filter(Boolean).join(' · ')||u.id;
+          details.append(name,meta);
+          const b=document.createElement('button');
+          b.textContent='Approve';
+          b.onclick=async()=>{
+            b.disabled=true;
+            const x=await cloud.client.rpc('admin_set_approval',{p_user_id:u.id,p_status:'approved'});
+            if(x.error){this.message(x.error.message);b.disabled=false;}
+            else await this.renderAdmin();
+          };
+          row.append(details,b);
+          return row;
         };
-        row.append(label,b);
-        if(list)list.append(row);
-        if(appList){
-          const appRow=row.cloneNode(true);
-          const appButton=appRow.querySelector('button');
-          appButton.onclick=b.onclick;
-          appList.append(appRow);
-        }
+        if(list)list.append(makeRow());
+        if(appList)appList.append(makeRow());
       });
     }
   };
 
-  window.BADMINTON_AUTH=Object.freeze(AUTH);
+  window.BADMINTON_AUTH=AUTH;
 })();

@@ -16,10 +16,6 @@
 <div class="cloud-auth-card">
 <h2>Badminton Tournament Manager</h2><p>Sign in to use the cloud version.</p>
 <div id="cloudAuthForm">
-  <div class="cloud-auth-mode" role="tablist" aria-label="Account access">
-    <button id="cloudLoginModeBtn" type="button" class="active" role="tab" aria-selected="true">Sign in</button>
-    <button id="cloudSignupModeBtn" type="button" role="tab" aria-selected="false">Sign up</button>
-  </div>
   <div id="cloudSignupFields" hidden>
     <input id="cloudDisplayName" type="text" autocomplete="name" placeholder="Name">
     <input id="cloudClubName" type="text" autocomplete="organization" placeholder="Club name">
@@ -28,8 +24,10 @@
   <input id="cloudEmail" type="email" autocomplete="email" placeholder="Email address">
   <input id="cloudPassword" type="password" autocomplete="current-password" placeholder="Password">
   <div class="cloud-auth-actions">
-    <button id="cloudLoginBtn" type="button">Sign in</button>
-    <button id="cloudSignupBtn" type="button" hidden>Create account</button>
+    <button id="cloudLoginBtn" type="button" class="cloud-auth-primary">Sign in</button>
+    <button id="cloudSignupBtn" type="button" class="cloud-auth-primary" hidden>Sign up</button>
+    <button id="cloudSignupModeBtn" type="button" class="cloud-auth-secondary">Sign up</button>
+    <button id="cloudLoginModeBtn" type="button" class="cloud-auth-secondary" hidden>Sign in</button>
   </div>
   <button id="cloudForgotPasswordBtn" class="cloud-auth-link" type="button">Forgot password?</button>
 </div>
@@ -54,7 +52,7 @@
       <div id="dashboardProgressBar" class="header-progress-bar"></div>
     </div>
   </div>
-  <div id="appVersion" class="app-version">V5.3.54</div>
+  <div id="appVersion" class="app-version">V5.3.56</div>
 </header>
 
 <div id="cloudAccountBar" class="cloud-account-bar" hidden>
@@ -193,7 +191,7 @@
 </details>
 
 <details class="card" id="fixturesCard">
-<summary><strong><span class="section-icon people-icon" aria-hidden="true"><svg viewBox="0 0 34 34" role="img"><circle cx="11" cy="9" r="5"/><path d="M2.5 25c.7-5.1 3.6-8 8.5-8s7.8 2.9 8.5 8v3H2.5z"/><circle cx="23" cy="11" r="4.5"/><path d="M16.5 26c.5-4.3 3.2-6.8 6.8-6.8 7.2v2h-14z"/></svg></span> Group Matches</strong></summary>
+<summary><strong><span class="section-icon people-icon" aria-hidden="true"><svg viewBox="0 0 34 34" role="img"><circle cx="11" cy="9" r="5"/><path d="M2.5 25c.7-5.1 3.6-8 8.5-8s7.8 2.9 8.5 8v3H2.5z"/><circle cx="23" cy="11" r="4.5"/><path d="M16.5 26c.5-4.3 3.2-6.8 6.8-6.8 4.1 0 6.8 2.7 7.2 6.8v2h-14z"/></svg></span> Group Matches</strong></summary>
 <div style="margin-top:10px">
 <div class="inline-control-row group-control-row">
 <select id="fixtureGroupFilter"></select>
@@ -343,6 +341,19 @@
 <div class="muted" style="margin-top:8px">Please retain the original developer attribution when modifying or redistributing this application.</div>
 </div>
 </details>
+
+<details class="card cloud-profile-card" id="cloudProfileCard" hidden>
+<summary><strong>👤 User Profile</strong></summary>
+<div class="cloud-profile-grid" style="margin-top:12px">
+  <div class="cloud-profile-row"><span>Name</span><strong id="cloudProfileName">—</strong></div>
+  <div class="cloud-profile-row"><span>Club</span><strong id="cloudProfileClub">—</strong></div>
+  <div class="cloud-profile-row"><span>City</span><strong id="cloudProfileCity">—</strong></div>
+  <div class="cloud-profile-row"><span>Email</span><strong id="cloudProfileEmail">—</strong></div>
+  <div class="cloud-profile-row"><span>Account</span><strong id="cloudProfileStatus">—</strong></div>
+  <div class="cloud-profile-row"><span>Role</span><strong id="cloudProfileRole">—</strong></div>
+</div>
+</details>
+
 </main>
 
 

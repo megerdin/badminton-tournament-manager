@@ -531,14 +531,14 @@ function drawGroupFixturePdfPage(pageData,canvas,scale){
   ctx.textBaseline="middle";
 
   let y=margin+12*mm;
-  ctx.font=`700 ${16*scale/72}px Arial,Helvetica,sans-serif`;
-  pdfDrawCenteredText(ctx,pageData.clubName,pageW/2,y,contentW,16*scale/72,"700");
+  ctx.font=`700 ${18*scale/72}px Arial,Helvetica,sans-serif`;
+  pdfDrawCenteredText(ctx,pageData.clubName,pageW/2,y,contentW,18*scale/72,"700");
   y+=7*mm;
   ctx.font=`700 ${11*scale/72}px Arial,Helvetica,sans-serif`;
   pdfDrawCenteredText(ctx,`[  ${pageData.categoryName}  ]`,pageW/2,y,contentW,11*scale/72,"700");
   y+=10*mm;
-  ctx.font=`700 ${18*scale/72}px Arial,Helvetica,sans-serif`;
-  pdfDrawCenteredText(ctx,`${pageData.groupName} — Group Fixtures`,pageW/2,y,contentW,18*scale/72,"700");
+  ctx.font=`700 ${16*scale/72}px Arial,Helvetica,sans-serif`;
+  pdfDrawCenteredText(ctx,`${pageData.groupName} — Group Fixtures`,pageW/2,y,contentW,16*scale/72,"700");
   y+=7*mm;
   ctx.font=`400 ${9*scale/72}px Arial,Helvetica,sans-serif`;
   ctx.fillStyle="#444";
@@ -602,10 +602,6 @@ function drawGroupFixturePdfPage(pageData,canvas,scale){
     });
   });
 
-  ctx.fillStyle="#555";
-  ctx.font=`400 ${8*scale/72}px Arial,Helvetica,sans-serif`;
-  ctx.textAlign="center";
-  ctx.fillText("Blank cells are provided for fixture entries.",pageW/2,pageH-margin/2);
   return canvas;
 }
 

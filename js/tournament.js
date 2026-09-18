@@ -1,4 +1,4 @@
-const APP_VERSION = '5.3.55';
+const APP_VERSION = '5.3.56';
 
 "use strict";
 
@@ -545,11 +545,16 @@ function resizePlayerPoolCount(requested){
   const previous=Math.max(2,Math.min(52,Number(tournament.settings?.playerPoolCount)||2));
   if(count===previous){
     ensurePlayerPoolState(count);
-    // Creating the default pool count (normally 2) is still a real action:
-    // the count did not change, but the pool structure has now been declared.
-    const wasCreated=!!tournament.settings.playerPoolsCreated;
-    tournament.settings.playerPoolsCreated=true;
-    return !wasCreated;
+    // The default count is already 2, so pressing Create with 2 pools must
+    // still register the Player Pool as explicitly created. Previously this
+    // path returned false, leaving playerPoolsCreated unset and the entry
+    // screen stuck on "Declare pool first."
+    if(!tournament.settings.playerPoolsCreated){
+      tournament.settings.playerPoolsCreated=true;
+      addHistory("Player pools created",String(count));
+      return true;
+    }
+    return false;
   }
   if(!Array.isArray(tournament.playerPoolPlayers))tournament.playerPoolPlayers=[];
 
