@@ -7,28 +7,15 @@
 
 create extension if not exists pgcrypto;
 
-do $$ begin
-  create type public.profile_role as enum ('user', 'master_admin');
-exception when duplicate_object then null; end $$;
-
-do $$ begin
-  create type public.approval_status as enum ('pending', 'approved', 'rejected', 'suspended');
-exception when duplicate_object then null; end $$;
-
-do $$ begin
-  create type public.tournament_member_role as enum ('owner', 'editor', 'viewer');
-exception when duplicate_object then null; end $$;
-
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,
   display_name text,
-  role public.profile_role not null default 'user',
-  approval_status public.approval_status not null default 'pending',
+  role text not null default 'user' check (role in ('user','master_admin')),
+  approval_status text not null default 'pending' check (approval_status in ('pending','approved','rejected','suspended')),
   created_at timestamptz not null default now(),
   approved_at timestamptz,
-  approved_by uuid references public.profiles(id) on delete set null,
-  updated_at timestamptz not null default now()
+  approved_by uuid references auth.users(id) on delete set null
 );
 
 create table if not exists public.clubs (
@@ -53,7 +40,7 @@ create table if not exists public.tournaments (
 create table if not exists public.tournament_members (
   tournament_id uuid not null references public.tournaments(id) on delete cascade,
   user_id uuid not null references public.profiles(id) on delete cascade,
-  role public.tournament_member_role not null default 'viewer',
+  role text not null default 'editor' check (role in ('viewer','editor','owner')),
   created_at timestamptz not null default now(),
   primary key (tournament_id, user_id)
 );
@@ -75,11 +62,6 @@ begin
   return new;
 end;
 $$;
-
-drop trigger if exists profiles_set_updated_at on public.profiles;
-create trigger profiles_set_updated_at
-before update on public.profiles
-for each row execute function public.set_updated_at();
 
 drop trigger if exists clubs_set_updated_at on public.clubs;
 create trigger clubs_set_updated_at

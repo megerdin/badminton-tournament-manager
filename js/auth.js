@@ -42,7 +42,7 @@
         }
       }else this.gate(true);
 
-      cloud.client.auth.onAuthStateChange(async(event,session)=>{
+      cloud.client.auth.onAuthStateChange((event,session)=>{
         cloud.session=session;
         if(event==='PASSWORD_RECOVERY'){
           cloud.profile=null;
@@ -52,8 +52,9 @@
           return;
         }
         if(session){
-          try{ await this.loadProfile(); }
-          catch(e){ cloud.message?.(e.message||String(e)); }
+          // Do not await Supabase calls inside onAuthStateChange; keep the
+          // callback lightweight so Auth can finish its internal state update.
+          setTimeout(()=>this.loadProfile().catch(e=>cloud.message?.(e.message||String(e))),0);
         }else{
           cloud.profile=null;
           cloud.cloudVersion=0;
@@ -204,7 +205,7 @@
         b.textContent='Approve';
         b.onclick=async()=>{
           b.disabled=true;
-          const x=await cloud.client.rpc('admin_set_approval',{target_user_id:u.id,new_status:'approved'});
+          const x=await cloud.client.rpc('admin_set_approval',{p_user_id:u.id,p_status:'approved'});
           if(x.error){this.message(x.error.message);b.disabled=false;}
           else await this.renderAdmin();
         };

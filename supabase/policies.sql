@@ -28,85 +28,53 @@ grant select, insert, update, delete on public.tournaments to authenticated;
 grant select, insert, update, delete on public.tournament_members to authenticated;
 
 -- ------------------------------------------------------------
--- Security-definer identity helpers
--- These functions bypass RLS only for their narrowly scoped lookup.
--- The search_path is pinned to avoid object-shadowing attacks.
+-- Private RLS helper functions
+-- These are intentionally kept outside the exposed public schema so they are
+-- not callable through the Data API as arbitrary RPC endpoints.
 -- ------------------------------------------------------------
-create or replace function public.is_approved_user()
+create schema if not exists private;
+
+create or replace function private.is_approved_user()
 returns boolean
-language sql
-stable
-security definer
+language sql stable security definer
 set search_path = public, pg_temp
 as $$
-  select exists (
-    select 1
-    from public.profiles p
-    where p.id = auth.uid()
-      and p.approval_status = 'approved'
-  );
+  select exists (select 1 from public.profiles p where p.id = auth.uid() and p.approval_status = 'approved');
 $$;
 
-create or replace function public.is_master_admin()
+create or replace function private.is_master_admin()
 returns boolean
-language sql
-stable
-security definer
+language sql stable security definer
 set search_path = public, pg_temp
 as $$
-  select exists (
-    select 1
-    from public.profiles p
-    where p.id = auth.uid()
-      and p.role = 'master_admin'
-      and p.approval_status = 'approved'
-  );
+  select exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'master_admin' and p.approval_status = 'approved');
 $$;
 
-revoke all on function public.is_approved_user() from public;
-revoke all on function public.is_master_admin() from public;
-grant execute on function public.is_approved_user() to authenticated;
-grant execute on function public.is_master_admin() to authenticated;
-
-create or replace function public.is_tournament_owner(target_tournament_id uuid)
+create or replace function private.is_tournament_owner(p_tournament_id uuid)
 returns boolean
-language sql
-stable
-security definer
+language sql stable security definer
 set search_path = public, pg_temp
 as $$
-  select exists (
-    select 1
-    from public.tournaments t
-    join public.clubs c on c.id = t.club_id
-    where t.id = target_tournament_id
-      and c.owner_id = auth.uid()
-  );
+  select exists (select 1 from public.tournaments t join public.clubs c on c.id=t.club_id where t.id=p_tournament_id and c.owner_id=auth.uid());
 $$;
 
-create or replace function public.has_tournament_role(
-  target_tournament_id uuid,
-  allowed_roles public.tournament_member_role[]
-)
+create or replace function private.has_tournament_role(p_tournament_id uuid, p_roles text[])
 returns boolean
-language sql
-stable
-security definer
+language sql stable security definer
 set search_path = public, pg_temp
 as $$
-  select exists (
-    select 1
-    from public.tournament_members tm
-    where tm.tournament_id = target_tournament_id
-      and tm.user_id = auth.uid()
-      and tm.role = any(allowed_roles)
-  );
+  select private.is_tournament_owner(p_tournament_id)
+  or exists (select 1 from public.tournament_members tm where tm.tournament_id=p_tournament_id and tm.user_id=auth.uid() and tm.role=any(p_roles));
 $$;
 
-revoke all on function public.is_tournament_owner(uuid) from public;
-revoke all on function public.has_tournament_role(uuid, public.tournament_member_role[]) from public;
-grant execute on function public.is_tournament_owner(uuid) to authenticated;
-grant execute on function public.has_tournament_role(uuid, public.tournament_member_role[]) to authenticated;
+revoke all on function private.is_approved_user() from public;
+revoke all on function private.is_master_admin() from public;
+revoke all on function private.is_tournament_owner(uuid) from public;
+revoke all on function private.has_tournament_role(uuid,text[]) from public;
+grant execute on function private.is_approved_user() to authenticated;
+grant execute on function private.is_master_admin() to authenticated;
+grant execute on function private.is_tournament_owner(uuid) to authenticated;
+grant execute on function private.has_tournament_role(uuid,text[]) to authenticated;
 
 -- ------------------------------------------------------------
 -- Master-admin approval RPC
@@ -114,7 +82,7 @@ grant execute on function public.has_tournament_role(uuid, public.tournament_mem
 -- ------------------------------------------------------------
 create or replace function public.admin_set_approval(
   target_user_id uuid,
-  new_status public.approval_status
+  new_status text
 )
 returns void
 language plpgsql
@@ -122,7 +90,7 @@ security definer
 set search_path = public, pg_temp
 as $$
 begin
-  if not public.is_master_admin() then
+  if not private.is_master_admin() then
     raise exception 'not authorized';
   end if;
 
@@ -142,155 +110,118 @@ begin
 end;
 $$;
 
-revoke all on function public.admin_set_approval(uuid, public.approval_status) from public;
-grant execute on function public.admin_set_approval(uuid, public.approval_status) to authenticated;
+revoke all on function public.admin_set_approval(uuid, text) from public;
+grant execute on function public.admin_set_approval(uuid, text) to authenticated;
+
+-- Protect role/approval fields from direct client updates.
+create or replace function public.protect_profile_security_fields()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  if new.role is distinct from old.role
+     or new.approval_status is distinct from old.approval_status
+     or new.approved_at is distinct from old.approved_at
+     or new.approved_by is distinct from old.approved_by then
+    if current_user <> 'postgres' and not private.is_master_admin() then
+      raise exception 'profile security fields may only be changed by an administrator';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists profiles_protect_security_fields on public.profiles;
+create trigger profiles_protect_security_fields
+before update on public.profiles
+for each row execute function public.protect_profile_security_fields();
 
 -- ------------------------------------------------------------
 -- Profiles
 -- ------------------------------------------------------------
-drop policy if exists profiles_select_visible on public.profiles;
-create policy profiles_select_visible
-on public.profiles
-for select to authenticated
-using (
-  id = auth.uid()
-  or public.is_master_admin()
-);
+drop policy if exists profiles_select_self_or_admin on public.profiles;
+create policy profiles_select_self_or_admin
+on public.profiles for select to authenticated
+using (id = auth.uid() or private.is_master_admin());
 
--- There is intentionally NO INSERT/UPDATE/DELETE policy for profiles.
--- New profiles are created by the auth trigger; role/status changes use the
--- admin RPC above. This prevents self-approval and self-role escalation.
+drop policy if exists profiles_update_self on public.profiles;
+create policy profiles_update_self
+on public.profiles for update to authenticated
+using (id = auth.uid())
+with check (id = auth.uid());
 
 -- ------------------------------------------------------------
 -- Clubs
 -- ------------------------------------------------------------
-drop policy if exists clubs_owner_all on public.clubs;
-create policy clubs_owner_all
-on public.clubs
-for all to authenticated
-using (
-  public.is_approved_user()
-  and owner_id = auth.uid()
-)
-with check (
-  public.is_approved_user()
-  and owner_id = auth.uid()
-);
+drop policy if exists clubs_select_owner on public.clubs;
+create policy clubs_select_owner
+on public.clubs for select to authenticated
+using (owner_id = auth.uid() or private.is_master_admin());
+
+drop policy if exists clubs_insert_approved on public.clubs;
+create policy clubs_insert_approved
+on public.clubs for insert to authenticated
+with check (private.is_approved_user() and owner_id = auth.uid());
+
+drop policy if exists clubs_update_owner on public.clubs;
+create policy clubs_update_owner
+on public.clubs for update to authenticated
+using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+
+drop policy if exists clubs_delete_owner on public.clubs;
+create policy clubs_delete_owner
+on public.clubs for delete to authenticated
+using (owner_id = auth.uid());
 
 -- ------------------------------------------------------------
 -- Tournaments
 -- ------------------------------------------------------------
-drop policy if exists tournaments_select_member_or_owner on public.tournaments;
-create policy tournaments_select_member_or_owner
-on public.tournaments
-for select to authenticated
-using (
-  public.is_approved_user()
-  and (
-    public.is_tournament_owner(tournaments.id)
-    or public.has_tournament_role(tournaments.id, array['owner','editor','viewer']::public.tournament_member_role[])
-  )
-);
+drop policy if exists tournaments_select_access on public.tournaments;
+create policy tournaments_select_access
+on public.tournaments for select to authenticated
+using (private.has_tournament_role(id,array['viewer','editor','owner']) or private.is_master_admin());
 
 drop policy if exists tournaments_insert_owner on public.tournaments;
 create policy tournaments_insert_owner
-on public.tournaments
-for insert to authenticated
-with check (
-  public.is_approved_user()
-  and exists (
-    select 1 from public.clubs c
-    where c.id = tournaments.club_id
-      and c.owner_id = auth.uid()
-  )
-  and updated_by = auth.uid()
-);
+on public.tournaments for insert to authenticated
+with check (private.is_approved_user() and exists (select 1 from public.clubs c where c.id=tournaments.club_id and c.owner_id=auth.uid()));
 
-drop policy if exists tournaments_update_owner_or_editor on public.tournaments;
-create policy tournaments_update_owner_or_editor
-on public.tournaments
-for update to authenticated
-using (
-  public.is_approved_user()
-  and (
-    public.is_tournament_owner(tournaments.id)
-    or public.has_tournament_role(tournaments.id, array['owner','editor']::public.tournament_member_role[])
-  )
-)
-with check (
-  public.is_approved_user()
-  and (
-    public.is_tournament_owner(tournaments.id)
-    or public.has_tournament_role(tournaments.id, array['owner','editor']::public.tournament_member_role[])
-  )
-  and updated_by = auth.uid()
-  and version >= 1
-);
+drop policy if exists tournaments_update_access on public.tournaments;
+create policy tournaments_update_access
+on public.tournaments for update to authenticated
+using (private.has_tournament_role(id,array['editor','owner']) or private.is_master_admin())
+with check (private.has_tournament_role(id,array['editor','owner']) or private.is_master_admin());
 
 drop policy if exists tournaments_delete_owner on public.tournaments;
 create policy tournaments_delete_owner
-on public.tournaments
-for delete to authenticated
-using (
-  public.is_approved_user()
-  and exists (
-    select 1 from public.clubs c
-    where c.id = tournaments.club_id
-      and c.owner_id = auth.uid()
-  )
-);
+on public.tournaments for delete to authenticated
+using (private.has_tournament_role(id,array['owner']) or private.is_master_admin());
 
 -- ------------------------------------------------------------
 -- Tournament members
 -- ------------------------------------------------------------
-drop policy if exists tournament_members_select_visible on public.tournament_members;
-create policy tournament_members_select_visible
-on public.tournament_members
-for select to authenticated
-using (
-  public.is_approved_user()
-  and (
-    user_id = auth.uid()
-    or exists (
-      select 1
-      from public.tournaments t
-      join public.clubs c on c.id = t.club_id
-      where t.id = tournament_members.tournament_id
-        and c.owner_id = auth.uid()
-    )
-  )
-);
+drop policy if exists tournament_members_select_access on public.tournament_members;
+create policy tournament_members_select_access
+on public.tournament_members for select to authenticated
+using (user_id=auth.uid() or private.is_tournament_owner(tournament_id) or private.is_master_admin());
 
 drop policy if exists tournament_members_insert_owner on public.tournament_members;
 create policy tournament_members_insert_owner
-on public.tournament_members
-for insert to authenticated
-with check (
-  public.is_approved_user()
-  and public.is_tournament_owner(tournament_members.tournament_id)
-);
+on public.tournament_members for insert to authenticated
+with check (private.is_approved_user() and (private.is_tournament_owner(tournament_id) or private.is_master_admin()));
 
 drop policy if exists tournament_members_update_owner on public.tournament_members;
 create policy tournament_members_update_owner
-on public.tournament_members
-for update to authenticated
-using (
-  public.is_approved_user()
-  and public.is_tournament_owner(tournament_members.tournament_id)
-)
-with check (
-  public.is_approved_user()
-  and public.is_tournament_owner(tournament_members.tournament_id)
-);
+on public.tournament_members for update to authenticated
+using (private.is_tournament_owner(tournament_id) or private.is_master_admin())
+with check (private.is_tournament_owner(tournament_id) or private.is_master_admin());
 
 drop policy if exists tournament_members_delete_owner on public.tournament_members;
 create policy tournament_members_delete_owner
-on public.tournament_members
-for delete to authenticated
-using (
-  public.is_approved_user()
-  and public.is_tournament_owner(tournament_members.tournament_id)
-);
+on public.tournament_members for delete to authenticated
+using (private.is_tournament_owner(tournament_id) or private.is_master_admin());
 
 -- ------------------------------------------------------------
 -- RLS remains enabled explicitly, even if this script is rerun.

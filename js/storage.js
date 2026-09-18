@@ -38,7 +38,20 @@ window.BADMINTON_CLOUD={
    localStorage.setItem(this.queueKey,JSON.stringify({snapshot,baseVersion:Number(baseVersion||0),userId:this.session?.user?.id||null,tournamentId:this.tournamentId||null,queuedAt:Date.now()}));
   }catch(e){console.warn('Cloud queue could not be stored:',e);}
  },
- queueClear(){localStorage.removeItem(this.queueKey);},
+ queueClear(){try{localStorage.removeItem(this.queueKey);}catch(e){}},
+ queueUpdate(patch){
+  try{
+   const current=this.queueRead()||{};
+   const next={...current,...(patch&&typeof patch==='object'?patch:{}),userId:this.session?.user?.id||current.userId||null,tournamentId:this.tournamentId||current.tournamentId||null};
+   localStorage.setItem(this.queueKey,JSON.stringify(next));
+  }catch(e){console.warn('Cloud queue could not be updated:',e);}
+ },
+ scheduleRetry(){
+  clearTimeout(this.retryTimer);
+  if(!this.queueRead()||!navigator.onLine)return;
+  const delay=Math.min(60000,Math.max(2000,2000*Math.pow(2,Math.min(this.retryAttempt++,5))));
+  this.retryTimer=setTimeout(()=>this.syncPending().catch(()=>{}),delay);
+ },
  async init(){
   if(!this.configured()){this.gate(false);return;}
   this.client=window.supabase.createClient(window.BADMINTON_CLOUD_CONFIG.url,window.BADMINTON_CLOUD_CONFIG.publishableKey,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}});
