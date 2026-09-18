@@ -82,6 +82,17 @@ grant execute on function private.is_master_admin() to authenticated;
 grant execute on function private.is_tournament_owner(uuid) to authenticated;
 grant execute on function private.has_tournament_role(uuid,text[]) to authenticated;
 
+
+create or replace function private.is_club_owner(p_club_id uuid)
+returns boolean
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select exists (select 1 from public.clubs c where c.id=p_club_id and c.owner_id=auth.uid());
+$$;
+revoke all on function private.is_club_owner(uuid) from public;
+grant execute on function private.is_club_owner(uuid) to authenticated;
+
 -- Master-admins may update approval fields through the guarded RPC.
 drop policy if exists profiles_update_master_admin on public.profiles;
 create policy profiles_update_master_admin
@@ -206,7 +217,7 @@ using (private.has_tournament_role(id,array['viewer','editor','owner']) or priva
 drop policy if exists tournaments_insert_owner on public.tournaments;
 create policy tournaments_insert_owner
 on public.tournaments for insert to authenticated
-with check (private.is_approved_user() and exists (select 1 from public.clubs c where c.id=tournaments.club_id and c.owner_id=auth.uid()));
+with check ((select private.is_approved_user()) and (select private.is_club_owner(tournaments.club_id)));
 
 drop policy if exists tournaments_update_access on public.tournaments;
 create policy tournaments_update_access
@@ -250,3 +261,44 @@ alter table public.profiles enable row level security;
 alter table public.clubs enable row level security;
 alter table public.tournaments enable row level security;
 alter table public.tournament_members enable row level security;
+
+
+-- Securely create the initial tournament for an approved club owner. The browser
+-- calls this RPC instead of inserting directly into tournaments, avoiding an
+-- RLS visibility dependency on the parent club row.
+create or replace function public.create_initial_tournament(p_club_id uuid)
+returns table(id uuid, version bigint)
+language plpgsql
+security definer
+set search_path = public, private, pg_temp
+as $$
+begin
+  if not private.is_approved_user() then raise exception 'not authorized'; end if;
+  if not private.is_club_owner(p_club_id) then raise exception 'not authorized'; end if;
+  return query
+    insert into public.tournaments(club_id,name,data,version,updated_by)
+    values(p_club_id,'Badminton Tournament Manager','{}'::jsonb,1,auth.uid())
+    on conflict (club_id) do update set club_id=excluded.club_id
+    returning public.tournaments.id, public.tournaments.version;
+end;
+$$;
+revoke all on function public.create_initial_tournament(uuid) from public, anon;
+grant execute on function public.create_initial_tournament(uuid) to authenticated;
+
+-- Allow the administrator to remove a user account. This cascades the user's
+-- profile-owned club/tournament/member records through the existing FK rules.
+create or replace function public.admin_delete_user(p_user_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public, private, pg_temp
+as $$
+begin
+  if not private.is_master_admin() then raise exception 'not authorized'; end if;
+  if p_user_id=auth.uid() then raise exception 'administrator cannot delete itself'; end if;
+  delete from auth.users where id=p_user_id;
+  if not found then raise exception 'target user not found'; end if;
+end;
+$$;
+revoke all on function public.admin_delete_user(uuid) from public, anon;
+grant execute on function public.admin_delete_user(uuid) to authenticated;

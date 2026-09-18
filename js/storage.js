@@ -106,7 +106,7 @@ window.BADMINTON_CLOUD={
   const uid=this.session.user.id;let r=await this.client.from('clubs').select('id').eq('owner_id',uid).order('created_at',{ascending:true}).limit(1).maybeSingle();if(r.error)throw r.error;let club=r.data;
   if(!club){r=await this.client.from('clubs').insert({owner_id:uid,name:'Your club name'}).select('id').single();if(r.error)throw r.error;club=r.data;}this.clubId=club.id;
   r=await this.client.from('tournaments').select('id,version').eq('club_id',this.clubId).order('created_at',{ascending:true}).limit(1).maybeSingle();if(r.error)throw r.error;let t=r.data;
-  if(!t){r=await this.client.from('tournaments').insert({club_id:this.clubId,name:'Badminton Tournament Manager',data:{},version:1,updated_by:uid}).select('id,version').single();if(r.error)throw r.error;t=r.data;r=await this.client.from('tournament_members').insert({tournament_id:t.id,user_id:uid,role:'owner'});if(r.error&&r.error.code!=='23505')throw r.error;}
+  if(!t){r=await this.client.rpc('create_initial_tournament',{p_club_id:this.clubId});if(r.error)throw r.error;t=Array.isArray(r.data)?r.data[0]:r.data;if(!t?.id)throw new Error('Initial tournament could not be created.');}
   this.tournamentId=t.id;this.cloudVersion=Number(t.version||1);
   // Existing tournaments must also have an owner membership. Without this
   // row, a normal approved owner can see the club but RLS will deny access to

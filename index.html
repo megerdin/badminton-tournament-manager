@@ -14,7 +14,7 @@
 
 <div id="cloudAuthGate">
 <div class="cloud-auth-card">
-<h2>Badminton Tournament Manager</h2><p>Sign in to use the cloud version <span id="cloudLoginVersion">V5.3.58</span>.</p>
+<h2>Badminton Tournament Manager</h2><p>Sign in to use the cloud version <span id="cloudLoginVersion">V5.3.59</span>.</p>
 <div id="cloudAuthForm">
   <div id="cloudSignupFields" hidden>
     <input id="cloudDisplayName" type="text" autocomplete="name" placeholder="Name">
@@ -52,7 +52,7 @@
       <div id="dashboardProgressBar" class="header-progress-bar"></div>
     </div>
   </div>
-  <div id="appVersion" class="app-version">V5.3.58</div>
+  <div id="appVersion" class="app-version">V5.3.59</div>
 </header>
 
 <div id="cloudAccountBar" class="cloud-account-bar" hidden>
@@ -83,7 +83,7 @@
     </div>
   </div>
   <details id="cloudAdminPanelApp" class="cloud-admin-panel" hidden>
-    <summary><strong>Admin — pending signups</strong></summary>
+    <summary><strong>Admin — user accounts</strong></summary>
     <div id="cloudPendingUsersApp" class="cloud-pending-users"></div>
   </details>
 </div>
@@ -342,17 +342,7 @@
 </div>
 </details>
 
-<details class="card cloud-profile-card" id="cloudProfileCard" hidden>
-<summary><strong>👤 User Profile</strong></summary>
-<div class="cloud-profile-grid" style="margin-top:12px">
-  <div class="cloud-profile-row"><span>Name</span><strong id="cloudProfileName">—</strong></div>
-  <div class="cloud-profile-row"><span>Club</span><strong id="cloudProfileClub">—</strong></div>
-  <div class="cloud-profile-row"><span>City</span><strong id="cloudProfileCity">—</strong></div>
-  <div class="cloud-profile-row"><span>Email</span><strong id="cloudProfileEmail">—</strong></div>
-  <div class="cloud-profile-row"><span>Account</span><strong id="cloudProfileStatus">—</strong></div>
-  <div class="cloud-profile-row"><span>Role</span><strong id="cloudProfileRole">—</strong></div>
-</div>
-</details>
+
 
 </main>
 
@@ -365,6 +355,18 @@
     <button class="btn btn-secondary" id="importBtn">Import</button>
   </div>
 </div>
+
+<details class="card cloud-profile-card" id="cloudProfileCard" hidden>
+<summary><strong>👤 User Profile</strong></summary>
+<div class="cloud-profile-grid" style="margin-top:12px">
+  <div class="cloud-profile-row"><span>Name</span><strong id="cloudProfileName">—</strong></div>
+  <div class="cloud-profile-row"><span>Club</span><strong id="cloudProfileClub">—</strong></div>
+  <div class="cloud-profile-row"><span>City</span><strong id="cloudProfileCity">—</strong></div>
+  <div class="cloud-profile-row"><span>Email</span><strong id="cloudProfileEmail">—</strong></div>
+  <div class="cloud-profile-row"><span>Account</span><strong id="cloudProfileStatus">—</strong></div>
+  <div class="cloud-profile-row"><span>Role</span><strong id="cloudProfileRole">—</strong></div>
+</div>
+</details>
 
 <input id="importFile" type="file" accept=".json,application/json" class="hidden">
 

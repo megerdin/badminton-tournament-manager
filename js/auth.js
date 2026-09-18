@@ -422,82 +422,41 @@
     async renderAdmin(){
       const cloud=window.BADMINTON_CLOUD;
       if(!cloud?.client||cloud.profile?.role!=='master_admin'||cloud.profile?.approval_status!=='approved')return;
-      const box=document.getElementById('cloudAuthAdmin');
-      const list=document.getElementById('cloudPendingUsers');
-      const appBox=document.getElementById('cloudAdminPanelApp');
-      const appList=document.getElementById('cloudPendingUsersApp');
+      const box=document.getElementById('cloudAuthAdmin'), list=document.getElementById('cloudPendingUsers');
+      const appBox=document.getElementById('cloudAdminPanelApp'), appList=document.getElementById('cloudPendingUsersApp');
       if(!box&&!appBox)return;
-      if(box)box.hidden=false;
-      if(appBox)appBox.hidden=false;
-      if(list)list.textContent='Loading…';
-      if(appList)appList.textContent='Loading…';
-
-      const r=await cloud.client
-        .from('profiles')
-        .select('id,email,display_name,club_name,city,approval_status,created_at')
-        .order('created_at',{ascending:true});
-      if(r.error){
-        const msg='Admin approval list could not be loaded: '+r.error.message;
-        if(list)list.textContent=msg;
-        if(appList)appList.textContent=msg;
-        this.message(msg);
-        return;
-      }
-
-      if(list)list.textContent='';
-      if(appList)appList.textContent='';
-      const pending=(r.data||[]).filter(x=>x.approval_status==='pending');
-      if(!pending.length){
-        if(list)list.textContent='No pending users.';
-        if(appList)appList.textContent='No pending signups.';
-        return;
-      }
-
-      const renderInto=(target)=>{
-        if(!target)return;
-        pending.forEach(u=>{
-          const row=document.createElement('div');
-          row.className='cloud-pending-user';
-          const details=document.createElement('div');
-          details.className='cloud-pending-details';
-          const name=document.createElement('strong');
-          name.textContent=u.display_name||'Name not provided';
-          const meta=document.createElement('span');
-          meta.textContent=[u.club_name,u.city,u.email].filter(Boolean).join(' · ')||u.id;
-          details.append(name,meta);
-          const actions=document.createElement('div');
-          actions.className='cloud-pending-actions';
-          const approve=document.createElement('button');
-          approve.type='button';
-          approve.textContent='Approve';
-          approve.onclick=async()=>{
-            approve.disabled=true;
-            approve.textContent='Approving…';
-            const x=await cloud.client.rpc('admin_set_approval',{p_user_id:u.id,p_status:'approved'});
-            if(x.error){
-              approve.disabled=false;
-              approve.textContent='Approve';
-              this.message('Approval failed: '+x.error.message);
-              return;
-            }
-            // Verify the server-side change before removing the user from the queue.
-            const verify=await cloud.client.from('profiles').select('approval_status').eq('id',u.id).single();
-            if(verify.error||verify.data?.approval_status!=='approved'){
-              approve.disabled=false;
-              approve.textContent='Approve';
-              this.message('Approval was not confirmed by the server. Please try again.');
-              return;
-            }
-            this.message((u.display_name||u.email||'User')+' approved.');
-            await this.renderAdmin();
-          };
-          actions.append(approve);
-          row.append(details,actions);
-          target.append(row);
-        });
-      };
-      renderInto(list);
-      renderInto(appList);
+      if(box)box.hidden=false; if(appBox)appBox.hidden=false;
+      if(list)list.textContent='Loading…'; if(appList)appList.textContent='Loading…';
+      const r=await cloud.client.from('profiles').select('id,email,display_name,club_name,city,role,approval_status,created_at').order('created_at',{ascending:true});
+      if(r.error){const msg='Admin user list could not be loaded: '+r.error.message;if(list)list.textContent=msg;if(appList)appList.textContent=msg;this.message(msg);return;}
+      if(list)list.textContent=''; if(appList)appList.textContent='';
+      const users=r.data||[];
+      if(!users.length){if(list)list.textContent='No users found.';if(appList)appList.textContent='No users found.';return;}
+      const renderInto=target=>{if(!target)return;users.forEach(u=>{
+        const row=document.createElement('div');row.className='cloud-pending-user';
+        const details=document.createElement('div');details.className='cloud-pending-details';
+        const name=document.createElement('strong');name.textContent=u.display_name||'Name not provided';
+        const meta=document.createElement('span');meta.textContent=[u.club_name,u.city,u.email].filter(Boolean).join(' · ')||u.id;
+        const status=document.createElement('span');status.className='cloud-user-status';status.textContent=(u.role==='master_admin'?'Admin':u.role==='user'?'User':u.role)+' · '+u.approval_status;
+        details.append(name,meta,status);
+        const actions=document.createElement('div');actions.className='cloud-pending-actions';
+        const runAction=(label,action,cls)=>{const btn=document.createElement('button');btn.type='button';btn.textContent=label;btn.className=cls||'';btn.onclick=async()=>{
+          if(action==='delete'&&!window.confirm('Delete this user account permanently? Their club and tournament data will also be removed.'))return;
+          btn.disabled=true;const old=btn.textContent;btn.textContent=label+'…';
+          const x=action==='delete'?await cloud.client.rpc('admin_delete_user',{p_user_id:u.id}):await cloud.client.rpc('admin_set_approval',{p_user_id:u.id,p_status:action});
+          if(x.error){btn.disabled=false;btn.textContent=old;this.message(label+' failed: '+x.error.message);return;}
+          if(action!=='delete'){const v=await cloud.client.from('profiles').select('approval_status').eq('id',u.id).single();if(v.error||v.data?.approval_status!==action){btn.disabled=false;btn.textContent=old;this.message(label+' was not confirmed by the server.');return;}}
+          this.message((u.display_name||u.email||'User')+' '+(action==='delete'?'deleted.':action+'.'));await this.renderAdmin();
+        };actions.append(btn);};
+        if(u.id!==cloud.session?.user?.id){
+          if(u.approval_status!=='approved')runAction('Approve','approved','cloud-action-approve');
+          if(u.approval_status!=='rejected')runAction('Reject','rejected','cloud-action-reject');
+          if(u.approval_status==='approved')runAction('Suspend','suspended','cloud-action-suspend');
+          runAction('Delete','delete','cloud-action-delete');
+        }
+        row.append(details,actions);target.append(row);
+      });};
+      renderInto(list);renderInto(appList);
     }
   };
 
