@@ -537,8 +537,8 @@ function drawGroupFixturePdfPage(pageData,canvas,scale){
   ctx.font=`700 ${11*scale/72}px Arial,Helvetica,sans-serif`;
   pdfDrawCenteredText(ctx,`[  ${pageData.categoryName}  ]`,pageW/2,y,contentW,11*scale/72,"700");
   y+=10*mm;
-  ctx.font=`700 ${16*scale/72}px Arial,Helvetica,sans-serif`;
-  pdfDrawCenteredText(ctx,`${pageData.groupName} — Group Fixtures`,pageW/2,y,contentW,16*scale/72,"700");
+  ctx.font=`700 ${14*scale/72}px Arial,Helvetica,sans-serif`;
+  pdfDrawCenteredText(ctx,`${pageData.groupName} — Group Fixtures`,pageW/2,y,contentW,14*scale/72,"700");
   y+=7*mm;
   ctx.font=`400 ${9*scale/72}px Arial,Helvetica,sans-serif`;
   ctx.fillStyle="#444";
