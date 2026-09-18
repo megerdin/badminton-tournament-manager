@@ -1359,3 +1359,6 @@ details.card>summary>strong{flex:1 1 auto;text-align:left}
 .cloud-profile-card{margin-top:14px}.cloud-profile-grid{display:grid;gap:0}.cloud-profile-row{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px;padding:8px 0;border-top:1px solid var(--border,#ddd);align-items:center}.cloud-profile-row:first-child{border-top:0}.cloud-profile-row>span{font-size:12px;color:#9ca3af}.cloud-profile-row>strong{font-size:13px;overflow-wrap:anywhere}
 
 .cloud-conflict-panel{margin-top:8px;padding:9px 10px;border:1px solid #d97706;border-radius:10px;background:#fff7e6}.cloud-conflict-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+
+/* Bottom Profile section */
+.cloud-profile-content{padding-top:10px}.cloud-profile-identity{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}.cloud-profile-identity>strong{font-size:15px}.cloud-profile-identity>.cloud-auth-user{margin:0}.cloud-profile-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.cloud-profile-content>.cloud-admin-panel{margin-top:14px;border-top:1px solid var(--border,#ddd);padding-top:12px}.cloud-profile-content>.cloud-admin-panel summary{cursor:pointer}.cloud-profile-content .cloud-pending-users{margin-top:8px}

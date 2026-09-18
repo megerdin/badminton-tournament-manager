@@ -209,6 +209,8 @@ using (owner_id = auth.uid());
 -- ------------------------------------------------------------
 -- Tournaments
 -- ------------------------------------------------------------
+create unique index if not exists uq_tournaments_one_primary_per_club on public.tournaments(club_id);
+
 drop policy if exists tournaments_select_access on public.tournaments;
 create policy tournaments_select_access
 on public.tournaments for select to authenticated

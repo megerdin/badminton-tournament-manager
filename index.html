@@ -14,7 +14,7 @@
 
 <div id="cloudAuthGate">
 <div class="cloud-auth-card">
-<h2>Badminton Tournament Manager</h2><p>Sign in to use the cloud version <span id="cloudLoginVersion">V5.3.59</span>.</p>
+<h2>Badminton Tournament Manager</h2><p>Sign in to use the cloud version <span id="cloudLoginVersion">V5.3.60</span>.</p>
 <div id="cloudAuthForm">
   <div id="cloudSignupFields" hidden>
     <input id="cloudDisplayName" type="text" autocomplete="name" placeholder="Name">
@@ -52,41 +52,10 @@
       <div id="dashboardProgressBar" class="header-progress-bar"></div>
     </div>
   </div>
-  <div id="appVersion" class="app-version">V5.3.59</div>
+  <div id="appVersion" class="app-version">V5.3.60</div>
 </header>
 
-<div id="cloudAccountBar" class="cloud-account-bar" hidden>
-  <div class="cloud-account-main">
-    <div>
-      <strong id="cloudAccountUser">Signed in</strong>
-      <span id="cloudSyncStatusApp" class="cloud-auth-user">Cloud</span>
-    </div>
-    <div class="cloud-account-actions">
-      <button id="cloudChangePasswordApp" type="button" class="btn btn-secondary btn-small">Change password</button>
-      <button id="cloudSignoutApp" type="button" class="btn btn-secondary btn-small">Sign out</button>
-    </div>
-  </div>
-  <div id="cloudConflictPanel" class="cloud-conflict-panel" hidden>
-    <strong>Cloud changes conflict with local changes.</strong>
-    <div class="cloud-conflict-actions">
-      <button id="cloudKeepLocalBtn" type="button" class="btn btn-secondary btn-small">Keep my local changes</button>
-      <button id="cloudUseCloudBtn" type="button" class="btn btn-secondary btn-small">Use cloud version</button>
-    </div>
-  </div>
-  <div id="cloudPasswordPanelApp" class="cloud-password-panel" hidden>
-    <strong>Change password</strong>
-    <input id="cloudNewPasswordApp" type="password" autocomplete="new-password" placeholder="New password">
-    <input id="cloudNewPasswordConfirmApp" type="password" autocomplete="new-password" placeholder="Confirm new password">
-    <div class="cloud-auth-actions">
-      <button id="cloudChangePasswordBtnApp" type="button">Update password</button>
-      <button id="cloudCancelPasswordBtnApp" type="button">Cancel</button>
-    </div>
-  </div>
-  <details id="cloudAdminPanelApp" class="cloud-admin-panel" hidden>
-    <summary><strong>Admin — user accounts</strong></summary>
-    <div id="cloudPendingUsersApp" class="cloud-pending-users"></div>
-  </details>
-</div>
+
 
 <main>
 
@@ -356,18 +325,42 @@
   </div>
 </div>
 
-<details class="card cloud-profile-card" id="cloudProfileCard" hidden>
-<summary><strong>👤 User Profile</strong></summary>
-<div class="cloud-profile-grid" style="margin-top:12px">
-  <div class="cloud-profile-row"><span>Name</span><strong id="cloudProfileName">—</strong></div>
-  <div class="cloud-profile-row"><span>Club</span><strong id="cloudProfileClub">—</strong></div>
-  <div class="cloud-profile-row"><span>City</span><strong id="cloudProfileCity">—</strong></div>
-  <div class="cloud-profile-row"><span>Email</span><strong id="cloudProfileEmail">—</strong></div>
-  <div class="cloud-profile-row"><span>Account</span><strong id="cloudProfileStatus">—</strong></div>
-  <div class="cloud-profile-row"><span>Role</span><strong id="cloudProfileRole">—</strong></div>
-</div>
-</details>
 
+
+
+<details class="card cloud-profile-card" id="cloudProfileCard" hidden>
+  <summary><strong>Profile</strong></summary>
+  <div class="cloud-profile-content">
+    <div class="cloud-profile-identity">
+      <strong id="cloudAccountUser">Signed in</strong>
+      <span id="cloudSyncStatusApp" class="cloud-auth-user">Cloud</span>
+    </div>
+    <div class="cloud-profile-actions">
+      <button id="cloudChangePasswordApp" type="button" class="btn btn-secondary btn-small">Change password</button>
+      <button id="cloudSignoutApp" type="button" class="btn btn-secondary btn-small">Sign out</button>
+    </div>
+    <div id="cloudConflictPanel" class="cloud-conflict-panel" hidden>
+      <strong>Cloud changes conflict with local changes.</strong>
+      <div class="cloud-conflict-actions">
+        <button id="cloudKeepLocalBtn" type="button" class="btn btn-secondary btn-small">Keep my local changes</button>
+        <button id="cloudUseCloudBtn" type="button" class="btn btn-secondary btn-small">Use cloud version</button>
+      </div>
+    </div>
+    <div id="cloudPasswordPanelApp" class="cloud-password-panel" hidden>
+      <strong>Change password</strong>
+      <input id="cloudNewPasswordApp" type="password" autocomplete="new-password" placeholder="New password">
+      <input id="cloudNewPasswordConfirmApp" type="password" autocomplete="new-password" placeholder="Confirm new password">
+      <div class="cloud-auth-actions">
+        <button id="cloudChangePasswordBtnApp" type="button">Update password</button>
+        <button id="cloudCancelPasswordBtnApp" type="button">Cancel</button>
+      </div>
+    </div>
+    <details id="cloudAdminPanelApp" class="cloud-admin-panel" hidden>
+      <summary><strong>Admin — user accounts</strong></summary>
+      <div id="cloudPendingUsersApp" class="cloud-pending-users"></div>
+    </details>
+  </div>
+</details>
 <input id="importFile" type="file" accept=".json,application/json" class="hidden">
 
 

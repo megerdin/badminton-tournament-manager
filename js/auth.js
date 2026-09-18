@@ -139,8 +139,6 @@
       document.getElementById('cloudAuthForm')?.removeAttribute('hidden');
       document.getElementById('cloudSignedIn')?.setAttribute('hidden','');
       document.getElementById('cloudAuthAdmin')?.setAttribute('hidden','');
-      const appBar=document.getElementById('cloudAccountBar');
-      if(appBar)appBar.hidden=true;
       const admin=document.getElementById('cloudAdminPanelApp');
       if(admin)admin.hidden=true;
       const appUser=document.getElementById('cloudAccountUser');
@@ -266,11 +264,6 @@
       const e=document.getElementById('cloudSignedInUser');
       if(e)e.textContent=accountName;
 
-      // The application account bar is the primary signed-in control surface.
-      // It must be shown whenever a valid session/profile is known, including
-      // while cloud data is loading, so users never lose access to Sign out.
-      const appBar=document.getElementById('cloudAccountBar');
-      if(appBar)appBar.hidden=false;
       const appUser=document.getElementById('cloudAccountUser');
       if(appUser)appUser.textContent=accountName;
       this.renderProfileCard();
