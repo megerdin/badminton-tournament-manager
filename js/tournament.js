@@ -1,4 +1,4 @@
-const APP_VERSION = '5.3.51';
+const APP_VERSION = '5.3.55';
 
 "use strict";
 
@@ -545,7 +545,11 @@ function resizePlayerPoolCount(requested){
   const previous=Math.max(2,Math.min(52,Number(tournament.settings?.playerPoolCount)||2));
   if(count===previous){
     ensurePlayerPoolState(count);
-    return false;
+    // Creating the default pool count (normally 2) is still a real action:
+    // the count did not change, but the pool structure has now been declared.
+    const wasCreated=!!tournament.settings.playerPoolsCreated;
+    tournament.settings.playerPoolsCreated=true;
+    return !wasCreated;
   }
   if(!Array.isArray(tournament.playerPoolPlayers))tournament.playerPoolPlayers=[];
 
