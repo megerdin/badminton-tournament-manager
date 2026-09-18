@@ -20,6 +20,8 @@
       document.getElementById('cloudSignupBtn')?.addEventListener('click',()=>this.signup());
       document.getElementById('cloudSignoutBtn')?.addEventListener('click',()=>this.signout());
       document.getElementById('cloudSignoutApp')?.addEventListener('click',()=>this.signout());
+      document.getElementById('cloudKeepLocalBtn')?.addEventListener('click',()=>window.BADMINTON_CLOUD?.resolveConflictKeepLocal?.());
+      document.getElementById('cloudUseCloudBtn')?.addEventListener('click',()=>window.BADMINTON_CLOUD?.resolveConflictUseCloud?.());
       document.getElementById('cloudForgotPasswordBtn')?.addEventListener('click',()=>this.resetPassword());
       document.getElementById('cloudChangePasswordBtn')?.addEventListener('click',()=>this.changePassword());
       document.getElementById('cloudChangePasswordApp')?.addEventListener('click',()=>this.showAppPasswordPanel(true));
@@ -58,7 +60,13 @@
         if(session){
           // Do not await Supabase calls inside onAuthStateChange; keep the
           // callback lightweight so Auth can finish its internal state update.
-          setTimeout(()=>this.loadProfile().catch(e=>cloud.message?.(e.message||String(e))),0);
+          // INITIAL_SESSION can overlap the explicit getSession()/loadProfile()
+          // path above, so only start another profile load when the session is
+          // not already represented by the current profile.
+          setTimeout(()=>{
+            const sameUser=cloud.profile?.id===session.user?.id;
+            if(!sameUser)this.loadProfile().catch(e=>cloud.message?.(e.message||String(e)));
+          },0);
         }else{
           cloud.profile=null;
           cloud.cloudVersion=0;
@@ -81,19 +89,33 @@
       if(appBar)appBar.hidden=true;
       const admin=document.getElementById('cloudAdminPanelApp');
       if(admin)admin.hidden=true;
+      const appUser=document.getElementById('cloudAccountUser');
+      if(appUser)appUser.textContent='';
     },
 
     syncAppStatus(){
       const el=document.getElementById('cloudSyncStatusApp');
       const source=document.getElementById('cloudSyncStatus');
       if(el)el.textContent=source?.textContent||'Cloud connected';
+      const panel=document.getElementById('cloudConflictPanel');
+      if(panel)panel.hidden=!Boolean(window.BADMINTON_CLOUD?.syncConflict);
     },
 
     renderSignedIn(){
+      const cloud=window.BADMINTON_CLOUD;
+      const accountName=cloud?.profile?.display_name||cloud?.session?.user?.email||'Signed in';
       document.getElementById('cloudAuthForm')?.setAttribute('hidden','');
       document.getElementById('cloudSignedIn')?.removeAttribute('hidden');
       const e=document.getElementById('cloudSignedInUser');
-      if(e)e.textContent=window.BADMINTON_CLOUD?.profile?.display_name||window.BADMINTON_CLOUD?.session?.user?.email||'Signed in';
+      if(e)e.textContent=accountName;
+
+      // The application account bar is the primary signed-in control surface.
+      // It must be shown whenever a valid session/profile is known, including
+      // while cloud data is loading, so users never lose access to Sign out.
+      const appBar=document.getElementById('cloudAccountBar');
+      if(appBar)appBar.hidden=false;
+      const appUser=document.getElementById('cloudAccountUser');
+      if(appUser)appUser.textContent=accountName;
     },
 
     async loadProfile(){
@@ -121,6 +143,14 @@
           this.gate(false);
           cloud.status('Sync conflict — cloud changed. Local changes were kept.');
           window.showMessage?.('Cloud sync conflict: local changes were kept. Resolve before making further changes.');
+          return;
+        }
+        // A failed/offline sync leaves the queue intact. Do not load the remote
+        // snapshot here or it would overwrite the user's local tournament and
+        // the pending queue could be lost on the next load.
+        if(cloud.queueRead()){
+          this.gate(false);
+          cloud.status(navigator.onLine?'Cloud sync pending — local changes kept':'Offline — changes saved locally');
           return;
         }
       }
@@ -218,7 +248,14 @@
       this.showPasswordPanel(false);
       this.showAppPasswordPanel(false);
       const r=await window.BADMINTON_CLOUD?.client?.auth.signOut();
-      if(r?.error)this.message(r.error.message);
+      if(r?.error){
+        this.message(r.error.message);
+        return;
+      }
+      // Do not wait for the asynchronous auth-state callback to update the UI.
+      this.renderSignedOut();
+      this.gate(true);
+      this.message('Signed out.');
     },
 
     async renderAdmin(){

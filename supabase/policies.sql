@@ -76,33 +76,46 @@ grant execute on function private.is_master_admin() to authenticated;
 grant execute on function private.is_tournament_owner(uuid) to authenticated;
 grant execute on function private.has_tournament_role(uuid,text[]) to authenticated;
 
+-- Master-admins may update approval fields through the guarded RPC.
+drop policy if exists profiles_update_master_admin on public.profiles;
+create policy profiles_update_master_admin
+on public.profiles
+for update
+to authenticated
+using (private.is_master_admin())
+with check (private.is_master_admin());
+
 -- ------------------------------------------------------------
 -- Master-admin approval RPC
 -- Users cannot update role/approval_status directly.
 -- ------------------------------------------------------------
 create or replace function public.admin_set_approval(
-  target_user_id uuid,
-  new_status text
+  p_user_id uuid,
+  p_status text
 )
 returns void
 language plpgsql
-security definer
-set search_path = public, pg_temp
+security invoker
+set search_path = public, private, pg_temp
 as $$
 begin
   if not private.is_master_admin() then
     raise exception 'not authorized';
   end if;
 
-  if target_user_id = auth.uid() and new_status <> 'approved' then
+  if p_user_id = auth.uid() and p_status <> 'approved' then
     raise exception 'master admin cannot suspend or reject itself';
   end if;
 
+  if p_status not in ('pending','approved','rejected','suspended') then
+    raise exception 'invalid approval status';
+  end if;
+
   update public.profiles
-  set approval_status = new_status,
-      approved_at = case when new_status = 'approved' then now() else approved_at end,
-      approved_by = case when new_status = 'approved' then auth.uid() else approved_by end
-  where id = target_user_id;
+  set approval_status = p_status,
+      approved_at = case when p_status = 'approved' then now() else approved_at end,
+      approved_by = case when p_status = 'approved' then auth.uid() else approved_by end
+  where id = p_user_id;
 
   if not found then
     raise exception 'target user not found';
@@ -112,6 +125,7 @@ $$;
 
 revoke all on function public.admin_set_approval(uuid, text) from public;
 grant execute on function public.admin_set_approval(uuid, text) to authenticated;
+
 
 -- Protect role/approval fields from direct client updates.
 create or replace function public.protect_profile_security_fields()

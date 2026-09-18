@@ -35,7 +35,7 @@ window.BADMINTON_CLOUD={
  },
  queueWrite(snapshot,baseVersion){
   try{
-   localStorage.setItem(this.queueKey,JSON.stringify({snapshot,baseVersion:Number(baseVersion||0),userId:this.session?.user?.id||null,tournamentId:this.tournamentId||null,queuedAt:Date.now()}));
+   localStorage.setItem(this.queueKey,JSON.stringify({snapshot,baseVersion:Number(baseVersion||0),userId:this.session?.user?.id||null,tournamentId:this.tournamentId||null,queuedAt:Date.now(),queueId:(globalThis.crypto?.randomUUID?.()||String(Date.now())+"-"+Math.random())}));
   }catch(e){console.warn('Cloud queue could not be stored:',e);}
  },
  queueClear(){try{localStorage.removeItem(this.queueKey);}catch(e){}},
@@ -45,6 +45,38 @@ window.BADMINTON_CLOUD={
    const next={...current,...(patch&&typeof patch==='object'?patch:{}),userId:this.session?.user?.id||current.userId||null,tournamentId:this.tournamentId||current.tournamentId||null};
    localStorage.setItem(this.queueKey,JSON.stringify(next));
   }catch(e){console.warn('Cloud queue could not be updated:',e);}
+ },
+ async resolveConflictKeepLocal(){
+  if(this.syncBusy||!this.client||!this.session||this.profile?.approval_status!=='approved'||!this.tournamentId)return {status:'idle'};
+  const q=this.queueRead();
+  if(!q)return {status:'clean'};
+  if(!navigator.onLine){this.status('Offline — local changes remain queued');return {status:'offline'};}
+  this.syncBusy=true;this.status('Preparing local changes…');
+  try{
+   const remote=await this.client.from('tournaments').select('version').eq('id',this.tournamentId).single();
+   if(remote.error)throw remote.error;
+   this.cloudVersion=Number(remote.data.version||1);
+   if(!this.queueRead())return {status:'clean'};
+   this.queueUpdate({baseVersion:this.cloudVersion,attempts:0,lastError:null});
+   this.syncConflict=false;this.status('Sync pending…');
+  }catch(e){this.status('Sync conflict — cloud changed. Local changes were kept.');throw e;}
+  finally{this.syncBusy=false;}
+  return this.syncPending();
+ },
+ async resolveConflictUseCloud(){
+  if(this.syncBusy||!this.client||!this.session||this.profile?.approval_status!=='approved'||!this.tournamentId)return {status:'idle'};
+  if(!navigator.onLine){this.status('Offline — cannot load cloud version');return {status:'offline'};}
+  this.syncBusy=true;this.status('Loading cloud version…');
+  try{
+   const r=await this.client.from('tournaments').select('data,version,updated_at').eq('id',this.tournamentId).single();
+   if(r.error)throw r.error;
+   this.cloudVersion=Number(r.data.version||1);
+   if(r.data?.data&&Object.keys(r.data.data).length)window.BADMINTON_CLOUD.applySnapshot(r.data.data);
+   this.queueClear();this.syncConflict=false;this.status('Cloud synced');this.gate(false);
+   if(window.renderAll)window.renderAll();
+   return {status:'loaded',version:this.cloudVersion};
+  }catch(e){this.status('Sync conflict — cloud changes were not loaded.');throw e;}
+  finally{this.syncBusy=false;}
  },
  scheduleRetry(){
   clearTimeout(this.retryTimer);
@@ -76,10 +108,30 @@ window.BADMINTON_CLOUD={
   r=await this.client.from('tournaments').select('id,version').eq('club_id',this.clubId).order('created_at',{ascending:true}).limit(1).maybeSingle();if(r.error)throw r.error;let t=r.data;
   if(!t){r=await this.client.from('tournaments').insert({club_id:this.clubId,name:'Badminton Tournament Manager',data:{},version:1,updated_by:uid}).select('id,version').single();if(r.error)throw r.error;t=r.data;r=await this.client.from('tournament_members').insert({tournament_id:t.id,user_id:uid,role:'owner'});if(r.error&&r.error.code!=='23505')throw r.error;}
   this.tournamentId=t.id;this.cloudVersion=Number(t.version||1);
+  // Existing tournaments must also have an owner membership. Without this
+  // row, a normal approved owner can see the club but RLS will deny access to
+  // the tournament. This is especially important for records created before
+  // membership enforcement was hardened.
+  const member=await this.client.from('tournament_members').select('tournament_id').eq('tournament_id',t.id).eq('user_id',uid).maybeSingle();
+  if(member.error)throw member.error;
+  if(!member.data){
+    const addMember=await this.client.from('tournament_members').insert({tournament_id:t.id,user_id:uid,role:'owner'});
+    if(addMember.error&&addMember.error.code!=='23505')throw addMember.error;
+  }
  },
  async loadRemoteIntoApp(){
-  if(!this.tournamentId)return;const r=await this.client.from('tournaments').select('data,version,updated_at').eq('id',this.tournamentId).single();if(r.error)throw r.error;
-  this.cloudVersion=Number(r.data.version||1);if(r.data?.data&&Object.keys(r.data.data).length)window.BADMINTON_CLOUD.applySnapshot(r.data.data);this.queueClear();this.status('Cloud synced');this.gate(false);if(window.renderAll)window.renderAll();
+  if(!this.tournamentId)return {status:'idle'};
+  // Never replace the live local tournament while a newer local snapshot is
+  // waiting to reach the cloud. This protects offline/poor-connection work
+  // during startup and after transient network failures.
+  if(this.queueRead()){
+   this.status(navigator.onLine?'Cloud sync pending — local changes kept':'Offline — changes saved locally');
+   this.gate(false);
+   return {status:'pending-local'};
+  }
+  const r=await this.client.from('tournaments').select('data,version,updated_at').eq('id',this.tournamentId).single();if(r.error)throw r.error;
+  this.cloudVersion=Number(r.data.version||1);if(r.data?.data&&Object.keys(r.data.data).length)window.BADMINTON_CLOUD.applySnapshot(r.data.data);this.status('Cloud synced');this.gate(false);if(window.renderAll)window.renderAll();
+  return {status:'loaded',version:this.cloudVersion};
  },
  queueSave(snapshot){
   if(!this.configured()||!this.client||!this.session||this.profile?.approval_status!=='approved'||!this.tournamentId)return Promise.resolve({status:'local-only'});
@@ -89,6 +141,7 @@ window.BADMINTON_CLOUD={
  async syncPending(){
   if(this.syncBusy||!this.client||!this.session||this.profile?.approval_status!=='approved'||!this.tournamentId)return {status:'idle'};
   const q=this.queueRead();if(!q)return {status:'clean'};if(!navigator.onLine){this.status('Offline — changes saved locally');return {status:'offline'};}
+  const queueId=q.queueId||String(q.queuedAt||"");
   this.syncBusy=true;this.status('Syncing…');
   try{
    const remote=await this.client.from('tournaments').select('version,data').eq('id',this.tournamentId).single();if(remote.error)throw remote.error;
@@ -102,7 +155,27 @@ window.BADMINTON_CLOUD={
    const next=remoteVersion+1;
    const w=await this.client.from('tournaments').update({data:q.snapshot,version:next,updated_by:this.session.user.id}).eq('id',this.tournamentId).eq('version',remoteVersion).select('version').single();
    if(w.error)throw w.error;
-   this.cloudVersion=Number(w.data.version||next);this.syncConflict=false;this.queueClear();this.status('Cloud synced');return {status:'synced',version:this.cloudVersion};
+   this.cloudVersion=Number(w.data.version||next);this.syncConflict=false;
+   // A user may save again while this network write is in flight. Only clear
+   // the queue when it is still the exact snapshot that we just uploaded.
+   const latest=this.queueRead();
+   if(latest?.queueId===queueId){
+    this.queueClear();
+    this.status('Cloud synced');
+    return {status:'synced',version:this.cloudVersion};
+   }
+   // The newer queue entry is based on the state immediately after the
+   // snapshot we just uploaded. Rebase its expected cloud version onto the
+   // version we just committed so sequential local saves do not become a
+   // false conflict with the user's own preceding upload. A genuinely
+   // external cloud change is still detected by the version check above.
+   const rebased=this.queueRead();
+   if(rebased?.queueId!==queueId){
+    this.queueUpdate({baseVersion:this.cloudVersion,attempts:0,lastError:null});
+   }
+   this.status('Cloud synced; newer local changes pending…');
+   this.scheduleRetry(0);
+   return {status:'synced-with-pending',version:this.cloudVersion};
   }catch(e){console.warn('Cloud sync deferred:',e);this.queueUpdate({attempts:Number(this.queueRead()?.attempts||0)+1,lastError:String(e?.message||e)});this.status(navigator.onLine?'Cloud sync pending — will retry':'Offline — changes saved locally');this.scheduleRetry();return {status:'pending',error:e};}
   finally{this.syncBusy=false;}
  },

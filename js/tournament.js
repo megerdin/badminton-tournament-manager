@@ -1,4 +1,4 @@
-const APP_VERSION = '5.3.39';
+const APP_VERSION = '5.3.51';
 
 "use strict";
 
@@ -531,7 +531,7 @@ function removeCategory(categoryId){
   masterTournament.categories=categories.filter(category=>String(category.id)!==String(categoryId));
   if(wasActive)masterTournament.activeCategoryId=masterTournament.categories[0].id;
   addHistory("Category removed",target.name);
-  window.BADMINTON_LOCAL?.write(JSON.stringify(masterTournament));
+  saveLocal(true);
   if(wasActive){
     const active=getActiveCategoryRecord();
     tournament=migrateTournamentData(active.data);
@@ -2671,6 +2671,13 @@ function addTeam(){
     format,playerIds,groupId,createdAt:Date.now(),updatedAt:Date.now()
   });
   group.teamCount=Math.max(group.teamCount||0,existing.length+1);
+  if(!Array.isArray(group.teamIds))group.teamIds=[];
+  if(!Array.isArray(group.teams))group.teams=[];
+  const addedTeam=tournament.teams[tournament.teams.length-1];
+  if(addedTeam){
+    group.teamIds.push(addedTeam.id);
+    group.teams.push(addedTeam.id);
+  }
   group.updatedAt=Date.now();
 
   addHistory("Team added",`${group.name} / Team ${number}`);
@@ -2793,6 +2800,9 @@ function removeTeam(teamId){
       team.updatedAt=Date.now();
     });
     g.teamCount=remaining.length;
+    const remainingIds=remaining.map(team=>String(team.id));
+    g.teamIds=remainingIds.slice();
+    g.teams=remainingIds.slice();
     g.updatedAt=Date.now();
   }
   addHistory("Team removed",t.name);
@@ -2804,8 +2814,8 @@ function newTournament(){
   if(!confirm("Start a new tournament? Unsaved local data in all categories will be replaced."))return;
   tournament=blankTournament();
   masterTournament=buildMasterFromLegacy(tournament);
-  window.BADMINTON_LOCAL?.write(JSON.stringify(masterTournament));
   renderAll();
+  saveLocal(true);
   showMessage("New tournament created.");
 }
 
@@ -2831,7 +2841,9 @@ function importTournamentFile(file){
       // Do not call saveLocal() here: saveLocal() reads the current form controls.
       // Restore the imported master directly, then render the selected category.
       saveActiveCategoryToMaster();
-      window.BADMINTON_LOCAL?.write(JSON.stringify(masterTournament));
+      const importedSnapshot=deepClone(masterTournament);
+      window.BADMINTON_LOCAL?.write(JSON.stringify(importedSnapshot));
+      window.BADMINTON_CLOUD?.queueSave?.(importedSnapshot).catch(err=>console.warn("Cloud import sync deferred:",err));
       renderAll();
       showMessage("Tournament master JSON imported.");
     }catch(e){
@@ -3257,6 +3269,19 @@ function buildMasterFromLegacy(legacy){
   return master;
 }
 
+function normalizeGroupMembership(tournamentData){
+  if(!tournamentData || !Array.isArray(tournamentData.groups) || !Array.isArray(tournamentData.teams))return;
+  tournamentData.groups.forEach(group=>{
+    const members=tournamentData.teams
+      .filter(team=>String(team.groupId)===String(group.id))
+      .sort((a,b)=>(Number(a.number)||0)-(Number(b.number)||0)||String(a.id).localeCompare(String(b.id)));
+    const ids=members.map(team=>String(team.id));
+    group.teamIds=ids.slice();
+    group.teams=ids.slice();
+    group.teamCount=members.length;
+  });
+}
+
 function normalizeMasterRecord(raw){
   if(!raw || typeof raw!=="object" || Array.isArray(raw))throw new Error("Invalid master tournament data");
   if(raw.type!=="badmintonTournamentManagerMaster" || !Array.isArray(raw.categories) || !raw.categories.length)
@@ -3277,6 +3302,7 @@ function normalizeMasterRecord(raw){
     else
       data=makeBlankCategoryRecord(cid,name).data;
     data.clubName=master.clubName;
+    normalizeGroupMembership(data);
     data.settings=data.settings||{};
     data.settings.categories=[{id:cid,name}];
     master.categories.push({id:cid,name,data});
@@ -3308,7 +3334,7 @@ function activateCategory(categoryId,{message=true}={}){
   tournament.settings=tournament.settings||{};
   tournament.settings.categories=[{id:String(target.id),name:String(target.name||"Internal").trim()||"Internal"}];
   target.data=deepClone(tournament);
-  window.BADMINTON_LOCAL?.write(JSON.stringify(masterTournament));
+  saveLocal(true);
   renderAll();
   window.scrollTo({top:0,behavior:"instant"});
   if(message)showMessage(`Switched to ${target.name}.`);
