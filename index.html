@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<title>Badminton Tournament Manager</title>
+
+
+
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<div id="cloudAuthGate">
+<div class="cloud-auth-card">
+<h2>Badminton Tournament Manager</h2><p>Sign in to use the cloud version.</p>
+<div id="cloudAuthForm">
+  <div class="cloud-auth-mode" role="tablist" aria-label="Account access">
+    <button id="cloudLoginModeBtn" type="button" class="active" role="tab" aria-selected="true">Sign in</button>
+    <button id="cloudSignupModeBtn" type="button" role="tab" aria-selected="false">Sign up</button>
+  </div>
+  <div id="cloudSignupFields" hidden>
+    <input id="cloudDisplayName" type="text" autocomplete="name" placeholder="Name">
+    <input id="cloudClubName" type="text" autocomplete="organization" placeholder="Club name">
+    <input id="cloudCity" type="text" autocomplete="address-level2" placeholder="City">
+  </div>
+  <input id="cloudEmail" type="email" autocomplete="email" placeholder="Email address">
+  <input id="cloudPassword" type="password" autocomplete="current-password" placeholder="Password">
+  <div class="cloud-auth-actions">
+    <button id="cloudLoginBtn" type="button">Sign in</button>
+    <button id="cloudSignupBtn" type="button" hidden>Create account</button>
+  </div>
+  <button id="cloudForgotPasswordBtn" class="cloud-auth-link" type="button">Forgot password?</button>
+</div>
+<div id="cloudPasswordPanel" class="cloud-password-panel" hidden><strong>Change password</strong><input id="cloudNewPassword" type="password" autocomplete="new-password" placeholder="New password"><input id="cloudNewPasswordConfirm" type="password" autocomplete="new-password" placeholder="Confirm new password"><div class="cloud-auth-actions"><button id="cloudChangePasswordBtn" type="button">Update password</button><button id="cloudCancelPasswordBtn" type="button">Cancel</button></div></div><div id="cloudAuthMessage" class="cloud-auth-message"></div><div id="cloudSyncStatus" class="cloud-auth-user" aria-live="polite"></div><div id="cloudAuthAdmin" class="cloud-auth-admin" hidden><strong>Pending approvals</strong><div id="cloudPendingUsers"></div></div><div id="cloudSignedIn" hidden><div id="cloudSignedInUser" class="cloud-auth-user"></div><button id="cloudChangePasswordLink" class="cloud-auth-link" type="button">Change password</button><button id="cloudSignoutBtn" type="button">Sign out</button></div>
+</div></div>
+
+<div class="app">
+<header class="app-header" onclick="cycleCategory()" role="button" tabindex="0" title="Tap to switch category">
+  <div class="header-title-row">
+    <div>
+      <h1 id="headerTournamentName">Your club name</h1>
+    </div>
+    <div class="header-racket" aria-hidden="true">🏸</div>
+  </div>
+  <div class="header-subtitle">Tournament Manager</div>
+  <div class="header-progress">
+    <div class="header-progress-label">
+      <span>CATEGORY: <span id="dashboardProgressCategory" class="category-reflective"></span></span>
+      <strong><span id="dashboardProgressText">0</span><span class="progress-word">%</span></strong>
+    </div>
+    <div class="header-progress-track">
+      <div id="dashboardProgressBar" class="header-progress-bar"></div>
+    </div>
+  </div>
+  <div id="appVersion" class="app-version">V5.3.54</div>
+</header>
+
+<div id="cloudAccountBar" class="cloud-account-bar" hidden>
+  <div class="cloud-account-main">
+    <div>
+      <strong id="cloudAccountUser">Signed in</strong>
+      <span id="cloudSyncStatusApp" class="cloud-auth-user">Cloud</span>
+    </div>
+    <div class="cloud-account-actions">
+      <button id="cloudChangePasswordApp" type="button" class="btn btn-secondary btn-small">Change password</button>
+      <button id="cloudSignoutApp" type="button" class="btn btn-secondary btn-small">Sign out</button>
+    </div>
+  </div>
+  <div id="cloudConflictPanel" class="cloud-conflict-panel" hidden>
+    <strong>Cloud changes conflict with local changes.</strong>
+    <div class="cloud-conflict-actions">
+      <button id="cloudKeepLocalBtn" type="button" class="btn btn-secondary btn-small">Keep my local changes</button>
+      <button id="cloudUseCloudBtn" type="button" class="btn btn-secondary btn-small">Use cloud version</button>
+    </div>
+  </div>
+  <div id="cloudPasswordPanelApp" class="cloud-password-panel" hidden>
+    <strong>Change password</strong>
+    <input id="cloudNewPasswordApp" type="password" autocomplete="new-password" placeholder="New password">
+    <input id="cloudNewPasswordConfirmApp" type="password" autocomplete="new-password" placeholder="Confirm new password">
+    <div class="cloud-auth-actions">
+      <button id="cloudChangePasswordBtnApp" type="button">Update password</button>
+      <button id="cloudCancelPasswordBtnApp" type="button">Cancel</button>
+    </div>
+  </div>
+  <details id="cloudAdminPanelApp" class="cloud-admin-panel" hidden>
+    <summary><strong>Master admin — pending signups</strong></summary>
+    <div id="cloudPendingUsersApp" class="cloud-pending-users"></div>
+  </details>
+</div>
+
+<main>
+
+<div id="message"></div>
+
+<section class="landing-dashboard" aria-label="Tournament dashboard">
+  <div class="dashboard-stats">
+    <div class="dashboard-stat" onclick="openDashboardSection('fixturesCard')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDashboardSection('fixturesCard');}"><strong id="dashboardTeamCount">0</strong><span>Teams</span></div>
+    <div class="dashboard-stat" onclick="openDashboardSection('fixturesCard')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDashboardSection('fixturesCard');}"><strong id="dashboardGroupCount">0</strong><span>Groups</span></div>
+    <div class="dashboard-stat" onclick="openDashboardSection('fixturesCard')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDashboardSection('fixturesCard');}"><strong id="dashboardFixtureProgress">0/0</strong><span>Matches</span></div>
+  </div>
+
+  <div class="dashboard-grid">
+    <div class="dashboard-card dashboard-blue" onclick="openDashboardSection('fixturesCard')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDashboardSection('fixturesCard');}">
+      <div class="dashboard-knockout-icon">🏸</div>
+      <div class="dashboard-action-copy">
+        <strong>Group Stage</strong>
+        <span id="dashboardGroupMeta">Set up groups and fixtures</span>
+      </div>
+      <span class="dashboard-card-arrow">›</span>
+    </div>
+    <div class="dashboard-card dashboard-knockout dashboard-knockout-card" onclick="openDashboardSection('knockoutCard')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDashboardSection('knockoutCard');}">
+      <div class="dashboard-knockout-icon">🏸</div>
+      <div class="dashboard-action-copy">
+        <strong>Knockout</strong>
+        <span id="dashboardKnockoutMeta">All knockout stages</span>
+      </div>
+      <span class="dashboard-arrow">›</span>
+    </div>
+  </div>
+
+
+  <div class="dashboard-primary-action" onclick="openDashboardSection('playerTeamEntryCard')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDashboardSection('playerTeamEntryCard');}">
+    <div class="dashboard-action-icon people-icon" aria-hidden="true"><svg viewBox="0 0 34 34" role="img"><circle cx="11" cy="9" r="5"/><path d="M2.5 25c.7-5.1 3.6-8 8.5-8s7.8 2.9 8.5 8v3H2.5z"/><circle cx="23" cy="11" r="4.5"/><path d="M16.5 26c.5-4.3 3.2-6.8 6.8-6.8 4.1 0 6.8 2.7 7.2 6.8v2h-14z"/></svg></div>
+    <div class="dashboard-action-copy">
+      <strong>Team Management</strong>
+      <span id="dashboardEntryHint">Register tournament participants</span>
+    </div>
+    <span class="dashboard-arrow">›</span>
+  </div>
+
+  <div class="dashboard-card dashboard-purple dashboard-ranking-card" onclick="openDashboardSection('tournamentRanking')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDashboardSection('tournamentRanking');}">
+    <div class="dashboard-card-icon">🏆</div>
+    <div class="dashboard-action-copy">
+      <strong>Tournament Rankings</strong>
+      <span id="dashboardRankingMeta">Group and tournament rankings</span>
+    </div>
+    <span class="dashboard-arrow">›</span>
+  </div>
+</section>
+
+<div class="dashboard-section-label">TOURNAMENT WORKSPACE</div>
+
+<details class="card" id="playerTeamEntryCard">
+<summary><strong><span class="section-icon people-icon" aria-hidden="true"><svg viewBox="0 0 34 34" role="img"><circle cx="11" cy="9" r="5"/><path d="M2.5 25c.7-5.1 3.6-8 8.5-8s7.8 2.9 8.5 8v3H2.5z"/><circle cx="23" cy="11" r="4.5"/><path d="M16.5 26c.5-4.3 3.2-6.8 6.8-6.8 4.1 0 6.8 2.7 7.2 6.8v2h-14z"/></svg></span> Team / Players</strong></summary>
+<div style="margin-top:12px">
+<div class="entry-tabs" role="tablist" aria-label="Pool entry type">
+  <button type="button" class="btn btn-primary entry-tab active" id="teamPoolTabBtn" role="tab" aria-selected="true" onclick="switchEntryTab('teamPool')">➕ Team Pool</button>
+  <button type="button" class="btn btn-secondary entry-tab" id="openPlayerPoolBtn" role="tab" aria-selected="false" onclick="switchEntryTab('pool')">➕ Player Pool</button>
+</div>
+<div style="margin-top:6px">
+  <button type="button" class="btn btn-secondary manual-team-entry-btn" id="manualTeamEntryBtn" onclick="openManualTeamEntry()">➕ Add teams / Verify teams</button>
+</div>
+<div id="teamPoolPanel" class="entry-tab-panel">
+  <div class="entry-card">
+        <div style="margin-top:10px">
+      <div class="entry-line" id="teamPoolEntryLine">
+        <div id="teamPoolPlayerFields" style="display:contents"></div>
+        <button class="btn btn-primary btn-small" id="teamPoolAddBtn">Submit</button>
+      </div>
+    </div>
+    <div id="teamPoolList" style="margin-top:0"></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+      <button type="button" class="btn btn-primary btn-small" id="teamPoolLotteryBtn">🎲 Lottery / Distribute</button>
+    </div>
+    <div id="teamPoolSummary" class="muted" style="margin-top:7px"></div>
+  </div>
+</div>
+<div id="addTeamPanel" class="entry-tab-panel" hidden>
+  <div class="entry-card">
+    <div style="margin-top:10px">
+<div class="entry-line">
+  <select id="entryGroup" aria-label="Group" onclick="if(!tournament.groups.length){openTournamentSettings();event.preventDefault();}" onchange="handleDirectionalEntryGroup(this);renderTeamList()"></select>
+  <div id="playerEntryFields"></div>
+  <button class="btn btn-primary btn-small" id="addTeamBtn">Submit</button>
+</div>
+</div>
+<div id="selectedGroupTeams" style="margin-top:0"></div>
+  </div>
+</div>
+<div id="playerPoolPanel" class="entry-tab-panel" hidden>
+  <div id="playerPoolOptions" class="entry-card">
+    <div id="playerPools" style="margin-top:10px"></div>
+    <div id="playerPoolBuildArea" style="margin-top:12px;display:none">
+      <button type="button" class="btn btn-primary btn-small" id="playerPoolLotteryBtn" onclick="runPlayerPoolLottery()" style="font-size:15px">🎲 Lottery / Build Teams / Distribute Teams</button>
+      <div id="playerPoolBuildSummary" class="muted player-pool-build-summary" style="margin-top:6px"></div>
+      <div id="playerPoolGeneratedPreview" style="margin-top:8px"></div>
+    </div>
+  </div>
+</div>
+</div>
+</details>
+
+<details class="card" id="fixturesCard">
+<summary><strong><span class="section-icon people-icon" aria-hidden="true"><svg viewBox="0 0 34 34" role="img"><circle cx="11" cy="9" r="5"/><path d="M2.5 25c.7-5.1 3.6-8 8.5-8s7.8 2.9 8.5 8v3H2.5z"/><circle cx="23" cy="11" r="4.5"/><path d="M16.5 26c.5-4.3 3.2-6.8 6.8-6.8 7.2v2h-14z"/></svg></span> Group Matches</strong></summary>
+<div style="margin-top:10px">
+<div class="inline-control-row group-control-row">
+<select id="fixtureGroupFilter"></select>
+<button class="btn btn-primary btn-small" id="generateFixturesBtn">Generate Matches</button>
+</div>
+<select id="resultGroupFilter" style="display:none"></select>
+<select id="resultFixtureFilter" style="display:none"></select>
+
+<div id="fixturesList" style="margin-top:0"></div>
+
+<div class="merged-match-score">
+<div class="merged-match-score-title">Group match scoring / results:</div>
+<div id="resultEditor" style="margin-top:4px"></div>
+</div>
+<div class="muted" style="margin-top:4px">Every team plays every other team once. Admin can regenerate after changing group teams.</div>
+</div>
+</details>
+<details class="card" id="qualificationCard">
+<summary><strong><span class="workspace-summary-icon" aria-hidden="true">🏆</span>Group Standing</strong></summary>
+<div style="margin-top:10px">
+<div class="row" style="align-items:center">
+<div class="field" style="margin:0;flex:1">
+<select id="qualificationGroupFilter"></select>
+</div>
+</div>
+<div id="qualificationHelp" class="muted" style="margin-top:5px"></div>
+<div id="qualificationList" style="margin-top:8px"></div>
+<div id="qualificationActions" style="margin-top:8px"></div>
+</div>
+</details>
+<div id="tournamentRanking"></div>
+<div id="preliminaryRound"></div>
+<details class="card" id="knockoutCard">
+<summary><strong><span class="workspace-summary-icon" aria-hidden="true">🏸</span>Main Knockout</strong></summary>
+<div style="margin-top:10px">
+<div class="row" style="align-items:center">
+<div class="field" style="margin:0;flex:1">
+<div id="knockoutStructureInfo" class="input-like muted">Waiting for qualification</div>
+</div>
+<button class="btn btn-primary btn-small" id="buildKnockoutBtn">Build Knockout</button>
+</div>
+<div class="muted" style="margin-top:6px">The bracket size is calculated automatically from the qualified teams. Direct qualifiers and Pre-Knockout winners are combined into the calculated bracket size. The bracket is not built until the admin clicks Build Knockout.</div>
+<div id="mainKnockoutAllocation"></div>
+<div id="knockoutList" style="margin-top:10px"></div>
+<div id="knockoutByeResolution"></div><div id="knockoutResultEditor" style="margin-top:10px"></div>
+</div>
+</details>
+<details class="card" id="podiumSection">
+<summary><strong><span class="workspace-summary-icon" aria-hidden="true">🏆</span>Podium</strong></summary>
+<div id="podiumCard" style="margin-top:10px"></div>
+</details>
+<details class="card" id="printFixturesCard">
+<summary><strong><span class="workspace-summary-icon" aria-hidden="true">📄</span>Export Fixtures PDF</strong></summary>
+<div style="margin-top:10px">
+<div class="print-fixtures-actions">
+<button type="button" class="btn btn-primary btn-small" id="printFixturesBtn">Download A4 Fixtures PDF</button>
+</div>
+<div id="printFixturesStatus" class="muted print-fixtures-status"></div>
+</div>
+</details>
+<div class="workspace-more-label">MORE</div>
+<details class="card" id="tournamentSettingsCard"><summary><strong>⚙ Tournament Settings</strong></summary><div style="margin-top:10px">
+<div style="margin-top:12px">
+<div class="settings-entry-row">
+<label for="tournamentDate">Date</label>
+<input id="tournamentDate" type="date">
+</div>
+<div class="settings-entry-row">
+<label for="clubName">Club name</label>
+<input id="clubName" placeholder="e.g. Magpie Club">
+</div>
+
+<div class="settings-subsection">
+  <div class="settings-category-controls">
+    <label class="settings-category-label" for="categoryCount">Categories</label>
+    <input id="categoryCount" type="number" min="1" max="52" value="1">
+    <button class="btn btn-primary btn-small group-create-btn" id="createCategoriesBtn">Create</button>
+  </div>
+  <div id="categoriesList" style="margin-top:8px"></div>
+  <div class="notice" style="margin-top:8px">Categories run independently. Tap the club banner to switch between categories; each category keeps its own players, teams, groups, fixtures, results and knockout stages.</div>
+</div>
+
+<div class="settings-subsection">
+  <div class="settings-group-controls">
+    <label class="settings-category-label" for="groupCount">Groups</label>
+    <input id="groupCount" type="number" min="1" max="52" value="1">
+    <label class="settings-category-label" for="defaultQualifiers">Qualifiers</label>
+    <input id="defaultQualifiers" type="number" min="0" value="2">
+    <button class="btn btn-primary btn-small group-create-btn" id="createGroupsBtn">Create</button>
+  </div>
+  <div id="groupCreateFeedback" class="muted" style="display:none;margin-top:5px"></div>
+  <div id="groupsCompact"></div>
+</div>
+
+<div class="settings-subsection">
+  <div class="settings-category-controls">
+    <label class="settings-category-label" for="playerPoolCountSetting">Player pools</label>
+    <input id="playerPoolCountSetting" type="number" min="2" max="52" value="2">
+    <button class="btn btn-primary btn-small group-create-btn" id="createPlayerPoolsBtn">Create</button>
+  </div>
+  <div id="playerPoolCreateFeedback" class="muted" style="display:none;margin-top:5px"></div>
+</div>
+
+<div class="settings-subsection">
+<div class="field">
+<label for="tournamentMode">Tournament mode</label>
+<select id="tournamentMode">
+<option value="doubles">Doubles</option>
+<option value="singles">Singles</option>
+<option value="multiplayer">Multiplayer</option>
+</select>
+</div>
+<div class="small-grid">
+<div class="field">
+<label for="bestOf">Games per match</label>
+<select id="bestOf">
+<option value="1" selected>Best of 1</option>
+<option value="3">Best of 3</option>
+<option value="5">Best of 5</option>
+</select>
+</div>
+<div class="field">
+<label for="pointsTarget">Points per game</label>
+<input id="pointsTarget" type="number" min="1" value="21">
+</div>
+</div>
+</div>
+
+<div class="notice">Tournament settings control scoring, group structure, qualification and team-entry options. Changes remain editable so the admin can correct tournament setup mistakes when needed.</div>
+
+</div></div></details>
+
+<details class="card tournament-status-card"><summary><strong>ℹ Tournament Status</strong></summary><div style="margin-top:10px">
+<div style="margin-top:12px">
+<div id="summary"></div>
+
+</div></details>
+
+<details class="card" id="aboutLicenseCard">
+<summary><strong>ⓘ About &amp; License</strong></summary>
+<div style="margin-top:12px">
+<div><strong>Badminton Tournament Manager</strong></div>
+<div style="margin-top:8px">Developed by Ruhul Amin</div>
+<div style="margin-top:8px">Licensed under the MIT License.</div>
+<div style="margin-top:8px">You are free to use, modify and redistribute this software in accordance with the MIT License.</div>
+<div style="margin-top:8px"><strong>Original developer:</strong> Ruhul Amin</div>
+<div class="muted" style="margin-top:8px">Please retain the original developer attribution when modifying or redistributing this application.</div>
+</div>
+</details>
+</main>
+
+
+<div class="bottom">
+  <div class="bottom-inner">
+    <button class="btn btn-secondary" id="newBtn">Reset</button>
+    <button class="btn btn-primary" id="saveBtn">Save</button>
+    <button class="btn btn-secondary" id="exportBtn">Export</button>
+    <button class="btn btn-secondary" id="importBtn">Import</button>
+  </div>
+</div>
+
+<input id="importFile" type="file" accept=".json,application/json" class="hidden">
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</div>
+<div id="floatingScorecard" aria-live="polite" aria-label="Match scorecard"></div>
+
+<script src="js/tournament.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
