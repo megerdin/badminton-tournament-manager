@@ -19,8 +19,12 @@
       document.getElementById('cloudLoginBtn')?.addEventListener('click',()=>this.login());
       document.getElementById('cloudSignupBtn')?.addEventListener('click',()=>this.signup());
       document.getElementById('cloudSignoutBtn')?.addEventListener('click',()=>this.signout());
+      document.getElementById('cloudSignoutApp')?.addEventListener('click',()=>this.signout());
       document.getElementById('cloudForgotPasswordBtn')?.addEventListener('click',()=>this.resetPassword());
       document.getElementById('cloudChangePasswordBtn')?.addEventListener('click',()=>this.changePassword());
+      document.getElementById('cloudChangePasswordApp')?.addEventListener('click',()=>this.showAppPasswordPanel(true));
+      document.getElementById('cloudChangePasswordBtnApp')?.addEventListener('click',()=>this.changeAppPassword());
+      document.getElementById('cloudCancelPasswordBtnApp')?.addEventListener('click',()=>this.showAppPasswordPanel(false));
       document.getElementById('cloudCancelPasswordBtn')?.addEventListener('click',()=>this.showPasswordPanel(false));
       document.getElementById('cloudChangePasswordLink')?.addEventListener('click',()=>this.showPasswordPanel(true));
 
@@ -73,6 +77,16 @@
       document.getElementById('cloudAuthForm')?.removeAttribute('hidden');
       document.getElementById('cloudSignedIn')?.setAttribute('hidden','');
       document.getElementById('cloudAuthAdmin')?.setAttribute('hidden','');
+      const appBar=document.getElementById('cloudAccountBar');
+      if(appBar)appBar.hidden=true;
+      const admin=document.getElementById('cloudAdminPanelApp');
+      if(admin)admin.hidden=true;
+    },
+
+    syncAppStatus(){
+      const el=document.getElementById('cloudSyncStatusApp');
+      const source=document.getElementById('cloudSyncStatus');
+      if(el)el.textContent=source?.textContent||'Cloud connected';
     },
 
     renderSignedIn(){
@@ -178,9 +192,33 @@
       this.message('Password updated successfully.');
     },
 
+    showAppPasswordPanel(show=true){
+      const p=document.getElementById('cloudPasswordPanelApp');
+      if(p)p.hidden=!show;
+      if(show)document.getElementById('cloudNewPasswordApp')?.focus();
+    },
+
+    async changeAppPassword(){
+      const cloud=window.BADMINTON_CLOUD;
+      const a=document.getElementById('cloudNewPasswordApp')?.value||'';
+      const b=document.getElementById('cloudNewPasswordConfirmApp')?.value||'';
+      if(!a||!b)return this.message('Enter and confirm your new password.');
+      if(a!==b)return this.message('The new passwords do not match.');
+      if(a.length<6)return this.message('Password must meet the Supabase password requirements.');
+      this.message('Updating password…');
+      const r=await cloud.client.auth.updateUser({password:a});
+      if(r.error)return this.message(r.error.message);
+      document.getElementById('cloudNewPasswordApp').value='';
+      document.getElementById('cloudNewPasswordConfirmApp').value='';
+      this.showAppPasswordPanel(false);
+      this.message('Password updated successfully.');
+    },
+
     async signout(){
       this.showPasswordPanel(false);
-      await window.BADMINTON_CLOUD?.client?.auth.signOut();
+      this.showAppPasswordPanel(false);
+      const r=await window.BADMINTON_CLOUD?.client?.auth.signOut();
+      if(r?.error)this.message(r.error.message);
     },
 
     async renderAdmin(){
@@ -188,14 +226,19 @@
       if(!cloud?.client||cloud.profile?.role!=='master_admin'||cloud.profile?.approval_status!=='approved')return;
       const box=document.getElementById('cloudAuthAdmin');
       const list=document.getElementById('cloudPendingUsers');
-      if(!box)return;
-      box.hidden=false;
-      list.textContent='Loading…';
+      const appBox=document.getElementById('cloudAdminPanelApp');
+      const appList=document.getElementById('cloudPendingUsersApp');
+      if(!box&&!appBox)return;
+      if(box)box.hidden=false;
+      if(appBox)appBox.hidden=false;
+      if(list)list.textContent='Loading…';
+      if(appList)appList.textContent='Loading…';
       const r=await cloud.client.from('profiles').select('id,email,display_name,approval_status').order('created_at',{ascending:true});
-      if(r.error){list.textContent=r.error.message;return;}
-      list.textContent='';
+      if(r.error){if(list)list.textContent=r.error.message;if(appList)appList.textContent=r.error.message;return;}
+      if(list)list.textContent='';
+      if(appList)appList.textContent='';
       const pending=(r.data||[]).filter(x=>x.approval_status==='pending');
-      if(!pending.length){list.textContent='No pending users.';return;}
+      if(!pending.length){if(list)list.textContent='No pending users.';if(appList)appList.textContent='No pending signups.';return;}
       pending.forEach(u=>{
         const row=document.createElement('div');
         row.className='cloud-pending-user';
@@ -210,7 +253,13 @@
           else await this.renderAdmin();
         };
         row.append(label,b);
-        list.append(row);
+        if(list)list.append(row);
+        if(appList){
+          const appRow=row.cloneNode(true);
+          const appButton=appRow.querySelector('button');
+          appButton.onclick=b.onclick;
+          appList.append(appRow);
+        }
       });
     }
   };

@@ -23,7 +23,7 @@ window.BADMINTON_CLOUD={
  configured(){const c=window.BADMINTON_CLOUD_CONFIG||{};return Boolean(c.url&&c.publishableKey&&window.supabase);},
  message(t){const e=document.getElementById('cloudAuthMessage');if(e)e.textContent=t||'';},
  gate(v){document.getElementById('cloudAuthGate')?.classList.toggle('hidden',!v);},
- status(t){const e=document.getElementById('cloudSyncStatus');if(e)e.textContent=t||'';},
+ status(t){const e=document.getElementById('cloudSyncStatus');if(e)e.textContent=t||'';window.BADMINTON_AUTH?.syncAppStatus?.();},
  queueRead(){
   try{
    const x=JSON.parse(localStorage.getItem(this.queueKey)||'null');

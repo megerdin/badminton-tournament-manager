@@ -37,8 +37,34 @@
       <div id="dashboardProgressBar" class="header-progress-bar"></div>
     </div>
   </div>
-  <div id="appVersion" class="app-version">V5.3.38</div>
+  <div id="appVersion" class="app-version">V5.3.39</div>
 </header>
+
+<div id="cloudAccountBar" class="cloud-account-bar" hidden>
+  <div class="cloud-account-main">
+    <div>
+      <strong id="cloudAccountUser">Signed in</strong>
+      <span id="cloudSyncStatusApp" class="cloud-auth-user">Cloud</span>
+    </div>
+    <div class="cloud-account-actions">
+      <button id="cloudChangePasswordApp" type="button" class="btn btn-secondary btn-small">Change password</button>
+      <button id="cloudSignoutApp" type="button" class="btn btn-secondary btn-small">Sign out</button>
+    </div>
+  </div>
+  <div id="cloudPasswordPanelApp" class="cloud-password-panel" hidden>
+    <strong>Change password</strong>
+    <input id="cloudNewPasswordApp" type="password" autocomplete="new-password" placeholder="New password">
+    <input id="cloudNewPasswordConfirmApp" type="password" autocomplete="new-password" placeholder="Confirm new password">
+    <div class="cloud-auth-actions">
+      <button id="cloudChangePasswordBtnApp" type="button">Update password</button>
+      <button id="cloudCancelPasswordBtnApp" type="button">Cancel</button>
+    </div>
+  </div>
+  <details id="cloudAdminPanelApp" class="cloud-admin-panel" hidden>
+    <summary><strong>Master admin — pending signups</strong></summary>
+    <div id="cloudPendingUsersApp" class="cloud-pending-users"></div>
+  </details>
+</div>
 
 <main>
 

@@ -1,4 +1,4 @@
-const APP_VERSION = '5.3.38';
+const APP_VERSION = '5.3.39';
 
 "use strict";
 
@@ -2876,19 +2876,6 @@ function exportJson(){
 
 window.applyCloudSnapshotInternal=function(snapshot){if(!snapshot||typeof snapshot!=='object')return;try{masterTournament=normalizeMasterRecord(deepClone(snapshot));tournament=loadActiveCategoryFromMaster();if(!tournament)tournament=buildDefaultTournament();window.BADMINTON_LOCAL?.write(JSON.stringify(masterTournament));}catch(e){console.warn('Cloud snapshot could not be applied:',e);}};
 
-loadLocal();
-if(!tournament.settings)tournament.settings={};
-if(tournament.settings.playerPoolBuildInputSignature===undefined)tournament.settings.playerPoolBuildInputSignature='';
-if(!tournament.settings.playerPoolsCreated &&
-   Array.isArray(tournament.playerPoolPlayers) &&
-   tournament.playerPoolPlayers.some(pool=>Array.isArray(pool)&&pool.some(x=>String(x?.name??x??"").trim())))
-  tournament.settings.playerPoolsCreated=true;
-ensurePlayerPoolState(tournament.settings.playerPoolCount);
-bindFloatingScorecardDismissal();
-bindCategorySwitcher();
-if(!masterTournament)masterTournament=buildMasterFromLegacy(tournament);
-renderAll();
-window.BADMINTON_CLOUD?.finishAppStartup?.();
 
 function scrollToPlayerTeamEntryHeader(){
   const card=$("playerTeamEntryCard");
