@@ -268,7 +268,7 @@ The login screen contains:
 
 ``` text
 Badminton Tournament Manager
-Sign in to use the cloud version V5.3.62.
+Sign in to use the cloud version V5.3.66.
 
 Email address
 Password
@@ -668,7 +668,7 @@ backup.
 Current final version:
 
 ``` text
-V5.3.62
+V5.3.66
 ```
 
 Version consistency is maintained in:
@@ -747,12 +747,12 @@ distributing the application.
 
 ``` text
 Application: Badminton Tournament Manager
-Version:     V5.3.62
+Version:     V5.3.66
 Architecture: Supabase cloud-primary + localStorage offline fallback
 Primary UI:   Mobile-first
 License:      MIT
 Developer:    Ruhul Amin
 ```
 
-This README describes the final V5.3.62 application structure and the
+This README describes the final V5.3.66 application structure and the
 cloud/local architecture shipped with this release.
