@@ -1,6 +1,6 @@
 # Supabase Configuration — Badminton Tournament Manager
 
-**Final application version: V5.3.62**
+**Final application version: V5.3.66**
 
 This document records the **final Supabase architecture, database structure, authentication model, security model, and operational configuration** used by the Badminton Tournament Manager.
 

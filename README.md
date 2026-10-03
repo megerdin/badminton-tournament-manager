@@ -1,6 +1,6 @@
 # Badminton Tournament Manager
 
-**Final application version: V5.3.62**
+**Final application version: V5.3.66**
 
 A mobile-first badminton tournament management application designed to
 manage a complete tournament from team/player entry through group
