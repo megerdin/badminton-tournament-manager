@@ -17,7 +17,7 @@ window.BADMINTON_CLOUD_CONFIG = {
 /* ====================== cloud.js ====================== */
 window.BADMINTON_CLOUD_CONFIG=window.BADMINTON_CLOUD_CONFIG||{url:"",publishableKey:""};
 window.BADMINTON_CLOUD={
- client:null,session:null,profile:null,tournamentId:null,clubId:null,saveTimer:null,appReady:false,cloudHydrated:false,pageSessionId:(globalThis.crypto?.randomUUID?.()||String(Date.now())+'-'+Math.random()),cloudVersion:0,syncBusy:false,syncConflict:false,
+ client:null,session:null,profile:null,tournamentId:null,clubId:null,saveTimer:null,appReady:false,cloudHydrated:false,pageSessionId:(globalThis.crypto?.randomUUID?.()||String(Date.now())+'-'+Math.random()),cloudVersion:0,cloudBaseSnapshot:null,syncBusy:false,syncConflict:false,
  retryTimer:null,retryAttempt:0,
  queueKey:"badmintonTournamentManager.cloudQueue.v3",
  configured(){const c=window.BADMINTON_CLOUD_CONFIG||{};return Boolean(c.url&&c.publishableKey&&window.supabase);},
@@ -35,7 +35,7 @@ window.BADMINTON_CLOUD={
  },
  queueWrite(snapshot,baseVersion){
   try{
-   localStorage.setItem(this.queueKey,JSON.stringify({snapshot,baseVersion:Number(baseVersion||0),userId:this.session?.user?.id||null,tournamentId:this.tournamentId||null,queuedAt:Date.now(),queueId:(globalThis.crypto?.randomUUID?.()||String(Date.now())+"-"+Math.random()),pageSessionId:this.pageSessionId,requiresReview:!this.cloudHydrated}));
+   localStorage.setItem(this.queueKey,JSON.stringify({snapshot,baseSnapshot:this.cloudBaseSnapshot?JSON.parse(JSON.stringify(this.cloudBaseSnapshot)):null,baseVersion:Number(baseVersion||0),userId:this.session?.user?.id||null,tournamentId:this.tournamentId||null,queuedAt:Date.now(),queueId:(globalThis.crypto?.randomUUID?.()||String(Date.now())+"-"+Math.random()),pageSessionId:this.pageSessionId,requiresReview:!this.cloudHydrated}));
   }catch(e){console.warn('Cloud queue could not be stored:',e);}
  },
  queueClear(){try{localStorage.removeItem(this.queueKey);}catch(e){}},
@@ -45,40 +45,6 @@ window.BADMINTON_CLOUD={
    const next={...current,...(patch&&typeof patch==='object'?patch:{}),userId:this.session?.user?.id||current.userId||null,tournamentId:this.tournamentId||current.tournamentId||null};
    localStorage.setItem(this.queueKey,JSON.stringify(next));
   }catch(e){console.warn('Cloud queue could not be updated:',e);}
- },
- async resolveConflictKeepLocal(){
-  if(this.syncBusy||!this.client||!this.session||this.profile?.approval_status!=='approved'||!this.tournamentId)return {status:'idle'};
-  const q=this.queueRead();
-  if(!q)return {status:'clean'};
-  if(!navigator.onLine){this.status('Offline — local changes remain queued');return {status:'offline'};}
-  this.syncBusy=true;this.status('Preparing local changes…');
-  try{
-   const remote=await this.client.from('tournaments').select('version').eq('id',this.tournamentId).single();
-   if(remote.error)throw remote.error;
-   this.cloudVersion=Number(remote.data.version||1);
-   if(!this.queueRead())return {status:'clean'};
-   this.queueUpdate({baseVersion:this.cloudVersion,attempts:0,lastError:null,requiresReview:false,pageSessionId:this.pageSessionId});
-   this.syncConflict=false;this.status('Sync pending…');
-  }catch(e){this.status('Sync conflict — cloud changed. Local changes were kept.');throw e;}
-  finally{this.syncBusy=false;}
-  const result=await this.syncPending();
-  if(['synced','synced-with-pending'].includes(result.status))this.cloudHydrated=true;
-  return result;
- },
- async resolveConflictUseCloud(){
-  if(this.syncBusy||!this.client||!this.session||this.profile?.approval_status!=='approved'||!this.tournamentId)return {status:'idle'};
-  if(!navigator.onLine){this.status('Offline — cannot load cloud version');return {status:'offline'};}
-  this.syncBusy=true;this.status('Loading cloud version…');
-  try{
-   const r=await this.client.from('tournaments').select('data,version,updated_at').eq('id',this.tournamentId).single();
-   if(r.error)throw r.error;
-   this.cloudVersion=Number(r.data.version||1);
-   if(r.data?.data&&Object.keys(r.data.data).length)window.BADMINTON_CLOUD.applySnapshot(r.data.data);
-   this.queueClear();this.syncConflict=false;this.cloudHydrated=true;this.status('Cloud synced');this.gate(false);
-   if(window.renderAll)window.renderAll();
-   return {status:'loaded',version:this.cloudVersion};
-  }catch(e){this.status('Sync conflict — cloud changes were not loaded.');throw e;}
-  finally{this.syncBusy=false;}
  },
  scheduleRetry(){
   clearTimeout(this.retryTimer);
@@ -123,17 +89,15 @@ window.BADMINTON_CLOUD={
  },
  async loadRemoteIntoApp(){
   if(!this.tournamentId)return {status:'idle'};
-  // Never replace the live local tournament while a newer local snapshot is
-  // waiting to reach the cloud. This protects offline/poor-connection work
-  // during startup and after transient network failures.
+  // Pending local changes are resolved automatically by syncPending().
+  // With no pending queue, the cloud is the authoritative startup snapshot.
   if(this.queueRead()){
-   this.syncConflict=true;
-   this.status('Local changes need review — choose local or cloud.');
-   this.gate(false);
-   return {status:'pending-local'};
+   const pending=await this.syncPending();
+   if(!['synced','clean','cloud-won'].includes(pending.status))return pending;
+   if(pending.status==='cloud-won')return pending;
   }
   const r=await this.client.from('tournaments').select('data,version,updated_at').eq('id',this.tournamentId).single();if(r.error)throw r.error;
-  this.cloudVersion=Number(r.data.version||1);if(r.data?.data&&Object.keys(r.data.data).length)window.BADMINTON_CLOUD.applySnapshot(r.data.data);this.cloudHydrated=true;this.syncConflict=false;this.status('Cloud synced');this.gate(false);if(window.renderAll)window.renderAll();
+  this.cloudVersion=Number(r.data.version||1);if(r.data?.data&&Object.keys(r.data.data).length){this.cloudBaseSnapshot=JSON.parse(JSON.stringify(r.data.data));window.BADMINTON_CLOUD.applySnapshot(r.data.data);}this.cloudHydrated=true;this.syncConflict=false;this.status('Cloud synced');this.gate(false);if(window.renderAll)window.renderAll();
   return {status:'loaded',version:this.cloudVersion};
  },
  queueSave(snapshot){
@@ -150,16 +114,34 @@ window.BADMINTON_CLOUD={
   try{
    const remote=await this.client.from('tournaments').select('version,data').eq('id',this.tournamentId).single();if(remote.error)throw remote.error;
    const remoteVersion=Number(remote.data.version||1),baseVersion=Number(q.baseVersion||0);
+   let uploadSnapshot=q.snapshot;
    if(remoteVersion!==baseVersion){
-    this.syncConflict=true;
-    this.status('Sync conflict — cloud changed. Local changes were kept.');
-    if(typeof window.showMessage==='function')window.showMessage('Cloud sync conflict: your local changes are safe, but not uploaded. Open Profile and choose “Keep my local changes” to upload this copy, or “Use cloud version” to replace it.');
-    return {status:'conflict',remoteVersion,baseVersion};
+    // Automatic single-user policy:
+    // - If the queued local snapshot has no changes from its known baseline,
+    //   the cloud has advanced independently, so cloud wins.
+    // - If there are pending local changes, local wins and replaces the cloud
+    //   snapshot. The conditional version update below still prevents a write
+    //   from silently racing another save; a failed attempt is retried.
+    const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+    // A queue created before the first successful cloud hydration has no
+    // trustworthy cloud baseline. Never let that ambiguous/legacy snapshot
+    // overwrite an established cloud record automatically.
+    const localHasChanges=Boolean(q.baseSnapshot)&&!same(q.snapshot,q.baseSnapshot);
+    if(q.requiresReview||!q.baseSnapshot||!localHasChanges){
+     this.cloudVersion=remoteVersion;
+     this.cloudBaseSnapshot=JSON.parse(JSON.stringify(remote.data.data));
+     this.queueClear();
+     this.applySnapshot(remote.data.data);
+     this.cloudHydrated=true;this.syncConflict=false;
+     if(window.renderAll)window.renderAll();
+     this.status('Cloud synced — latest cloud data loaded');
+     return {status:'cloud-won',version:remoteVersion};
+    }
    }
    const next=remoteVersion+1;
-   const w=await this.client.from('tournaments').update({data:q.snapshot,version:next,updated_by:this.session.user.id}).eq('id',this.tournamentId).eq('version',remoteVersion).select('version').single();
+   const w=await this.client.from('tournaments').update({data:uploadSnapshot,version:next,updated_by:this.session.user.id}).eq('id',this.tournamentId).eq('version',remoteVersion).select('version').single();
    if(w.error)throw w.error;
-   this.cloudVersion=Number(w.data.version||next);this.syncConflict=false;
+   this.cloudVersion=Number(w.data.version||next);this.cloudBaseSnapshot=JSON.parse(JSON.stringify(uploadSnapshot));this.syncConflict=false;
    // A user may save again while this network write is in flight. Only clear
    // the queue when it is still the exact snapshot that we just uploaded.
    const latest=this.queueRead();
@@ -175,7 +157,7 @@ window.BADMINTON_CLOUD={
    // external cloud change is still detected by the version check above.
    const rebased=this.queueRead();
    if(rebased?.queueId!==queueId){
-    this.queueUpdate({baseVersion:this.cloudVersion,attempts:0,lastError:null});
+    this.queueUpdate({baseSnapshot:JSON.parse(JSON.stringify(uploadSnapshot)),baseVersion:this.cloudVersion,attempts:0,lastError:null});
    }
    this.status('Cloud synced; newer local changes pending…');
    this.scheduleRetry(0);
@@ -186,12 +168,10 @@ window.BADMINTON_CLOUD={
  async completeCloudStartup(){
   if(!this.appReady||this.profile?.approval_status!=='approved'||!this.tournamentId)return {status:'not-ready'};
   const q=this.queueRead();
-  if(q&&(q.pageSessionId!==this.pageSessionId||q.requiresReview)){ 
-   this.syncConflict=true;this.status('Saved local changes need review — choose local or cloud.');this.gate(false);return {status:'review-required'};
-  }
   if(q){
    const synced=await this.syncPending();
-   if(synced.status!=='synced'&&synced.status!=='clean'){this.gate(false);return synced;}
+   if(!['synced','clean','cloud-won'].includes(synced.status)){this.gate(false);return synced;}
+   if(synced.status==='cloud-won')return synced;
   }
   return this.loadRemoteIntoApp();
  },

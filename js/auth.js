@@ -34,8 +34,6 @@
       this.setAuthMode('login');
       document.getElementById('cloudSignoutBtn')?.addEventListener('click',()=>this.signout());
       document.getElementById('cloudSignoutApp')?.addEventListener('click',()=>this.signout());
-      document.getElementById('cloudKeepLocalBtn')?.addEventListener('click',()=>window.BADMINTON_CLOUD?.resolveConflictKeepLocal?.());
-      document.getElementById('cloudUseCloudBtn')?.addEventListener('click',()=>window.BADMINTON_CLOUD?.resolveConflictUseCloud?.());
       document.getElementById('cloudForgotPasswordBtn')?.addEventListener('click',()=>this.resetPassword());
       document.getElementById('cloudChangePasswordBtn')?.addEventListener('click',()=>this.changePassword());
       document.getElementById('cloudChangePasswordApp')?.addEventListener('click',()=>this.showAppPasswordPanel(true));
@@ -152,16 +150,6 @@
       const el=document.getElementById('cloudSyncStatusApp');
       const source=document.getElementById('cloudSyncStatus');
       if(el)el.textContent=source?.textContent||'Cloud connected';
-      const conflict=Boolean(window.BADMINTON_CLOUD?.syncConflict);
-      const panel=document.getElementById('cloudConflictPanel');
-      if(panel)panel.hidden=!conflict;
-      // A conflict requires an explicit choice. Do not leave the resolution
-      // buttons inside a collapsed/hidden Profile card where the user cannot
-      // discover them after the Save action reports a conflict.
-      if(conflict){
-        const profileCard=document.getElementById('cloudProfileCard');
-        if(profileCard){profileCard.hidden=false;profileCard.open=true;}
-      }
     },
 
     renderProfileCard(){
