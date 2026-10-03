@@ -1,4 +1,4 @@
-const APP_VERSION = '5.3.70';
+const APP_VERSION = '5.3.71';
 
 "use strict";
 
@@ -3615,9 +3615,13 @@ function activateCategory(categoryId,{message=true}={}){
   tournament.date=masterTournament.date||tournament.date||"";
   tournament.settings=tournament.settings||{};
   tournament.settings.categories=[{id:String(target.id),name:String(target.name||"Internal").trim()||"Internal"}];
+  // Refresh the UI from the newly selected category BEFORE saving. saveLocal()
+  // synchronizes form controls into tournament.settings; calling it while the
+  // previous category's controls are still visible would overwrite this
+  // category's saved mode, Best-of, points target, and other settings.
   target.data=deepClone(tournament);
-  saveLocal(true);
   renderAll();
+  saveLocal(true);
   focusActiveCategorySettingsTab();
   if(message)showMessage(`Switched to ${target.name}.`);
 }
