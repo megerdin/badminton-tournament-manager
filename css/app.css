@@ -1377,3 +1377,10 @@ details.card>summary>strong{flex:1 1 auto;text-align:left}
 .reset-dialog-content .btn{width:100%;min-height:42px}
 .reset-dialog-content #resetCurrentBtn{background:#9a3412;border-color:#c2410c;color:#fff}
 .reset-dialog-content #resetAllBtn{background:#7f1d1d;border-color:#991b1b;color:#fff}
+
+
+/* V5.3.67 — compact category-specific settings tabs */
+.category-settings-tabs{display:flex;gap:6px;overflow-x:auto;padding:7px 0 2px;scrollbar-width:thin}
+.category-settings-tab{flex:0 0 auto;min-height:38px;padding:7px 14px;border:1px solid var(--border-color,#454a52);border-radius:10px;background:var(--surface-2,#252a31);color:inherit;font:inherit;font-weight:700;white-space:nowrap}
+.category-settings-tab.is-active{background:var(--accent,#2146a0);border-color:var(--accent,#2146a0);color:#fff}
+.category-settings-tab:focus-visible{outline:2px solid var(--focus,#8ab4ff);outline-offset:2px}

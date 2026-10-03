@@ -14,7 +14,7 @@
 
 <div id="cloudAuthGate">
 <div class="cloud-auth-card">
-<h2>Badminton Tournament Manager</h2><p>Sign in to use the cloud version <span id="cloudLoginVersion">V5.3.66</span>.</p>
+<h2>Badminton Tournament Manager</h2><p>Sign in to use the cloud version <span id="cloudLoginVersion">V5.3.67</span>.</p>
 <div id="cloudAuthForm">
   <div id="cloudSignupFields" hidden>
     <input id="cloudDisplayName" type="text" autocomplete="name" placeholder="Name">
@@ -52,7 +52,7 @@
       <div id="dashboardProgressBar" class="header-progress-bar"></div>
     </div>
   </div>
-  <div id="appVersion" class="app-version">V5.3.66</div>
+  <div id="appVersion" class="app-version">V5.3.67</div>
 </header>
 
 
@@ -240,7 +240,7 @@
     <button class="btn btn-primary btn-small group-create-btn" id="createCategoriesBtn">Create</button>
   </div>
   <div id="categoriesList" style="margin-top:8px"></div>
-  <div class="notice" style="margin-top:8px">Categories run independently. Tap the club banner to switch between categories; each category keeps its own players, teams, groups, fixtures, results and knockout stages.</div>
+  <div id="categorySettingsTabs" class="category-settings-tabs" role="tablist" aria-label="Category settings"></div>
 </div>
 
 <div class="settings-subsection">
@@ -289,7 +289,6 @@
 </div>
 </div>
 
-<div class="notice">Tournament settings control scoring, group structure, qualification and team-entry options. Changes remain editable so the admin can correct tournament setup mistakes when needed.</div>
 
 </div></div></details>
 
@@ -351,7 +350,7 @@
 
 <div class="bottom">
   <div class="bottom-inner">
-    <button class="btn btn-secondary" id="newBtn">Reset</button>
+    <button class="btn btn-secondary" id="newBtn" type="button">Reset</button>
     <button class="btn btn-primary" id="saveBtn">Save</button>
     <button class="btn btn-secondary" id="exportBtn">Export</button>
     <button class="btn btn-secondary" id="importBtn">Import</button>
@@ -360,6 +359,17 @@
 
 
 
+
+
+<dialog id="resetDialog" class="reset-dialog" aria-labelledby="resetDialogTitle">
+  <div class="reset-dialog-content">
+    <h2 id="resetDialogTitle">Reset tournament data</h2>
+    <p>Choose what to reset. Category names and scoring settings will be preserved.</p>
+    <button class="btn btn-danger" id="resetCurrentBtn" type="button">Reset Current Category</button>
+    <button class="btn btn-danger" id="resetAllBtn" type="button">Reset All Categories</button>
+    <button class="btn btn-secondary" id="cancelResetBtn" type="button">Cancel</button>
+  </div>
+</dialog>
 
 <input id="importFile" type="file" accept=".json,application/json" class="hidden">
 

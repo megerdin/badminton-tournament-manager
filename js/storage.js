@@ -283,6 +283,7 @@ function saveLocal(silent=false){
 function syncSettings(){
   tournament.clubName=$("clubName").value.trim();
   tournament.date=$("tournamentDate").value;
+  if(masterTournament)masterTournament.date=tournament.date;
   syncCategorySettingsFromUI();
   if($("tournamentMode")){
     const mode=$("tournamentMode").value;

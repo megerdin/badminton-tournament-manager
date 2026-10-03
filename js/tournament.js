@@ -1,4 +1,4 @@
-const APP_VERSION = '5.3.66';
+const APP_VERSION = '5.3.67';
 
 "use strict";
 
@@ -402,6 +402,7 @@ function renderAll(){
   $("clubName").value=tournament.clubName||"";
   $("tournamentDate").value=tournament.date||"";
   renderCategories();
+  renderCategorySettingsTabs();
   if($("tournamentMode"))$("tournamentMode").value=tournament.settings.mode;
   renderPlayerPoolEntryAvailability();
   $("bestOf").value=String(tournament.settings?.bestOf ?? 1);
@@ -503,6 +504,20 @@ function renderCategories(){
       saveLocal(true);
       renderAll();
     });
+  });
+}
+
+function renderCategorySettingsTabs(){
+  const host=$("categorySettingsTabs");
+  if(!host)return;
+  const categories=normalizeCategories();
+  const activeId=String(masterTournament?.activeCategoryId||categories[0]?.id||"");
+  host.innerHTML=categories.map((category,index)=>{
+    const selected=String(category.id)===activeId;
+    return `<button type="button" role="tab" class="category-settings-tab${selected?" is-active":""}" aria-selected="${selected?"true":"false"}" data-settings-category-id="${escapeHtml(category.id)}">${escapeHtml(category.name||`Category ${index+1}`)}</button>`;
+  }).join("");
+  host.querySelectorAll("[data-settings-category-id]").forEach(button=>{
+    button.addEventListener("click",()=>activateCategory(button.dataset.settingsCategoryId));
   });
 }
 
@@ -1186,9 +1201,7 @@ function renderScoreboardViewModel(host,model,options={}){
   completedGames.forEach(g=>{if(Number(g.a)>Number(g.b))aWins++;else if(Number(g.b)>Number(g.a))bWins++;});
   const aWinner=!!model.completed&&aWins>bWins;
   const bWinner=!!model.completed&&bWins>aWins;
-  const label=model.matchNumber!==null&&model.matchNumber!==undefined
-    ? `Game ${escapeHtml(String(model.matchNumber))} <span class="score-stage-label">(${escapeHtml(model.stageLabel||"")}):</span>`
-    : `${escapeHtml(model.stageLabel||"")}:`;
+  const stageLabel=escapeHtml(model.stageLabel||"");
   const meta=`${bestOf===1?"Best of 1":"Best of "+bestOf} · ${target} points`;
   const formatControl=`<div class="scoreboard-format-controls"><label for="scoreboardBestOf">Format for this match</label><select class="scoreboard-best-of" aria-label="Format for this match" id="scoreboardBestOf">${[1,3,5].map(n=>`<option value="${n}"${bestOf===n?" selected":""}>Best of ${n}</option>`).join("")}</select><span class="muted">Category default: Best of ${gameCountForMatch()}</span></div>`;
 
@@ -1199,7 +1212,7 @@ function renderScoreboardViewModel(host,model,options={}){
     const idA=i===0&&inputIdA?` id="${escapeHtml(inputIdA)}"`:"";
     const idB=i===0&&inputIdB?` id="${escapeHtml(inputIdB)}"`:"";
     return `<div class="group-score-game-row">
-      <div class="group-game-number score-game-heading"><span>${label}</span><span class="muted result-meta">${meta}</span></div>
+      <div class="group-game-number score-game-heading"><span>Game ${i+1}${stageLabel?` <span class="score-stage-label">(${stageLabel})</span>`:""}</span><span class="muted result-meta">${meta}</span></div>
       <div class="group-score-center">
         <strong class="${aWinner||aGameWin?'winner-team':''}">${escapeHtml(model.teamALabel||"")}</strong>
         <input${idA} class="result-score ${escapeHtml(inputClass)}" data-score-scope="${escapeHtml(model.stage||"")}" data-game="${i}" data-side="a" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="${target}" value="${escapeHtml(String(a))}">
@@ -3003,11 +3016,15 @@ function importTournamentFile(file){
       const active=getActiveCategoryRecord();
       tournament=migrateTournamentData(active.data);
       tournament.clubName=masterTournament.clubName||"";
+      tournament.date=masterTournament.date||tournament.date||"";
       tournament.settings=tournament.settings||{};
       tournament.settings.categories=[{id:String(active.id),name:String(active.name||"Internal").trim()||"Internal"}];
       syncThirdPlacePlayoffFromMainKnockout();
       // Do not call saveLocal() here: saveLocal() reads the current form controls.
-      // Restore the imported master directly, then render the selected category.
+      // The imported master is authoritative. Do not call saveLocal() or
+      // syncSettings() here: current form controls belong to the pre-import data.
+      // Persist the active in-memory snapshot only because the playoff normalizer
+      // above may have reconciled derived active-category fields.
       saveActiveCategoryToMaster();
       const importedSnapshot=deepClone(masterTournament);
       window.BADMINTON_LOCAL?.write(JSON.stringify(importedSnapshot));
@@ -3050,7 +3067,9 @@ function exportJson(){
   document.body.appendChild(a);
   a.click();
   a.remove();
-  URL.revokeObjectURL(url);
+  // Do not revoke the object URL in the same task as click(); browsers may
+  // cancel the download before they have consumed the blob URL.
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
   showMessage("Tournament master JSON exported.");
 }
 
@@ -3388,11 +3407,13 @@ function saveActiveCategoryToMaster(){
   // settings value is authoritative when saving, so a changed club name must
   // update the master rather than being overwritten by the previous master name.
   snapshot.clubName=String(tournament.clubName||"").trim();
+  snapshot.date=String(tournament.date||"");
   snapshot.settings=snapshot.settings||{};
   snapshot.settings.categories=[{id:String(active.id),name:String(active.name||"Internal").trim()||"Internal"}];
   active.name=String(active.name||"Internal").trim()||"Internal";
   active.data=snapshot;
   masterTournament.clubName=snapshot.clubName;
+  masterTournament.date=snapshot.date;
 }
 
 function categoryHasCompetitionData(record){
@@ -3404,6 +3425,7 @@ function categoryHasCompetitionData(record){
 function makeBlankCategoryRecord(categoryId,categoryName){
   const data=blankTournament();
   data.clubName=masterTournament?.clubName||"";
+  data.date=masterTournament?.date||data.date||"";
   data.settings.categories=[{id:String(categoryId),name:String(categoryName||"Internal").trim()||"Internal"}];
   return {id:String(categoryId),name:String(categoryName||"Internal").trim()||"Internal",data};
 }
@@ -3420,6 +3442,7 @@ function buildMasterFromLegacy(legacy){
     masterSchemaVersion:MASTER_SCHEMA_VERSION,
     type:"badmintonTournamentManagerMaster",
     clubName:String(legacy?.clubName||""),
+    date:String(legacy?.date||""),
     activeCategoryId:normalized[0].id,
     categories:[]
   };
@@ -3458,6 +3481,7 @@ function normalizeMasterRecord(raw){
     masterSchemaVersion:MASTER_SCHEMA_VERSION,
     type:"badmintonTournamentManagerMaster",
     clubName:String(raw.clubName||""),
+    date:String(raw.date||raw.categories[0]?.data?.date||""),
     activeCategoryId:String(raw.activeCategoryId||raw.categories[0]?.id||""),
     categories:[]
   };
@@ -3470,6 +3494,7 @@ function normalizeMasterRecord(raw){
     else
       data=makeBlankCategoryRecord(cid,name).data;
     data.clubName=master.clubName;
+    data.date=master.date||data.date||"";
     normalizeGroupMembership(data);
     data.settings=data.settings||{};
     data.settings.categories=[{id:cid,name}];
@@ -3499,6 +3524,7 @@ function activateCategory(categoryId,{message=true}={}){
   masterTournament.activeCategoryId=String(target.id);
   tournament=migrateTournamentData(target.data||makeBlankCategoryRecord(target.id,target.name).data);
   tournament.clubName=masterTournament.clubName||"";
+  tournament.date=masterTournament.date||tournament.date||"";
   tournament.settings=tournament.settings||{};
   tournament.settings.categories=[{id:String(target.id),name:String(target.name||"Internal").trim()||"Internal"}];
   target.data=deepClone(tournament);
