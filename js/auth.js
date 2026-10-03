@@ -91,6 +91,7 @@
         }else{
           cloud.profile=null;
           cloud.cloudVersion=0;
+          cloud.cloudHydrated=false;
           this.gate(true);
           this.renderSignedOut();
         }
@@ -151,8 +152,16 @@
       const el=document.getElementById('cloudSyncStatusApp');
       const source=document.getElementById('cloudSyncStatus');
       if(el)el.textContent=source?.textContent||'Cloud connected';
+      const conflict=Boolean(window.BADMINTON_CLOUD?.syncConflict);
       const panel=document.getElementById('cloudConflictPanel');
-      if(panel)panel.hidden=!Boolean(window.BADMINTON_CLOUD?.syncConflict);
+      if(panel)panel.hidden=!conflict;
+      // A conflict requires an explicit choice. Do not leave the resolution
+      // buttons inside a collapsed/hidden Profile card where the user cannot
+      // discover them after the Save action reports a conflict.
+      if(conflict){
+        const profileCard=document.getElementById('cloudProfileCard');
+        if(profileCard){profileCard.hidden=false;profileCard.open=true;}
+      }
     },
 
     renderProfileCard(){
@@ -288,25 +297,12 @@
 
       if(cloud.profile.role==='master_admin') await this.renderAdmin();
       await cloud.prepareCloudRecord();
-      const pending=cloud.queueRead();
-      if(pending){
-        const synced=await cloud.syncPending();
-        if(synced.status==='conflict'){
-          this.gate(false);
-          cloud.status('Sync conflict — cloud changed. Local changes were kept.');
-          window.showMessage?.('Cloud sync conflict: local changes were kept. Resolve before making further changes.');
-          return;
-        }
-        // A failed/offline sync leaves the queue intact. Do not load the remote
-        // snapshot here or it would overwrite the user's local tournament and
-        // the pending queue could be lost on the next load.
-        if(cloud.queueRead()){
-          this.gate(false);
-          cloud.status(navigator.onLine?'Cloud sync pending — local changes kept':'Offline — changes saved locally');
-          return;
-        }
-      }
-      if(cloud.appReady) await cloud.loadRemoteIntoApp(); else this.gate(false);
+      // Startup must hydrate from the cloud before any local snapshot is allowed
+      // to upload. app.js can finish rendering before this async auth flow does.
+      // If a queue survived a previous page session, completeCloudStartup asks
+      // for an explicit local-vs-cloud decision instead of blindly uploading it.
+      if(cloud.appReady) await cloud.completeCloudStartup();
+      else { cloud.gate(true); cloud.status('Loading cloud tournament…'); }
       if(cloud.profile.role==='master_admin') await this.renderAdmin();
     },
 

@@ -17,7 +17,7 @@ window.BADMINTON_CLOUD_CONFIG = {
 /* ====================== cloud.js ====================== */
 window.BADMINTON_CLOUD_CONFIG=window.BADMINTON_CLOUD_CONFIG||{url:"",publishableKey:""};
 window.BADMINTON_CLOUD={
- client:null,session:null,profile:null,tournamentId:null,clubId:null,saveTimer:null,appReady:false,cloudVersion:0,syncBusy:false,syncConflict:false,
+ client:null,session:null,profile:null,tournamentId:null,clubId:null,saveTimer:null,appReady:false,cloudHydrated:false,pageSessionId:(globalThis.crypto?.randomUUID?.()||String(Date.now())+'-'+Math.random()),cloudVersion:0,syncBusy:false,syncConflict:false,
  retryTimer:null,retryAttempt:0,
  queueKey:"badmintonTournamentManager.cloudQueue.v3",
  configured(){const c=window.BADMINTON_CLOUD_CONFIG||{};return Boolean(c.url&&c.publishableKey&&window.supabase);},
@@ -35,7 +35,7 @@ window.BADMINTON_CLOUD={
  },
  queueWrite(snapshot,baseVersion){
   try{
-   localStorage.setItem(this.queueKey,JSON.stringify({snapshot,baseVersion:Number(baseVersion||0),userId:this.session?.user?.id||null,tournamentId:this.tournamentId||null,queuedAt:Date.now(),queueId:(globalThis.crypto?.randomUUID?.()||String(Date.now())+"-"+Math.random())}));
+   localStorage.setItem(this.queueKey,JSON.stringify({snapshot,baseVersion:Number(baseVersion||0),userId:this.session?.user?.id||null,tournamentId:this.tournamentId||null,queuedAt:Date.now(),queueId:(globalThis.crypto?.randomUUID?.()||String(Date.now())+"-"+Math.random()),pageSessionId:this.pageSessionId,requiresReview:!this.cloudHydrated}));
   }catch(e){console.warn('Cloud queue could not be stored:',e);}
  },
  queueClear(){try{localStorage.removeItem(this.queueKey);}catch(e){}},
@@ -57,11 +57,13 @@ window.BADMINTON_CLOUD={
    if(remote.error)throw remote.error;
    this.cloudVersion=Number(remote.data.version||1);
    if(!this.queueRead())return {status:'clean'};
-   this.queueUpdate({baseVersion:this.cloudVersion,attempts:0,lastError:null});
+   this.queueUpdate({baseVersion:this.cloudVersion,attempts:0,lastError:null,requiresReview:false,pageSessionId:this.pageSessionId});
    this.syncConflict=false;this.status('Sync pending…');
   }catch(e){this.status('Sync conflict — cloud changed. Local changes were kept.');throw e;}
   finally{this.syncBusy=false;}
-  return this.syncPending();
+  const result=await this.syncPending();
+  if(['synced','synced-with-pending'].includes(result.status))this.cloudHydrated=true;
+  return result;
  },
  async resolveConflictUseCloud(){
   if(this.syncBusy||!this.client||!this.session||this.profile?.approval_status!=='approved'||!this.tournamentId)return {status:'idle'};
@@ -72,7 +74,7 @@ window.BADMINTON_CLOUD={
    if(r.error)throw r.error;
    this.cloudVersion=Number(r.data.version||1);
    if(r.data?.data&&Object.keys(r.data.data).length)window.BADMINTON_CLOUD.applySnapshot(r.data.data);
-   this.queueClear();this.syncConflict=false;this.status('Cloud synced');this.gate(false);
+   this.queueClear();this.syncConflict=false;this.cloudHydrated=true;this.status('Cloud synced');this.gate(false);
    if(window.renderAll)window.renderAll();
    return {status:'loaded',version:this.cloudVersion};
   }catch(e){this.status('Sync conflict — cloud changes were not loaded.');throw e;}
@@ -125,16 +127,18 @@ window.BADMINTON_CLOUD={
   // waiting to reach the cloud. This protects offline/poor-connection work
   // during startup and after transient network failures.
   if(this.queueRead()){
-   this.status(navigator.onLine?'Cloud sync pending — local changes kept':'Offline — changes saved locally');
+   this.syncConflict=true;
+   this.status('Local changes need review — choose local or cloud.');
    this.gate(false);
    return {status:'pending-local'};
   }
   const r=await this.client.from('tournaments').select('data,version,updated_at').eq('id',this.tournamentId).single();if(r.error)throw r.error;
-  this.cloudVersion=Number(r.data.version||1);if(r.data?.data&&Object.keys(r.data.data).length)window.BADMINTON_CLOUD.applySnapshot(r.data.data);this.status('Cloud synced');this.gate(false);if(window.renderAll)window.renderAll();
+  this.cloudVersion=Number(r.data.version||1);if(r.data?.data&&Object.keys(r.data.data).length)window.BADMINTON_CLOUD.applySnapshot(r.data.data);this.cloudHydrated=true;this.syncConflict=false;this.status('Cloud synced');this.gate(false);if(window.renderAll)window.renderAll();
   return {status:'loaded',version:this.cloudVersion};
  },
  queueSave(snapshot){
   if(!this.configured()||!this.client||!this.session||this.profile?.approval_status!=='approved'||!this.tournamentId)return Promise.resolve({status:'local-only'});
+  if(!this.cloudHydrated){this.queueWrite(snapshot,this.cloudVersion);this.status('Cloud not loaded — local changes kept; review required before upload.');return Promise.resolve({status:'cloud-not-loaded'});}
   clearTimeout(this.saveTimer);this.queueWrite(snapshot,this.cloudVersion);this.status('Sync pending…');
   return new Promise(resolve=>{this.saveTimer=setTimeout(async()=>{const r=await this.syncPending();resolve(r);},400);});
  },
@@ -149,7 +153,7 @@ window.BADMINTON_CLOUD={
    if(remoteVersion!==baseVersion){
     this.syncConflict=true;
     this.status('Sync conflict — cloud changed. Local changes were kept.');
-    if(typeof window.showMessage==='function')window.showMessage('Cloud sync conflict: cloud data changed before these local changes were uploaded.');
+    if(typeof window.showMessage==='function')window.showMessage('Cloud sync conflict: your local changes are safe, but not uploaded. Open Profile and choose “Keep my local changes” to upload this copy, or “Use cloud version” to replace it.');
     return {status:'conflict',remoteVersion,baseVersion};
    }
    const next=remoteVersion+1;
@@ -179,7 +183,19 @@ window.BADMINTON_CLOUD={
   }catch(e){console.warn('Cloud sync deferred:',e);this.queueUpdate({attempts:Number(this.queueRead()?.attempts||0)+1,lastError:String(e?.message||e)});this.status(navigator.onLine?'Cloud sync pending — will retry':'Offline — changes saved locally');this.scheduleRetry();return {status:'pending',error:e};}
   finally{this.syncBusy=false;}
  },
- finishAppStartup(){this.appReady=true;if(this.profile?.approval_status==='approved')this.loadRemoteIntoApp().catch(e=>this.message('Cloud load failed: '+e.message));}
+ async completeCloudStartup(){
+  if(!this.appReady||this.profile?.approval_status!=='approved'||!this.tournamentId)return {status:'not-ready'};
+  const q=this.queueRead();
+  if(q&&(q.pageSessionId!==this.pageSessionId||q.requiresReview)){ 
+   this.syncConflict=true;this.status('Saved local changes need review — choose local or cloud.');this.gate(false);return {status:'review-required'};
+  }
+  if(q){
+   const synced=await this.syncPending();
+   if(synced.status!=='synced'&&synced.status!=='clean'){this.gate(false);return synced;}
+  }
+  return this.loadRemoteIntoApp();
+ },
+ finishAppStartup(){this.appReady=true;if(this.profile?.approval_status==='approved')this.completeCloudStartup().catch(e=>{this.status('Cloud load failed — local data kept.');this.message('Cloud load failed: '+e.message);this.gate(false);});}
 };
 window.BADMINTON_CLOUD.applySnapshot=s=>{if(typeof window.applyCloudSnapshotInternal==='function')window.applyCloudSnapshotInternal(s);};
 document.addEventListener('DOMContentLoaded',()=>BADMINTON_CLOUD.init().catch(e=>BADMINTON_CLOUD.message(e.message||String(e))));

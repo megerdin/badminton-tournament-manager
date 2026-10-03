@@ -1388,3 +1388,5 @@ details.card>summary>strong{flex:1 1 auto;text-align:left}
 
 /* V5.3.72 — distinguish individual game winners from the match winner. */
 .scoreboard-series-summary{padding:8px 12px;margin:0 0 6px;border-bottom:1px solid var(--border-color,#3a3d42);font-size:.92rem}
+
+/* V5.3.74 — make cloud conflict resolution visible */
