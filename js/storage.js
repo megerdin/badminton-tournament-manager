@@ -162,7 +162,7 @@ window.BADMINTON_CLOUD={
    this.status('Cloud synced; newer local changes pending…');
    this.scheduleRetry(0);
    return {status:'synced-with-pending',version:this.cloudVersion};
-  }catch(e){console.warn('Cloud sync deferred:',e);this.queueUpdate({attempts:Number(this.queueRead()?.attempts||0)+1,lastError:String(e?.message||e)});this.status(navigator.onLine?'Cloud sync pending — will retry':'Offline — changes saved locally');this.scheduleRetry();return {status:'pending',error:e};}
+  }catch(e){const reason=String(e?.message||e||'Unknown cloud error').slice(0,140);console.warn('Cloud sync deferred:',e);this.queueUpdate({attempts:Number(this.queueRead()?.attempts||0)+1,lastError:reason});this.status(navigator.onLine?'Cloud sync failed — retrying: '+reason:'Offline — changes saved locally; cloud retry pending');this.scheduleRetry();return {status:'pending',error:e};}
   finally{this.syncBusy=false;}
  },
  async completeCloudStartup(){
@@ -258,20 +258,31 @@ function saveLocal(silent=false){
   saveActiveCategoryToMaster();
   const snapshot = deepClone(masterTournament||tournament);
 
-  // Local cache remains immediate and reliable. Cloud persistence is queued
-  // separately so a slow/broken network never blocks tournament operation.
-  window.BADMINTON_LOCAL?.write(JSON.stringify(snapshot));
-  if(window.BADMINTON_CLOUD?.queueSave){
-    window.BADMINTON_CLOUD.queueSave(snapshot).catch(err=>{
-      console.warn("Cloud save deferred:", err);
+  // Persist the complete master record immediately. A cloud queue is not a
+  // successful cloud save, so the user-facing message must wait for the actual
+  // sync result instead of claiming success before the network write completes.
+  const localSaved=window.BADMINTON_LOCAL?.write(JSON.stringify(snapshot))!==false;
+  const cloud=window.BADMINTON_CLOUD;
+  if(!localSaved && !silent)showMessage("Local save failed. Check browser storage space or permissions.","warning");
+  if(cloud?.queueSave){
+    if(!silent && localSaved)showMessage("Saved on this device; syncing to cloud…");
+    Promise.resolve(cloud.queueSave(snapshot)).then(result=>{
+      if(silent)return;
+      const status=result?.status||"pending";
+      if(status==="synced")showMessage("Tournament saved and synced to cloud.","success");
+      else if(status==="cloud-won")showMessage("Latest cloud copy loaded; this local copy was outdated.","warning");
+      else if(status==="offline")showMessage("Saved on this device; offline. Cloud sync will retry.","warning");
+      else if(status==="cloud-not-loaded")showMessage("Saved on this device; waiting for cloud data to load.","warning");
+      else if(status==="local-only")showMessage("Saved on this device only; cloud sync is not ready.","warning");
+      else if(status==="clean")showMessage("Tournament is already synced with the cloud.","success");
+      else showMessage("Saved on this device; cloud sync has not completed and will retry.","warning");
+    }).catch(err=>{
+      console.warn("Cloud save deferred:",err);
+      if(!silent)showMessage("Saved on this device; cloud sync failed and will retry.","warning");
     });
+  }else if(!silent && localSaved){
+    showMessage("Tournament saved on this device.");
   }
-
-  if(!silent) showMessage(
-    window.BADMINTON_CLOUD?.configured?.()
-      ? "Tournament saved locally; cloud sync queued."
-      : "Tournament saved locally."
-  );
 }
 
 // Tournament settings remain editable after results exist so the admin can correct
