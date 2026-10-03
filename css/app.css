@@ -1379,8 +1379,9 @@ details.card>summary>strong{flex:1 1 auto;text-align:left}
 .reset-dialog-content #resetAllBtn{background:#7f1d1d;border-color:#991b1b;color:#fff}
 
 
-/* V5.3.67 — compact category-specific settings tabs */
+/* V5.3.69 — category tabs and inherited match-format defaults */
 .category-settings-tabs{display:flex;gap:6px;overflow-x:auto;padding:7px 0 2px;scrollbar-width:thin}
-.category-settings-tab{flex:0 0 auto;min-height:38px;padding:7px 14px;border:1px solid var(--border-color,#454a52);border-radius:10px;background:var(--surface-2,#252a31);color:inherit;font:inherit;font-weight:700;white-space:nowrap}
-.category-settings-tab.is-active{background:var(--accent,#2146a0);border-color:var(--accent,#2146a0);color:#fff}
-.category-settings-tab:focus-visible{outline:2px solid var(--focus,#8ab4ff);outline-offset:2px}
+.category-settings-tab{flex:0 0 auto;min-height:38px;padding:7px 14px;border:1px solid color-mix(in srgb,var(--category-tab-color,#64748b) 55%,transparent);border-radius:10px;background:color-mix(in srgb,var(--category-tab-color,#64748b) 10%,var(--surface-2,#252a31));color:inherit;font:inherit;font-weight:700;white-space:nowrap;transition:background-color .12s,border-color .12s,box-shadow .12s}
+.category-settings-tab.is-active{background:var(--category-tab-color,#2146a0);border-color:var(--category-tab-color,#2146a0);color:#fff;box-shadow:0 0 0 2px color-mix(in srgb,var(--category-tab-color,#2146a0) 28%,transparent)}
+.category-settings-tab:hover{border-color:var(--category-tab-color,#64748b)}
+.category-settings-tab:focus-visible{outline:2px solid var(--category-tab-color,#8ab4ff);outline-offset:2px}

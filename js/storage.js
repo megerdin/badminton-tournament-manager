@@ -298,7 +298,11 @@ function syncSettings(){
   tournament.settings.entryFormat=activeFormat;
   tournament.settings.allowedFormats=[activeFormat];
   tournament.settings.defaultQualifiers=Math.max(0,Number($("defaultQualifiers")?.value ?? tournament.settings.defaultQualifiers ?? 2)||0);
-  tournament.settings.bestOf=Number($("bestOf").value);
+  const nextBestOf=Math.max(1,Number($("bestOf").value)||1);
+  const previousBestOf=Math.max(1,Number(tournament.settings.bestOf)||1);
+  if(nextBestOf!==previousBestOf&&typeof markLegacyMatchFormatsBeforeDefaultChange==="function")
+    markLegacyMatchFormatsBeforeDefaultChange(previousBestOf);
+  tournament.settings.bestOf=nextBestOf;
   tournament.settings.pointsTarget=Math.max(1,Number($("pointsTarget").value)||21);
 }
 

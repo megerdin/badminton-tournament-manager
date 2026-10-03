@@ -1,4 +1,4 @@
-const APP_VERSION = '5.3.67';
+const APP_VERSION = '5.3.69';
 
 "use strict";
 
@@ -514,7 +514,8 @@ function renderCategorySettingsTabs(){
   const activeId=String(masterTournament?.activeCategoryId||categories[0]?.id||"");
   host.innerHTML=categories.map((category,index)=>{
     const selected=String(category.id)===activeId;
-    return `<button type="button" role="tab" class="category-settings-tab${selected?" is-active":""}" aria-selected="${selected?"true":"false"}" data-settings-category-id="${escapeHtml(category.id)}">${escapeHtml(category.name||`Category ${index+1}`)}</button>`;
+    const color=getCategoryReflectiveColor(category.name||`Category ${index+1}`);
+    return `<button type="button" role="tab" class="category-settings-tab${selected?" is-active":""}" aria-selected="${selected?"true":"false"}" aria-current="${selected?"page":"false"}" style="--category-tab-color:${color}" data-settings-category-id="${escapeHtml(category.id)}">${escapeHtml(category.name||`Category ${index+1}`)}</button>`;
   }).join("");
   host.querySelectorAll("[data-settings-category-id]").forEach(button=>{
     button.addEventListener("click",()=>activateCategory(button.dataset.settingsCategoryId));
@@ -855,6 +856,39 @@ function gameCountForMatch(){
   return Math.max(1,Number(tournament.settings?.bestOf||1));
 }
 
+function eachSavedMatchResult(callback){
+  (tournament.results||[]).forEach(result=>callback(result));
+  (tournament.preliminaryRound?.matches||[]).forEach(match=>{if(match?.result)callback(match.result);});
+  (tournament.mainKnockoutDraw?.rounds||[]).forEach(round=>(round.matches||[]).forEach(match=>{if(match?.result)callback(match.result);}));
+  if(tournament.thirdPlacePlayoff?.result)callback(tournament.thirdPlacePlayoff.result);
+}
+
+function markLegacyMatchFormatsBeforeDefaultChange(previousDefault){
+  const previous=Math.max(1,Number(previousDefault)||1);
+  eachSavedMatchResult(result=>{
+    if(result.bestOfOverride!==undefined)return;
+    const saved=Number(result.bestOf);
+    result.bestOfOverride=[1,3,5].includes(saved)&&saved!==previous;
+  });
+}
+
+function effectiveMatchBestOf(result){
+  const fallback=gameCountForMatch();
+  const saved=Number(result?.bestOf);
+  if(result?.bestOfOverride===true&&[1,3,5].includes(saved))return saved;
+  if(result?.bestOfOverride===false)return fallback;
+  // Backward compatibility: legacy results equal to the category default are
+  // inherited; a different saved value is treated as a match-specific override.
+  return [1,3,5].includes(saved)&&saved!==fallback?saved:fallback;
+}
+
+function scoreboardFormatWasChanged(host,matchId){
+  return String(host?.dataset?.scoreboardFormatTouchedMatchId||"")===String(matchId||"");
+}
+function clearScoreboardFormatTouched(host,matchId){
+  if(scoreboardFormatWasChanged(host,matchId))delete host.dataset.scoreboardFormatTouchedMatchId;
+}
+
 function pointsTargetForMatch(){
   return Math.max(1,Number(tournament.settings?.pointsTarget||21));
 }
@@ -898,7 +932,7 @@ function isValidCompletedSeriesResult(result,winnerTeamId,loserTeamId,teamAId,te
   if(result.loserTeamId!=null&&String(result.loserTeamId)!==loser)return false;
   if(result.walkover===true)return !Array.isArray(result.games)||result.games.length===0;
   if(!Array.isArray(result.games)||!result.games.length)return false;
-  const bestOf=Math.max(1,Number(result.bestOf)||gameCountForMatch());
+  const bestOf=effectiveMatchBestOf(result);
   if(result.games.length>bestOf)return false;
   const needed=Math.floor(bestOf/2)+1;
   let aWins=0,bWins=0;
@@ -1042,7 +1076,7 @@ function getGroupScoreboardViewModel(fixtureId){
     teamALabel:teamDisplayLabel(a),
     teamBLabel:teamDisplayLabel(b),
     games:Array.isArray(result?.games)&&result.games.length?result.games:[],
-    bestOf:Math.max(1,Number(result?.bestOf)||gameCountForMatch()),
+    bestOf:effectiveMatchBestOf(result),
     pointsTarget:pointsTargetForMatch(),
     completed:isFixtureResultComplete(fixture),
     save:{type:"group-result",matchId:String(fixture.id)},
@@ -1075,7 +1109,7 @@ function getPreliminaryScoreboardViewModel(matchId){
     teamALabel:preliminaryTeamDisplay(a),
     teamBLabel:preliminaryTeamDisplay(b),
     games:Array.isArray(result?.games)&&result.games.length?result.games:[],
-    bestOf:Math.max(1,Number(result?.bestOf)||gameCountForMatch()),
+    bestOf:effectiveMatchBestOf(result),
     pointsTarget:pointsTargetForMatch(),
     completed:isGeneratedMatchResultComplete(match),
     save:{type:"preliminary-result",matchId:String(match.id)},
@@ -1103,7 +1137,7 @@ function getMainKnockoutScoreboardViewModel(matchId){
     teamALabel:mainKnockoutScorePlayerLabel(match,1),
     teamBLabel:mainKnockoutScorePlayerLabel(match,2),
     games:Array.isArray(result?.games)&&result.games.length?result.games:[],
-    bestOf:Math.max(1,Number(result?.bestOf)||gameCountForMatch()),
+    bestOf:effectiveMatchBestOf(result),
     pointsTarget:pointsTargetForMatch(),
     completed:isGeneratedMatchResultComplete(match),
     save:{type:"main-result",matchId:String(match.id)},
@@ -1133,7 +1167,7 @@ function getThirdPlaceScoreboardViewModel(){
     teamALabel:knockoutDisplayLabel(teamAId),
     teamBLabel:knockoutDisplayLabel(teamBId),
     games:Array.isArray(result?.games)&&result.games.length?result.games:[],
-    bestOf:Math.max(1,Number(result?.bestOf)||gameCountForMatch()),
+    bestOf:effectiveMatchBestOf(result),
     pointsTarget:pointsTargetForMatch(),
     completed:isThirdPlaceResultComplete(match),
     save:{type:"third-place-result",matchId:String(match.id||"thirdPlace")},
@@ -1171,6 +1205,7 @@ function renderScoreboardViewModel(host,model,options={}){
 
   host.dataset.scoreboardStage=String(model.stage||"");
   host.dataset.scoreboardMatchId=String(model.matchId||"");
+  host.dataset.scoreboardBestOf=String(bestOf);
   host.__scoreboardModel=model;
   host.__scoreboardOptions=options;
 
@@ -1268,6 +1303,8 @@ function renderScoreboardViewModel(host,model,options={}){
     entered.forEach(item=>{if(item.game<next){if(!saved[item.game])saved[item.game]={a:"",b:""};saved[item.game][item.side]=item.value;}});
     model.games=Array.from({length:next},(_,i)=>saved[i]||({a:"",b:""}));
     model.bestOf=next;
+    host.dataset.scoreboardBestOf=String(next);
+    host.dataset.scoreboardFormatTouchedMatchId=String(model.matchId||"");
     model.completed=false;
     const renderOptions=host.__scoreboardOptions||{};
     renderScoreboardViewModel(host,model,renderOptions);
@@ -1461,7 +1498,8 @@ function findScoreboardHost(stage,matchId){
 }
 function getScorecardBestOf(stage,matchId,fallback=gameCountForMatch(),host=null){
   const scorecard=host||findScoreboardHost(stage,matchId);
-  const value=Number(scorecard?.querySelector(".scoreboard-best-of")?.value);
+  const selectorValue=scorecard?.querySelector(".scoreboard-best-of")?.value;
+  const value=Number(selectorValue??scorecard?.dataset?.scoreboardBestOf);
   return [1,3,5].includes(value)?value:Math.max(1,Number(fallback)||1);
 }
 
@@ -1490,6 +1528,7 @@ function saveMatchResult(fixtureId){
     fixtureId,
     status:"completed",
     bestOf,
+    bestOfOverride:scoreboardFormatWasChanged(scorecard,fixtureId)?bestOf!==gameCountForMatch():!!old?.bestOfOverride||bestOf!==gameCountForMatch(),
     walkover:false,
     winnerTeamId:winner==="a"?fixture.teamAId:fixture.teamBId,
     loserTeamId:winner==="a"?fixture.teamBId:fixture.teamAId,
@@ -1501,6 +1540,7 @@ function saveMatchResult(fixtureId){
   }else{
     tournament.results.push(result);
   }
+  clearScoreboardFormatTouched(scorecard,fixtureId);
   fixture.status="completed";
   fixture.resultId=fixtureId;
   fixture.updatedAt=Date.now();
@@ -2058,7 +2098,8 @@ function saveKnockoutResult(matchId){
   const winner=normalized.winner;
   const completedGames=normalized.games;
 
-  match.result={games:completedGames,winnerSide:winner,bestOf,updatedAt:Date.now()};
+  match.result={games:completedGames,winnerSide:winner,bestOf,bestOfOverride:scoreboardFormatWasChanged($("floatingScorecard"),matchId)?bestOf!==gameCountForMatch():!!match.result?.bestOfOverride||bestOf!==gameCountForMatch(),updatedAt:Date.now()};
+  clearScoreboardFormatTouched($("floatingScorecard"),matchId);
   match.winnerTeamId=winner==="a"?match.team1Id:match.team2Id;
   match.loserTeamId=winner==="a"?match.team2Id:match.team1Id;
   match.score1=completedGames[0]?.a??null;
@@ -2256,7 +2297,9 @@ function saveThirdPlaceResult(editor){
   const winner=normalized.winner;
   const completedGames=normalized.games;
 
-  m.result={games:completedGames,winnerSide:winner,bestOf,updatedAt:Date.now()};
+  const previousOverride=!!m.result?.bestOfOverride;
+  m.result={games:completedGames,winnerSide:winner,bestOf,bestOfOverride:scoreboardFormatWasChanged(editor,m.id||"thirdPlace")?bestOf!==gameCountForMatch():previousOverride||bestOf!==gameCountForMatch(),updatedAt:Date.now()};
+  clearScoreboardFormatTouched(editor,m.id||"thirdPlace");
   m.winnerTeamId=winner==="a"?m.teamAId:m.teamBId;
   m.loserTeamId=winner==="a"?m.teamBId:m.teamAId;
   m.status="completed";
@@ -3511,7 +3554,25 @@ function activateCategory(categoryId,{message=true}={}){
   if(!target)return;
   const currentId=String(masterTournament.activeCategoryId||"");
   if(currentId===String(target.id)){
+    // Re-selecting the active tab is an explicit refresh request. Capture any
+    // current form edits first, then reload the category snapshot so the UI
+    // and persisted category settings cannot drift apart.
+    syncSettings();
+    clearCalculationCache();
+    if(typeof calculateAndStoreGroupGlobalMetrics==="function")calculateAndStoreGroupGlobalMetrics();
+    if(typeof calculateTournamentRanking==="function")calculateTournamentRanking();
+    saveActiveCategoryToMaster();
+    saveLocal(true);
+    const refreshed=getActiveCategoryRecord();
+    if(refreshed){
+      tournament=migrateTournamentData(refreshed.data||makeBlankCategoryRecord(refreshed.id,refreshed.name).data);
+      tournament.clubName=masterTournament.clubName||"";
+      tournament.date=masterTournament.date||tournament.date||"";
+      tournament.settings=tournament.settings||{};
+      tournament.settings.categories=[{id:String(refreshed.id),name:String(refreshed.name||"Internal").trim()||"Internal"}];
+    }
     renderAll();
+    if(message)showMessage(`${target.name} refreshed.`);
     return;
   }
   // Capture the current subset before changing the active pointer.
@@ -4500,14 +4561,18 @@ function savePreliminaryResult(matchId,games,walkover=false,winnerTeamId=null,be
   const loser=String(winner)===String(match.teamAId)
     ?match.teamBId:match.teamAId;
 
+  const previousOverride=!!match.result?.bestOfOverride;
+  const formatTouched=scoreboardFormatWasChanged($("floatingScorecard"),matchId);
   match.result={
     games:walkover?[]:completedGames,
     bestOf:Math.max(1,Number(bestOf)||gameCountForMatch()),
+    bestOfOverride:formatTouched?bestOf!==gameCountForMatch():previousOverride||bestOf!==gameCountForMatch(),
     walkover:!!walkover,
     winnerTeamId:winner,
     loserTeamId:loser,
     savedAt:Date.now()
   };
+  clearScoreboardFormatTouched($("floatingScorecard"),matchId);
   match.winnerTeamId=winner;
   match.loserTeamId=loser;
   match.status="completed";
