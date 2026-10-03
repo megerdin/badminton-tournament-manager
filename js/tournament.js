@@ -1,4 +1,4 @@
-const APP_VERSION = '5.3.69';
+const APP_VERSION = '5.3.70';
 
 "use strict";
 
@@ -429,6 +429,9 @@ function renderAll(){
   renderWorkspaceStatusIndicators();
   if($("fixturesCard"))$("fixturesCard").open=fixturesCardOpen;
   if($("knockoutCard"))$("knockoutCard").open=knockoutCardOpen;
+  // Render category-specific controls last, after all category renderers finish.
+  // This prevents a renderer from leaving the previous category's values visible.
+  renderActiveCategorySettingsControls();
 }
 
 function groupLabel(index){
@@ -688,6 +691,29 @@ function renderGroups(){
     </div>`;
   }).join("");
 }
+function renderActiveCategorySettingsControls(){
+  const settings=tournament?.settings||{};
+  if($("clubName"))$("clubName").value=String(masterTournament?.clubName??tournament?.clubName??"");
+  if($("tournamentDate"))$("tournamentDate").value=String(masterTournament?.date??tournament?.date??"");
+  if($("tournamentMode"))$("tournamentMode").value=["doubles","singles","multiplayer"].includes(settings.mode)?settings.mode:"doubles";
+  if($("bestOf"))$("bestOf").value=String([1,3,5].includes(Number(settings.bestOf))?Number(settings.bestOf):1);
+  if($("pointsTarget"))$("pointsTarget").value=String(Math.max(1,Number(settings.pointsTarget)||21));
+  if($("playerPoolCountSetting"))$("playerPoolCountSetting").value=String(Math.max(2,Math.min(52,Number(settings.playerPoolCount)||2)));
+  if($("groupCount"))$("groupCount").value=String(Math.max(1,Array.isArray(tournament?.groups)?tournament.groups.length:0));
+  if($("defaultQualifiers"))$("defaultQualifiers").value=String(Math.max(0,Number(settings.defaultQualifiers??2)||0));
+}
+
+function focusActiveCategorySettingsTab(){
+  requestAnimationFrame(()=>{
+    const host=$("categorySettingsTabs");
+    const activeId=String(masterTournament?.activeCategoryId||"");
+    const tab=[...(host?.querySelectorAll("[data-settings-category-id]")||[])].find(item=>String(item.dataset.settingsCategoryId)===activeId);
+    if(!tab)return;
+    tab.focus({preventScroll:true});
+    tab.scrollIntoView({behavior:"smooth",block:"nearest",inline:"nearest"});
+  });
+}
+
 function handleDirectionalKey(event,action){
   if(event.key==="Enter"||event.key===" "){
     event.preventDefault();
@@ -3572,6 +3598,7 @@ function activateCategory(categoryId,{message=true}={}){
       tournament.settings.categories=[{id:String(refreshed.id),name:String(refreshed.name||"Internal").trim()||"Internal"}];
     }
     renderAll();
+    focusActiveCategorySettingsTab();
     if(message)showMessage(`${target.name} refreshed.`);
     return;
   }
@@ -3591,7 +3618,7 @@ function activateCategory(categoryId,{message=true}={}){
   target.data=deepClone(tournament);
   saveLocal(true);
   renderAll();
-  window.scrollTo({top:0,behavior:"instant"});
+  focusActiveCategorySettingsTab();
   if(message)showMessage(`Switched to ${target.name}.`);
 }
 
