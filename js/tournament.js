@@ -1,4 +1,4 @@
-const APP_VERSION = '5.3.62';
+const APP_VERSION = '5.3.63';
 
 "use strict";
 
@@ -1004,8 +1004,8 @@ function getPreliminaryScoreboardViewModel(matchId){
     teamALabel:preliminaryTeamDisplay(a),
     teamBLabel:preliminaryTeamDisplay(b),
     games:Array.isArray(result?.games)&&result.games.length?result.games:[],
-    bestOf:1,
-    pointsTarget:21,
+    bestOf:gameCountForMatch(),
+    pointsTarget:pointsTargetForMatch(),
     completed:isGeneratedMatchResultComplete(match),
     save:{type:"preliminary-result",matchId:String(match.id)},
     walkoverA:{type:"preliminary-walkover",matchId:String(match.id),winnerTeamId:match.teamAId},
@@ -1118,9 +1118,11 @@ function renderScoreboardViewModel(host,model,options={}){
     return true;
   }
 
-  const games=Array.isArray(model.games)&&model.games.length
-    ? model.games
-    : Array.from({length:bestOf},()=>({a:"",b:""}));
+  // Always render the configured series length. Saved results may contain fewer
+  // games when a match ends early (for example 2-0 in Best of 3), but the
+  // unused game slots must remain available when reviewing or correcting a score.
+  const savedGames=Array.isArray(model.games)?model.games:[];
+  const games=Array.from({length:bestOf},(_,i)=>savedGames[i]||({a:"",b:""}));
   const completedGames=games.filter(g=>g&&g.a!==""&&g.b!=="");
   let aWins=0,bWins=0;
   completedGames.forEach(g=>{if(Number(g.a)>Number(g.b))aWins++;else if(Number(g.b)>Number(g.a))bWins++;});
@@ -4288,8 +4290,6 @@ function getPreliminaryMatch(matchId){
   return matches.find(m=>String(m.id)===String(matchId))||null;
 }
 
-// Pre-Knockout is intentionally Best of 1; its UI supplies one game score.
-
 /* ====================== preliminary.js ====================== */
 function savePreliminaryResult(matchId,games,walkover=false,winnerTeamId=null){
   const match=getPreliminaryMatch(matchId);
@@ -4297,22 +4297,12 @@ function savePreliminaryResult(matchId,games,walkover=false,winnerTeamId=null){
   if(!match.teamAId||!match.teamBId)return {error:"preliminary_match_has_vacant_team"};
 
   let winner=winnerTeamId;
-  if(!winner && !walkover){
-    const totals={};
-    totals[match.teamAId]=0;
-    totals[match.teamBId]=0;
-    (games||[]).forEach(g=>{
-      const a=Number(g.a),b=Number(g.b);
-      if(Number.isFinite(a)&&Number.isFinite(b)&&a!==b){
-        if(a>b)totals[match.teamAId]++;
-        else totals[match.teamBId]++;
-      }
-    });
-    if(totals[match.teamAId]===totals[match.teamBId]){
-      return {error:"preliminary_result_has_no_winner"};
-    }
-    winner=totals[match.teamAId]>totals[match.teamBId]
-      ?match.teamAId:match.teamBId;
+  let completedGames=[];
+  if(!walkover){
+    const normalized=normalizeMatchGames(games,gameCountForMatch());
+    if(!normalized.valid)return {error:normalized.error};
+    completedGames=normalized.games;
+    winner=normalized.winner==="a"?match.teamAId:match.teamBId;
   }
 
   if(!winner)return {error:"preliminary_winner_required"};
@@ -4325,7 +4315,7 @@ function savePreliminaryResult(matchId,games,walkover=false,winnerTeamId=null){
     ?match.teamBId:match.teamAId;
 
   match.result={
-    games:Array.isArray(games)?games:[],
+    games:walkover?[]:completedGames,
     walkover:!!walkover,
     winnerTeamId:winner,
     loserTeamId:loser,
@@ -4591,12 +4581,12 @@ function bindPreliminaryScoreboardActionBridge(host,model){
       const id=String(model.matchId||"");
 
       if(action==="save"&&model.actions?.save){
-        const av=Number($("prelimScoreA")?.value),bv=Number($("prelimScoreB")?.value);
-        if(!Number.isFinite(av)||!Number.isFinite(bv)||av<0||bv<0||av===bv){
-          alert("Enter a valid score with a winner.");
-          return;
-        }
-        const result=savePreliminaryResult(id,[{a:av,b:bv}],false);
+        const bestOf=gameCountForMatch();
+        const games=Array.from({length:bestOf},(_,i)=>({
+          a:host.querySelector(`.prelim-score-input[data-game="${i}"][data-side="a"]`)?.value??"",
+          b:host.querySelector(`.prelim-score-input[data-game="${i}"][data-side="b"]`)?.value??""
+        }));
+        const result=savePreliminaryResult(id,games,false);
         if(result.error){alert(result.error);return;}
         const nextId=nextPendingPreliminaryMatchId(id);
         if(nextId){
