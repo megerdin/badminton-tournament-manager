@@ -1,4 +1,4 @@
-const APP_VERSION = '5.3.64';
+const APP_VERSION = '5.3.66';
 
 "use strict";
 
@@ -1027,7 +1027,7 @@ function getGroupScoreboardViewModel(fixtureId){
     teamALabel:teamDisplayLabel(a),
     teamBLabel:teamDisplayLabel(b),
     games:Array.isArray(result?.games)&&result.games.length?result.games:[],
-    bestOf:gameCountForMatch(),
+    bestOf:Math.max(1,Number(result?.bestOf)||gameCountForMatch()),
     pointsTarget:pointsTargetForMatch(),
     completed:isFixtureResultComplete(fixture),
     save:{type:"group-result",matchId:String(fixture.id)},
@@ -1060,7 +1060,7 @@ function getPreliminaryScoreboardViewModel(matchId){
     teamALabel:preliminaryTeamDisplay(a),
     teamBLabel:preliminaryTeamDisplay(b),
     games:Array.isArray(result?.games)&&result.games.length?result.games:[],
-    bestOf:gameCountForMatch(),
+    bestOf:Math.max(1,Number(result?.bestOf)||gameCountForMatch()),
     pointsTarget:pointsTargetForMatch(),
     completed:isGeneratedMatchResultComplete(match),
     save:{type:"preliminary-result",matchId:String(match.id)},
@@ -1088,7 +1088,7 @@ function getMainKnockoutScoreboardViewModel(matchId){
     teamALabel:mainKnockoutScorePlayerLabel(match,1),
     teamBLabel:mainKnockoutScorePlayerLabel(match,2),
     games:Array.isArray(result?.games)&&result.games.length?result.games:[],
-    bestOf:gameCountForMatch(),
+    bestOf:Math.max(1,Number(result?.bestOf)||gameCountForMatch()),
     pointsTarget:pointsTargetForMatch(),
     completed:isGeneratedMatchResultComplete(match),
     save:{type:"main-result",matchId:String(match.id)},
@@ -1118,7 +1118,7 @@ function getThirdPlaceScoreboardViewModel(){
     teamALabel:knockoutDisplayLabel(teamAId),
     teamBLabel:knockoutDisplayLabel(teamBId),
     games:Array.isArray(result?.games)&&result.games.length?result.games:[],
-    bestOf:gameCountForMatch(),
+    bestOf:Math.max(1,Number(result?.bestOf)||gameCountForMatch()),
     pointsTarget:pointsTargetForMatch(),
     completed:isThirdPlaceResultComplete(match),
     save:{type:"third-place-result",matchId:String(match.id||"thirdPlace")},
@@ -1156,6 +1156,8 @@ function renderScoreboardViewModel(host,model,options={}){
 
   host.dataset.scoreboardStage=String(model.stage||"");
   host.dataset.scoreboardMatchId=String(model.matchId||"");
+  host.__scoreboardModel=model;
+  host.__scoreboardOptions=options;
 
   if(model.walkover){
     const winner=String(model.walkover.winnerTeamId)===String(model.teamAId)?model.teamALabel:model.teamBLabel;
@@ -1188,6 +1190,7 @@ function renderScoreboardViewModel(host,model,options={}){
     ? `Game ${escapeHtml(String(model.matchNumber))} <span class="score-stage-label">(${escapeHtml(model.stageLabel||"")}):</span>`
     : `${escapeHtml(model.stageLabel||"")}:`;
   const meta=`${bestOf===1?"Best of 1":"Best of "+bestOf} · ${target} points`;
+  const formatControl=`<div class="scoreboard-format-controls"><label for="scoreboardBestOf">Format for this match</label><select class="scoreboard-best-of" aria-label="Format for this match" id="scoreboardBestOf">${[1,3,5].map(n=>`<option value="${n}"${bestOf===n?" selected":""}>Best of ${n}</option>`).join("")}</select><span class="muted">Category default: Best of ${gameCountForMatch()}</span></div>`;
 
   const rows=games.map((g,i)=>{
     const a=g?.a??"",b=g?.b??"";
@@ -1199,9 +1202,9 @@ function renderScoreboardViewModel(host,model,options={}){
       <div class="group-game-number score-game-heading"><span>${label}</span><span class="muted result-meta">${meta}</span></div>
       <div class="group-score-center">
         <strong class="${aWinner||aGameWin?'winner-team':''}">${escapeHtml(model.teamALabel||"")}</strong>
-        <input${idA} class="result-score ${escapeHtml(inputClass)}" data-score-scope="${escapeHtml(model.stage||"")}" data-game="${i}" data-side="a" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" autocomplete="off" placeholder="${target}" value="${escapeHtml(String(a))}">
+        <input${idA} class="result-score ${escapeHtml(inputClass)}" data-score-scope="${escapeHtml(model.stage||"")}" data-game="${i}" data-side="a" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="${target}" value="${escapeHtml(String(a))}">
         <span>–</span>
-        <input${idB} class="result-score ${escapeHtml(inputClass)}" data-score-scope="${escapeHtml(model.stage||"")}" data-game="${i}" data-side="b" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" autocomplete="off" placeholder="${target}" value="${escapeHtml(String(b))}">
+        <input${idB} class="result-score ${escapeHtml(inputClass)}" data-score-scope="${escapeHtml(model.stage||"")}" data-game="${i}" data-side="b" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="${target}" value="${escapeHtml(String(b))}">
         <strong class="${bWinner||bGameWin?'winner-team':''}">${escapeHtml(model.teamBLabel||"")}</strong>
       </div>
     </div>`;
@@ -1234,11 +1237,36 @@ function renderScoreboardViewModel(host,model,options={}){
   }
 
   host.innerHTML=`<div class="floating-scorecard-shell">${contextTitle?`<div class="ko-result-context-title">${escapeHtml(contextTitle)}</div>`:""}<button type="button" class="floating-scorecard-close" aria-label="Close scorecard" title="Close scorecard">×</button><div class="card ${cardClass}">
-    <div class="group-score-games">${rows}</div>
+    ${formatControl}<div class="group-score-games">${rows}</div>
     <div class="result-actions group-result-actions ${actionClass}">${actions.join("")}</div>
   </div></div>`;
   host.querySelector(".floating-scorecard-close")?.addEventListener("click",event=>{event.stopPropagation();closeFloatingScorecard();});
+  host.querySelector(".scoreboard-best-of")?.addEventListener("change",event=>{
+    const selector=event.currentTarget;
+    const previous=Math.max(1,Number(model.bestOf)||1);
+    const next=Math.max(1,Number(selector.value)||1);
+    const entered=Array.from(host.querySelectorAll(".result-score[data-game]"),input=>({game:Number(input.dataset.game),side:input.dataset.side,value:input.value}));
+    const removedScores=entered.filter(item=>item.game>=next&&String(item.value).trim()!=="");
+    if(removedScores.length&&!confirm(`Changing to Best of ${next} removes scores entered for games beyond game ${next}. Continue?`)){
+      selector.value=String(previous);
+      return;
+    }
+    const saved=[];
+    entered.forEach(item=>{if(item.game<next){if(!saved[item.game])saved[item.game]={a:"",b:""};saved[item.game][item.side]=item.value;}});
+    model.games=Array.from({length:next},(_,i)=>saved[i]||({a:"",b:""}));
+    model.bestOf=next;
+    model.completed=false;
+    const renderOptions=host.__scoreboardOptions||{};
+    renderScoreboardViewModel(host,model,renderOptions);
+    bindScoreboardStageActionBridge(host,model);
+    bindScoreboardKeyboard(host,model);
+  });
   return true;
+}
+
+function bindScoreboardStageActionBridge(host,model){
+  if(model?.stage==="preliminary")bindPreliminaryScoreboardActionBridge(host,model);
+  else bindScoreboardActionBridge(host,model);
 }
 
 function bindScoreboardActionBridge(host,model){
@@ -1414,14 +1442,24 @@ function normalizeMatchGames(games,bestOf){
   return {valid:true,games:normalized,winner};
 }
 
+function findScoreboardHost(stage,matchId){
+  return [...document.querySelectorAll("[data-scoreboard-stage][data-scoreboard-match-id]")]
+    .find(host=>host.dataset.scoreboardStage===String(stage)&&host.dataset.scoreboardMatchId===String(matchId))||null;
+}
+function getScorecardBestOf(stage,matchId,fallback=gameCountForMatch(),host=null){
+  const scorecard=host||findScoreboardHost(stage,matchId);
+  const value=Number(scorecard?.querySelector(".scoreboard-best-of")?.value);
+  return [1,3,5].includes(value)?value:Math.max(1,Number(fallback)||1);
+}
+
 function saveMatchResult(fixtureId){
   const fixture=tournament.fixtures.find(f=>f.id===fixtureId);
   if(!fixture)return;
-  const inputs=[...document.querySelectorAll(".result-score")];
-  const bestOf=gameCountForMatch();
+  const scorecard=findScoreboardHost("group",fixtureId);
+  const bestOf=getScorecardBestOf("group",fixtureId,gameCountForMatch(),scorecard);
   const games=Array.from({length:bestOf},(_,i)=>{
-    const a=document.querySelector(`.result-score[data-game="${i}"][data-side="a"]`)?.value??"";
-    const b=document.querySelector(`.result-score[data-game="${i}"][data-side="b"]`)?.value??"";
+    const a=scorecard?.querySelector(`.result-score[data-game="${i}"][data-side="a"]`)?.value??"";
+    const b=scorecard?.querySelector(`.result-score[data-game="${i}"][data-side="b"]`)?.value??"";
     return {a:a===""?"":Number(a),b:b===""?"":Number(b)};
   });
 
@@ -1995,7 +2033,7 @@ function saveKnockoutResult(matchId){
   const match=mainKnockoutMatchById(matchId);
   if(!match||!match.team1Id||!match.team2Id||String(match.team1Id)===String(match.team2Id))return;
 
-  const bestOf=gameCountForMatch();
+  const bestOf=getScorecardBestOf("main",matchId,gameCountForMatch(),$("floatingScorecard"));
   const games=Array.from({length:bestOf},(_,i)=>{
     const a=$("floatingScorecard")?.querySelector(`.ko-result-score[data-game="${i}"][data-side="a"]`)?.value??"";
     const b=$("floatingScorecard")?.querySelector(`.ko-result-score[data-game="${i}"][data-side="b"]`)?.value??"";
@@ -2194,7 +2232,7 @@ function saveThirdPlaceResult(editor){
   if(!editor)return;
   if(!m||!m.teamAId||!m.teamBId||String(m.teamAId)===String(m.teamBId))return;
 
-  const bestOf=gameCountForMatch();
+  const bestOf=getScorecardBestOf("third-place",m.id||"thirdPlace",gameCountForMatch(),editor);
   const games=Array.from({length:bestOf},(_,i)=>({
     a:(editor.querySelector(`.ko-third-score[data-game="${i}"][data-side="a"]`)?.value??"")===""?"":Number(editor.querySelector(`.ko-third-score[data-game="${i}"][data-side="a"]`)?.value),
     b:(editor.querySelector(`.ko-third-score[data-game="${i}"][data-side="b"]`)?.value??"")===""?"":Number(editor.querySelector(`.ko-third-score[data-game="${i}"][data-side="b"]`)?.value)
@@ -2887,13 +2925,66 @@ function removeTeam(teamId){
   saveLocal(true);refreshControlled("team-change");
 }
 
-function newTournament(){
-  if(!confirm("Start a new tournament? Unsaved local data in all categories will be replaced."))return;
-  tournament=blankTournament();
-  masterTournament=buildMasterFromLegacy(tournament);
+function resetCategoryDataKeepingSettings(existing,categoryId,categoryName,clubName){
+  const fresh=blankTournament();
+  const previous=existing&&typeof existing==="object"?existing:{};
+  const oldSettings=deepClone(previous.settings||{});
+  fresh.id=String(previous.id||fresh.id);
+  fresh.clubName=String(clubName||previous.clubName||"");
+  fresh.date=String(previous.date||"");
+  fresh.settings={...fresh.settings,...oldSettings};
+  fresh.settings.categories=[{id:String(categoryId),name:String(categoryName||"Internal").trim()||"Internal"}];
+  // Preserve category configuration but clear entry/pool data and generated state.
+  fresh.settings.teamPoolEntries=[];
+  fresh.settings.teamPoolNames=[];
+  fresh.settings.teamPoolCommittedIds=[];
+  fresh.settings.teamPoolDistributionComplete=false;
+  fresh.settings.teamPoolDistributionCounts={};
+  fresh.settings.teamPoolLotteryInputSignature="";
+  fresh.settings.playerPoolBuildInputSignature="";
+  fresh.settings.defaultQualifiers=Math.max(0,Number(oldSettings.defaultQualifiers??2)||0);
+  fresh.settings.bestOf=[1,3,5].includes(Number(oldSettings.bestOf))?Number(oldSettings.bestOf):1;
+  fresh.settings.pointsTarget=Math.max(1,Number(oldSettings.pointsTarget)||21);
+  return fresh;
+}
+function openResetDialog(){
+  const dialog=$("resetDialog");
+  if(dialog?.showModal){dialog.showModal();return;}
+  // Safe fallback for browsers without native dialog support. Cancel never
+  // escalates to a more destructive reset operation.
+  const choice=prompt("Choose reset scope:\n1 — Reset current category\n2 — Reset all categories\nCancel — Do nothing");
+  if(choice==="1")resetCurrentCategory();
+  else if(choice==="2")resetAllCategories();
+}
+function resetCurrentCategory(){
+  const active=getActiveCategoryRecord();
+  if(!active)return;
+  const name=String(active.name||"Internal");
+  if(!confirm(`Reset category "${name}"? All its players, teams, pools, groups, fixtures, results and knockout data will be cleared. Other categories and this category's settings will be preserved.`))return;
+  syncSettings();
+  saveActiveCategoryToMaster();
+  const current=getActiveCategoryRecord();
+  current.data=resetCategoryDataKeepingSettings(tournament,current.id,current.name,masterTournament?.clubName||tournament.clubName);
+  tournament=migrateTournamentData(current.data);
+  tournament.clubName=masterTournament?.clubName||"";
   renderAll();
   saveLocal(true);
-  showMessage("New tournament created.");
+  showMessage(`Category "${name}" reset. Other categories were preserved.`);
+}
+function resetAllCategories(){
+  if(!masterTournament||!Array.isArray(masterTournament.categories)||!masterTournament.categories.length)return;
+  if(!confirm("Reset ALL categories? This clears all players, teams, pools, groups, fixtures, results and knockout data in every category. Category names, category settings and the club name will be preserved."))return;
+  syncSettings();
+  saveActiveCategoryToMaster();
+  masterTournament.categories.forEach(category=>{
+    category.data=resetCategoryDataKeepingSettings(category.data,category.id,category.name,masterTournament.clubName);
+  });
+  const active=getActiveCategoryRecord();
+  tournament=migrateTournamentData(active.data);
+  tournament.clubName=masterTournament.clubName||"";
+  renderAll();
+  saveLocal(true);
+  showMessage("All categories reset. Category names and settings were preserved.");
 }
 
 function importTournamentFile(file){
@@ -4360,7 +4451,7 @@ function getPreliminaryMatch(matchId){
 }
 
 /* ====================== preliminary.js ====================== */
-function savePreliminaryResult(matchId,games,walkover=false,winnerTeamId=null){
+function savePreliminaryResult(matchId,games,walkover=false,winnerTeamId=null,bestOf=gameCountForMatch()){
   const match=getPreliminaryMatch(matchId);
   if(!match)return {error:"preliminary_match_not_found"};
   if(!match.teamAId||!match.teamBId)return {error:"preliminary_match_has_vacant_team"};
@@ -4368,7 +4459,7 @@ function savePreliminaryResult(matchId,games,walkover=false,winnerTeamId=null){
   let winner=winnerTeamId;
   let completedGames=[];
   if(!walkover){
-    const normalized=normalizeMatchGames(games,gameCountForMatch());
+    const normalized=normalizeMatchGames(games,bestOf);
     if(!normalized.valid)return {error:normalized.error};
     completedGames=normalized.games;
     winner=normalized.winner==="a"?match.teamAId:match.teamBId;
@@ -4385,7 +4476,7 @@ function savePreliminaryResult(matchId,games,walkover=false,winnerTeamId=null){
 
   match.result={
     games:walkover?[]:completedGames,
-    bestOf:gameCountForMatch(),
+    bestOf:Math.max(1,Number(bestOf)||gameCountForMatch()),
     walkover:!!walkover,
     winnerTeamId:winner,
     loserTeamId:loser,
@@ -4651,12 +4742,12 @@ function bindPreliminaryScoreboardActionBridge(host,model){
       const id=String(model.matchId||"");
 
       if(action==="save"&&model.actions?.save){
-        const bestOf=gameCountForMatch();
+        const bestOf=getScorecardBestOf("preliminary",id,gameCountForMatch(),host);
         const games=Array.from({length:bestOf},(_,i)=>({
           a:host.querySelector(`.prelim-score-input[data-game="${i}"][data-side="a"]`)?.value??"",
           b:host.querySelector(`.prelim-score-input[data-game="${i}"][data-side="b"]`)?.value??""
         }));
-        const result=savePreliminaryResult(id,games,false);
+        const result=savePreliminaryResult(id,games,false,null,bestOf);
         if(result.error){alert(result.error);return;}
         const nextId=nextPendingPreliminaryMatchId(id);
         if(nextId){

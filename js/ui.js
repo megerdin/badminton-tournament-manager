@@ -406,7 +406,10 @@ ui$("teamPoolPanel").addEventListener("blur",e=>{
   },0);
 },true);
 ui$("saveBtn").addEventListener("click",()=>saveLocal());
-ui$("newBtn").addEventListener("click",newTournament);
+ui$("newBtn").addEventListener("click",openResetDialog);
+ui$("resetCurrentBtn").addEventListener("click",()=>{ui$("resetDialog")?.close();resetCurrentCategory();});
+ui$("resetAllBtn").addEventListener("click",()=>{ui$("resetDialog")?.close();resetAllCategories();});
+ui$("cancelResetBtn").addEventListener("click",()=>ui$("resetDialog")?.close());
 ui$("exportBtn").addEventListener("click",exportJson);
 ui$("importBtn").addEventListener("click",openImportFile);
 ui$("importFile").addEventListener("change",e=>importTournamentFile(e.target.files?.[0]));
