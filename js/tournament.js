@@ -1,4 +1,4 @@
-const APP_VERSION = '5.3.71';
+const APP_VERSION = '5.3.72';
 
 "use strict";
 
@@ -1260,10 +1260,10 @@ function renderScoreboardViewModel(host,model,options={}){
   const completedGames=games.filter(g=>g&&g.a!==""&&g.b!=="");
   let aWins=0,bWins=0;
   completedGames.forEach(g=>{if(Number(g.a)>Number(g.b))aWins++;else if(Number(g.b)>Number(g.a))bWins++;});
-  const aWinner=!!model.completed&&aWins>bWins;
-  const bWinner=!!model.completed&&bWins>aWins;
   const stageLabel=escapeHtml(model.stageLabel||"");
   const meta=`${bestOf===1?"Best of 1":"Best of "+bestOf} · ${target} points`;
+  const seriesWinner=model.completed?(aWins>bWins?model.teamALabel:(bWins>aWins?model.teamBLabel:"")):"";
+  const seriesSummary=seriesWinner?`<div class="scoreboard-series-summary">Match winner: <strong class="winner-team">${escapeHtml(seriesWinner)}</strong> <span class="muted">(${Math.max(aWins,bWins)}–${Math.min(aWins,bWins)})</span></div>`:"";
   const formatControl=`<div class="scoreboard-format-controls"><label for="scoreboardBestOf">Format for this match</label><select class="scoreboard-best-of" aria-label="Format for this match" id="scoreboardBestOf">${[1,3,5].map(n=>`<option value="${n}"${bestOf===n?" selected":""}>Best of ${n}</option>`).join("")}</select><span class="muted">Category default: Best of ${gameCountForMatch()}</span></div>`;
 
   const rows=games.map((g,i)=>{
@@ -1275,11 +1275,11 @@ function renderScoreboardViewModel(host,model,options={}){
     return `<div class="group-score-game-row">
       <div class="group-game-number score-game-heading"><span>Game ${i+1}${stageLabel?` <span class="score-stage-label">(${stageLabel})</span>`:""}</span><span class="muted result-meta">${meta}</span></div>
       <div class="group-score-center">
-        <strong class="${aWinner||aGameWin?'winner-team':''}">${escapeHtml(model.teamALabel||"")}</strong>
+        <strong class="${aGameWin?'winner-team':''}">${escapeHtml(model.teamALabel||"")}</strong>
         <input${idA} class="result-score ${escapeHtml(inputClass)}" data-score-scope="${escapeHtml(model.stage||"")}" data-game="${i}" data-side="a" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="${target}" value="${escapeHtml(String(a))}">
         <span>–</span>
         <input${idB} class="result-score ${escapeHtml(inputClass)}" data-score-scope="${escapeHtml(model.stage||"")}" data-game="${i}" data-side="b" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="${target}" value="${escapeHtml(String(b))}">
-        <strong class="${bWinner||bGameWin?'winner-team':''}">${escapeHtml(model.teamBLabel||"")}</strong>
+        <strong class="${bGameWin?'winner-team':''}">${escapeHtml(model.teamBLabel||"")}</strong>
       </div>
     </div>`;
   }).join("");
@@ -1311,7 +1311,7 @@ function renderScoreboardViewModel(host,model,options={}){
   }
 
   host.innerHTML=`<div class="floating-scorecard-shell">${contextTitle?`<div class="ko-result-context-title">${escapeHtml(contextTitle)}</div>`:""}<button type="button" class="floating-scorecard-close" aria-label="Close scorecard" title="Close scorecard">×</button><div class="card ${cardClass}">
-    ${formatControl}<div class="group-score-games">${rows}</div>
+    ${formatControl}${seriesSummary}<div class="group-score-games">${rows}</div>
     <div class="result-actions group-result-actions ${actionClass}">${actions.join("")}</div>
   </div></div>`;
   host.querySelector(".floating-scorecard-close")?.addEventListener("click",event=>{event.stopPropagation();closeFloatingScorecard();});
