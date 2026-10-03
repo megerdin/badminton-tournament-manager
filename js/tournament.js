@@ -1,4 +1,4 @@
-const APP_VERSION = '5.3.63';
+const APP_VERSION = '5.3.64';
 
 "use strict";
 
@@ -100,8 +100,15 @@ function getCalculationIndexes(){
   const teamById=new Map(teams.map(t=>[String(t.id),t]));
   const fixtureById=new Map(fixtures.map(f=>[String(f.id),f]));
   const resultsByGroup=new Map();
+  const indexedFixtureIds=new Set();
   results.forEach(r=>{
-    const fixture=fixtureById.get(String(r.fixtureId));
+    const fixtureKey=String(r.fixtureId);
+    // A fixture has exactly one authoritative result record. Match fixtureResult()
+    // semantics (first record wins) and prevent imported duplicates from counting
+    // the same played match more than once.
+    if(indexedFixtureIds.has(fixtureKey))return;
+    indexedFixtureIds.add(fixtureKey);
+    const fixture=fixtureById.get(fixtureKey);
     if(!fixture)return;
     const gid=String(fixture.groupId);
     if(!resultsByGroup.has(gid))resultsByGroup.set(gid,[]);
@@ -172,6 +179,27 @@ function getQualifiedTeamSourceRecords(){
         groupLetter:String(group.name||"").replace(/^Group\s+/i,"").trim().charAt(0),
         groupRank:r.position
       });
+    });
+  });
+  // Explicit manual Main Knockout entries are valid qualification sources by
+  // design, including before group play is complete. Keep them in tournament
+  // ranking as well as in the knockout count, while rejecting missing/duplicate
+  // IDs so the two qualification views cannot disagree.
+  (tournament.manualKnockoutTeams||[]).forEach(id=>{
+    const key=String(id??"");
+    if(!key||seen.has(key))return;
+    const team=(tournament.teams||[]).find(t=>String(t.id)===key);
+    if(!team)return;
+    const group=(tournament.groups||[]).find(g=>String(g.id)===String(team.groupId));
+    const standings=group?calculateGroupStandings(group.id):[];
+    const rank=standings.findIndex(r=>String(r.team?.id)===key)+1;
+    seen.add(key);
+    records.push({
+      teamId:team.id,
+      groupId:team.groupId??group?.id??null,
+      groupLetter:String(group?.name||"").replace(/^Group\s+/i,"").trim().charAt(0)||"?",
+      groupRank:rank>0?rank:null,
+      manual:true
     });
   });
   return records;
@@ -839,39 +867,67 @@ function fixtureResult(fixtureId){
   return tournament.results.find(r=>String(r.fixtureId)===String(fixtureId))||null;
 }
 
-/* AUTHORITATIVE MATCH COMPLETION
-   A fixture's status is derived UI state; the recorded result is the source of
-   truth for whether a match actually has a valid outcome. This prevents stale
-   or legacy fixture.status values from making an unplayed/missing-result match
-   count as completed in progress, qualification, or navigation. */
-function isFixtureResultComplete(fixture){
-  if(!fixture)return false;
-  const result=fixtureResult(fixture.id);
+/* RESULT INTEGRITY — one shared rule for group fixtures and generated stages.
+   A result only counts when it names the actual participants and contains either
+   an explicit walkover or a complete, internally consistent best-of series. */
+function isValidCompletedSeriesResult(result,winnerTeamId,loserTeamId,teamAId,teamBId){
   if(!result)return false;
-  const winner=String(result.winnerTeamId??"");
-  const loser=String(result.loserTeamId??"");
-  if(!winner||!loser||winner===loser)return false;
-  const a=String(fixture.teamAId??fixture.team1Id??fixture.homeTeamId??"");
-  const b=String(fixture.teamBId??fixture.team2Id??fixture.awayTeamId??"");
+  const winner=String(winnerTeamId??"");
+  const loser=String(loserTeamId??"");
+  const a=String(teamAId??"");
+  const b=String(teamBId??"");
+  if(!winner||!loser||!a||!b||a===b||winner===loser)return false;
   if(!((winner===a&&loser===b)||(winner===b&&loser===a)))return false;
-  return result.status==="completed" || result.walkover===true;
+  if(result.status!=null&&result.status!=="completed")return false;
+  if(result.winnerTeamId!=null&&String(result.winnerTeamId)!==winner)return false;
+  if(result.loserTeamId!=null&&String(result.loserTeamId)!==loser)return false;
+  if(result.walkover===true)return !Array.isArray(result.games)||result.games.length===0;
+  if(!Array.isArray(result.games)||!result.games.length)return false;
+  const bestOf=Math.max(1,Number(result.bestOf)||gameCountForMatch());
+  if(result.games.length>bestOf)return false;
+  const needed=Math.floor(bestOf/2)+1;
+  let aWins=0,bWins=0;
+  for(let i=0;i<result.games.length;i++){
+    const game=result.games[i];
+    const ga=Number(game?.a),gb=Number(game?.b);
+    if(!Number.isFinite(ga)||!Number.isFinite(gb)||ga<0||gb<0||ga===gb)return false;
+    if(ga>gb)aWins++;else bWins++;
+    if(aWins>=needed||bWins>=needed){
+      if(i!==result.games.length-1)return false;
+      break;
+    }
+  }
+  const seriesWinner=aWins>=needed?"a":bWins>=needed?"b":null;
+  if(!seriesWinner)return false;
+  const expectedWinner=seriesWinner==="a"?a:b;
+  const expectedLoser=seriesWinner==="a"?b:a;
+  if(winner!==expectedWinner||loser!==expectedLoser)return false;
+  if(result.winnerSide && result.winnerSide!==seriesWinner)return false;
+  return true;
 }
 
-/* AUTHORITATIVE GENERATED-MATCH COMPLETION
-   Generated stages store their result directly on the match object rather than
-   in tournament.results. Completion therefore follows the same invariant as
-   group fixtures: the match must be marked completed AND have a valid winner
-   and loser drawn from its actual participants. This prevents stale/malformed
-   imported state from inflating dashboard progress or advancing a feeder. */
+/* AUTHORITATIVE MATCH COMPLETION — UI status alone never proves completion.
+   Accept a specific record as input for calculation loops so they validate the
+   record being counted, not merely whichever record fixtureResult() finds first. */
+function isFixtureResultRecordComplete(fixture,result){
+  if(!fixture||!result||result.status!=="completed")return false;
+  const a=fixture.teamAId??fixture.team1Id??fixture.homeTeamId;
+  const b=fixture.teamBId??fixture.team2Id??fixture.awayTeamId;
+  return isValidCompletedSeriesResult(result,result.winnerTeamId,result.loserTeamId,a,b);
+}
+function isFixtureResultComplete(fixture){
+  return !!fixture&&isFixtureResultRecordComplete(fixture,fixtureResult(fixture.id));
+}
+
+/* AUTHORITATIVE GENERATED-MATCH COMPLETION — generated stages keep their
+   results on the match. Require a real completed series or explicit walkover. */
 function isGeneratedMatchResultComplete(match){
-  if(!match || match.status!=="completed")return false;
-  const winner=String(match.winnerTeamId??match.result?.winnerTeamId??"");
-  const loser=String(match.loserTeamId??match.result?.loserTeamId??"");
-  if(!winner||!loser||winner===loser)return false;
-  const a=String(match.teamAId??match.team1Id??"");
-  const b=String(match.teamBId??match.team2Id??"");
-  if(!a||!b)return false;
-  return (winner===a&&loser===b)||(winner===b&&loser===a);
+  if(!match || match.status!=="completed" || !match.result)return false;
+  const a=match.teamAId??match.team1Id;
+  const b=match.teamBId??match.team2Id;
+  const winner=match.winnerTeamId??match.result.winnerTeamId;
+  const loser=match.loserTeamId??match.result.loserTeamId;
+  return isValidCompletedSeriesResult(match.result,winner,loser,a,b);
 }
 
 function isThirdPlaceResultComplete(match){
@@ -1382,6 +1438,7 @@ function saveMatchResult(fixtureId){
   const result={
     fixtureId,
     status:"completed",
+    bestOf,
     walkover:false,
     winnerTeamId:winner==="a"?fixture.teamAId:fixture.teamBId,
     loserTeamId:winner==="a"?fixture.teamBId:fixture.teamAId,
@@ -1408,11 +1465,16 @@ function saveMatchResult(fixtureId){
 function saveWalkover(fixtureId,winnerTeamId,loserTeamId){
   const fixture=tournament.fixtures.find(f=>f.id===fixtureId);
   if(!fixture)return;
+  const a=String(fixture.teamAId??fixture.team1Id??fixture.homeTeamId??"");
+  const b=String(fixture.teamBId??fixture.team2Id??fixture.awayTeamId??"");
+  const w=String(winnerTeamId??""),l=String(loserTeamId??"");
+  if(!a||!b||a===b||!((w===a&&l===b)||(w===b&&l===a))){showMessage("Invalid walkover: winner and loser must be the two teams in this fixture.");return;}
   if(!Array.isArray(tournament.results))tournament.results=[];
   const old=fixtureResult(fixtureId);
   const result={
     fixtureId,
     status:"completed",
+    bestOf:gameCountForMatch(),
     walkover:true,
     winnerTeamId,
     loserTeamId,
@@ -1451,7 +1513,7 @@ function teamLostScore(teamId,groupId){
   const {resultsByGroup}=getCalculationIndexes();
   const groupResults=resultsByGroup.get(String(groupId))||[];
   groupResults.forEach(({result:r,fixture:f})=>{
-    if(r.walkover||String(r.loserTeamId)!==String(teamId))return;
+    if(!isFixtureResultRecordComplete(f,r)||r.walkover||String(r.loserTeamId)!==String(teamId))return;
     (r.games||[]).forEach(g=>{
       const score=String(r.loserTeamId)===String(f.teamAId)?Number(g.a):Number(g.b);
       if(Number.isFinite(score))total+=score;
@@ -1465,7 +1527,7 @@ function headToHeadWinner(teamAId,teamBId,groupId){
   const groupResults=resultsByGroup.get(String(groupId))||[];
   const wanted=[String(teamAId),String(teamBId)].sort();
   for(const {result:r,fixture:f} of groupResults){
-    if(r.walkover)continue;
+    if(!isFixtureResultRecordComplete(f,r)||r.walkover)continue;
     const pair=[String(f.teamAId),String(f.teamBId)].sort();
     if(pair[0]===wanted[0]&&pair[1]===wanted[1]&&r.winnerTeamId){
       return String(r.winnerTeamId);
@@ -1480,7 +1542,7 @@ function groupLostScoreAgainstTied(teamId,tiedIds,groupId){
   const {resultsByGroup}=getCalculationIndexes();
   const groupResults=resultsByGroup.get(String(groupId))||[];
   groupResults.forEach(({result:r,fixture:f})=>{
-    if(r.walkover)return;
+    if(!isFixtureResultRecordComplete(f,r)||r.walkover)return;
     const a=String(f.teamAId),b=String(f.teamBId);
     if(!tied.has(a)||!tied.has(b)||String(r.loserTeamId)!==String(teamId))return;
     (r.games||[]).forEach(g=>{
@@ -1510,7 +1572,7 @@ function buildGroupH2HMiniTable(tiedRows,groupId){
   const {resultsByGroup}=getCalculationIndexes();
   const groupResults=resultsByGroup.get(String(groupId))||[];
   groupResults.forEach(({result:r,fixture:f})=>{
-    if(r.walkover||!r.winnerTeamId||!r.loserTeamId)return;
+    if(!isFixtureResultRecordComplete(f,r)||r.walkover||!r.winnerTeamId||!r.loserTeamId)return;
     const a=String(f.teamAId),b=String(f.teamBId);
     if(!ids.has(a)||!ids.has(b))return;
 
@@ -1931,7 +1993,7 @@ function clearKnockoutResult(matchId){
 
 function saveKnockoutResult(matchId){
   const match=mainKnockoutMatchById(matchId);
-  if(!match||!match.team1Id||!match.team2Id)return;
+  if(!match||!match.team1Id||!match.team2Id||String(match.team1Id)===String(match.team2Id))return;
 
   const bestOf=gameCountForMatch();
   const games=Array.from({length:bestOf},(_,i)=>{
@@ -1945,7 +2007,7 @@ function saveKnockoutResult(matchId){
   const winner=normalized.winner;
   const completedGames=normalized.games;
 
-  match.result={games:completedGames,winnerSide:winner,updatedAt:Date.now()};
+  match.result={games:completedGames,winnerSide:winner,bestOf,updatedAt:Date.now()};
   match.winnerTeamId=winner==="a"?match.team1Id:match.team2Id;
   match.loserTeamId=winner==="a"?match.team2Id:match.team1Id;
   match.score1=completedGames[0]?.a??null;
@@ -1968,12 +2030,14 @@ function saveKnockoutResult(matchId){
 
 function saveKnockoutWalkover(matchId,winnerTeamId,loserTeamId){
   const match=mainKnockoutMatchById(matchId);
-  if(!match||!match.team1Id||!match.team2Id)return;
-  if(String(winnerTeamId)!==String(match.team1Id)&&String(winnerTeamId)!==String(match.team2Id))return;
+  if(!match||!match.team1Id||!match.team2Id||String(match.team1Id)===String(match.team2Id))return;
+  const validPair=(String(winnerTeamId)===String(match.team1Id)&&String(loserTeamId)===String(match.team2Id))||
+    (String(winnerTeamId)===String(match.team2Id)&&String(loserTeamId)===String(match.team1Id));
+  if(!validPair)return;
 
   match.winnerTeamId=winnerTeamId;
   match.loserTeamId=loserTeamId;
-  match.result={games:[],walkover:true,updatedAt:Date.now()};
+  match.result={games:[],bestOf:gameCountForMatch(),walkover:true,updatedAt:Date.now()};
   match.status="completed";
   match.updatedAt=Date.now();
 
@@ -2128,7 +2192,7 @@ function saveThirdPlaceResult(editor){
   const m=tournament.thirdPlacePlayoff;
   editor=editor||$("floatingScorecard");
   if(!editor)return;
-  if(!m||!m.teamAId||!m.teamBId)return;
+  if(!m||!m.teamAId||!m.teamBId||String(m.teamAId)===String(m.teamBId))return;
 
   const bestOf=gameCountForMatch();
   const games=Array.from({length:bestOf},(_,i)=>({
@@ -2141,7 +2205,7 @@ function saveThirdPlaceResult(editor){
   const winner=normalized.winner;
   const completedGames=normalized.games;
 
-  m.result={games:completedGames,winnerSide:winner,updatedAt:Date.now()};
+  m.result={games:completedGames,winnerSide:winner,bestOf,updatedAt:Date.now()};
   m.winnerTeamId=winner==="a"?m.teamAId:m.teamBId;
   m.loserTeamId=winner==="a"?m.teamBId:m.teamAId;
   m.status="completed";
@@ -2154,10 +2218,12 @@ function saveThirdPlaceResult(editor){
 
 function saveThirdPlaceWalkover(winnerTeamId,loserTeamId){
   const m=tournament.thirdPlacePlayoff;
-  if(!m||!m.teamAId||!m.teamBId)return;
-  if(String(winnerTeamId)!==String(m.teamAId)&&String(winnerTeamId)!==String(m.teamBId))return;
+  if(!m||!m.teamAId||!m.teamBId||String(m.teamAId)===String(m.teamBId))return;
+  const validPair=(String(winnerTeamId)===String(m.teamAId)&&String(loserTeamId)===String(m.teamBId))||
+    (String(winnerTeamId)===String(m.teamBId)&&String(loserTeamId)===String(m.teamAId));
+  if(!validPair)return;
 
-  m.result={games:[],walkover:true,updatedAt:Date.now()};
+  m.result={games:[],bestOf:gameCountForMatch(),walkover:true,updatedAt:Date.now()};
   m.winnerTeamId=winnerTeamId;
   m.loserTeamId=loserTeamId;
   m.status="completed";
@@ -3409,6 +3475,7 @@ function calculateGlobalH2HComponent(teamId){
   // resolves their fixture through tournament.fixtures.
   const groupResults=resultsByGroup.get(String(groupId))||[];
   groupResults.forEach(({result,fixture})=>{
+    if(!isFixtureResultRecordComplete(fixture,result))return;
     const aId=String(fixture.teamAId??fixture.team1Id??fixture.homeTeamId);
     const bId=String(fixture.teamBId??fixture.team2Id??fixture.awayTeamId);
 
@@ -3550,7 +3617,7 @@ function calculateGroupStandings(groupId){
   const {resultsByGroup}=getCalculationIndexes();
   const groupResults=resultsByGroup.get(String(groupId))||[];
   groupResults.forEach(({result:r,fixture:f})=>{
-    if(!r.winnerTeamId||!r.loserTeamId)return;
+    if(!isFixtureResultRecordComplete(f,r))return;
     const w=byId.get(String(r.winnerTeamId));
     const l=byId.get(String(r.loserTeamId));
     if(!w||!l)return;
@@ -4075,7 +4142,9 @@ function buildMainKnockoutEntryPlan(){
   });
 
   const preliminaryEntries=matches.slice(0,preliminaryRequired).map((match,index)=>{
-    const winnerId=match.winnerTeamId??match.result?.winnerTeamId??null;
+    const winnerId=isGeneratedMatchResultComplete(match)
+      ? (match.winnerTeamId??match.result?.winnerTeamId??null)
+      : null;
     const winnerRow=winnerId!=null?(entryPlan.tournamentRanking||[]).find(row=>String(row.teamId??row.id)===String(winnerId))||null:null;
     return {
       slot:directEntries.length+index+1,
@@ -4083,7 +4152,7 @@ function buildMainKnockoutEntryPlan(){
       sourceId:String(match.id),
       sourceLabel:`PR${index+1}`,
       preliminaryMatchId:match.id,
-      teamId:winnerId,
+      teamId:winnerRow?winnerId:null,
       team:winnerRow?(winnerRow.team||winnerRow):null,
       rankingRow:winnerRow,
       status:winnerRow?"ready":"awaiting_preliminary"
@@ -4140,7 +4209,7 @@ function syncMainKnockoutEntries(){
       ? (tournament.preliminaryRound?.matches||[]).find(m=>String(m.id)===String(entry.preliminaryMatchId))
       : null;
     const winnerId=entry.sourceType==="PRELIMINARY"
-      ? (isGeneratedMatchResultComplete(match) ? (match.winnerTeamId??match.result?.winnerTeamId??null) : null)
+      ? (entry.teamId??null)
       : (entry.teamId??null);
     return {
       slot:entry.slot,sourceType:entry.sourceType,sourceId:entry.sourceId,
@@ -4316,6 +4385,7 @@ function savePreliminaryResult(matchId,games,walkover=false,winnerTeamId=null){
 
   match.result={
     games:walkover?[]:completedGames,
+    bestOf:gameCountForMatch(),
     walkover:!!walkover,
     winnerTeamId:winner,
     loserTeamId:loser,
