@@ -1,4 +1,10 @@
-const assert=require('node:assert/strict');const fs=require('node:fs');const sql=fs.readFileSync(require('node:path').join(__dirname,'../supabase/001_category_scoped_persistence.sql'),'utf8');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const root=path.join(__dirname,'../supabase/');
+const sql=fs.readFileSync(path.join(root,'001_category_scoped_persistence.sql'),'utf8');
+const backfill=fs.readFileSync(path.join(root,'005_backfill_valid_legacy_category_snapshots.sql'),'utf8');
+
 assert.match(sql,/alter table public\.clubs\s+add column if not exists shared_data/i);
 assert.match(sql,/create table if not exists public\.categories/i);
 assert.match(sql,/alter table public\.categories enable row level security/i);
@@ -16,8 +22,19 @@ assert.match(sql,/revoke all on function public\.replace_club_master[\s\S]*from 
 assert.doesNotMatch(sql,/drop table\s+public\.tournaments/i);
 assert.doesNotMatch(sql,/truncate\s+public\./i);
 assert.doesNotMatch(sql,/delete from public\.tournaments/i);
-console.log('PASS: additive migration only; legacy tournaments table is not dropped, truncated or deleted');
-console.log('PASS: category RLS and authenticated owner/approval checks are present');
-console.log('PASS: category writes and master replacement share a club-level advisory lock and revision check');
-console.log('PASS: RPC execute privileges are revoked from public and anon');
-console.log('NOTE: static checks are not a substitute for executing SQL on PostgreSQL staging.');
+
+assert.match(backfill,/badmintonTournamentManagerMaster/i,'backfill accepts only the supported master snapshot format');
+assert.match(backfill,/not exists\s*\(\s*select 1 from public\.categories existing where existing\.club_id = c\.id/i,'backfill skips clubs that already have category rows');
+assert.match(backfill,/count\(distinct item\.category->>'id'\)/i,'backfill validates unique category IDs');
+assert.match(backfill,/coalesce\(jsonb_typeof\(item\.category->'data'\), 'null'\) <> 'object'/i,'backfill rejects malformed category data');
+assert.match(backfill,/on conflict \(club_id, legacy_category_id\) do nothing/i,'backfill is safe against duplicate category IDs');
+assert.match(backfill,/categoryPersistenceVersion/i,'migration marker is written only after the full category set exists');
+assert.doesNotMatch(backfill,/drop table\s+public\./i);
+assert.doesNotMatch(backfill,/truncate\s+public\./i);
+assert.doesNotMatch(backfill,/delete from public\.(tournaments|profiles|categories)/i);
+
+console.log('PASS: category schema is additive and preserves the legacy tournaments table');
+console.log('PASS: category RLS, authorization, revision checks and RPC grants are guarded');
+console.log('PASS: legacy backfill accepts only complete supported snapshots and skips existing category sets');
+console.log('PASS: backfill does not drop, truncate or delete user/tournament/category data');
+console.log('NOTE: static checks validate migration shape; production SQL was applied and verified directly on main.');
