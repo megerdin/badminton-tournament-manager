@@ -1,5 +1,5 @@
 const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');
-const root=path.join(__dirname,'../candidate-app');const storage=fs.readFileSync(path.join(root,'js/storage.js'),'utf8');const tournament=fs.readFileSync(path.join(root,'js/tournament.js'),'utf8');const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const root=path.join(__dirname,'..');const storage=fs.readFileSync(path.join(root,'js/storage.js'),'utf8');const tournament=fs.readFileSync(path.join(root,'js/tournament.js'),'utf8');const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 assert.match(storage,/categoryScopedPersistence:\s*true/,'production category persistence is enabled');
 assert.ok(html.indexOf('js/categoryPersistenceAdapter.js')<html.indexOf('js/storage.js'),'adapter loads before storage module');
 assert.ok(html.indexOf('js/categorySyncQueue.js')<html.indexOf('js/storage.js'),'queue loads before storage module');

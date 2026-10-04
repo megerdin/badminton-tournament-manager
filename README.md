@@ -1,6 +1,6 @@
 # Badminton Tournament Manager — Production
 
-**Production version: V5.3.80.** The GitHub Pages root app and candidate source are aligned, and category-scoped persistence is enabled against the existing main Supabase project.
+**Production version: V5.3.80.** The GitHub Pages root app is the single production application, and category-scoped persistence is enabled against the existing main Supabase project.
 
 The additive category-persistence schema and the production legacy-category backfill were applied to the main Supabase project on 2026-10-04. Existing user accounts and legacy tournament records are retained. The backfill migrated only clubs with no category rows and a fully valid `badmintonTournamentManagerMaster` snapshot; existing live category sets were skipped. Two empty or unrecognized legacy records remain intentionally untouched and are handled by the guarded application startup path rather than overwritten. Routine saves update the active category and shared club metadata; full imports and category-list changes use the full-master replacement RPC. V5.3.80 also fixes a debounced-autosave confirmation defect: rapid edits now resolve all waiting save callers with the eventual cloud result instead of leaving an earlier manual-save confirmation unresolved.
 
@@ -10,8 +10,6 @@ GitHub Actions automated tests and the GitHub Pages deployment both completed su
 
 - index.html, css/ and js/ — production app deployed at the GitHub Pages root, V5.3.80.
 - supabase.md — canonical production Supabase connection, security, schema, migration and verification guide.
-- candidate-app/ — source mirror for the production app and its category-persistence modules.
-- reference-app/ — untouched V5.3.78 reference.
 - supabase/001_category_scoped_persistence.sql — reviewed additive schema reference; already applied to main. Do not rerun it blindly.
 - supabase/005_backfill_valid_legacy_category_snapshots.sql — guarded, additive backfill applied to main; skips clubs with existing category rows and leaves legacy snapshots intact.
 - supabase/002_rollback_staging_only.sql — destructive rollback draft for isolated testing only. Never run against main.
