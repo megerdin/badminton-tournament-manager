@@ -1,5 +1,5 @@
--- READ-ONLY STAGING VALIDATION QUERIES.
--- Replace the UUID below with the club ID in the isolated staging project.
+-- READ-ONLY CATEGORY DATA VALIDATION QUERIES.
+-- Replace the UUID below with the club ID to inspect in the main project. This script is read-only.
 -- These statements do not write or alter data.
 
 -- 1) Compare the legacy master category IDs with the category table and verify
