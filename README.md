@@ -1,14 +1,14 @@
 # Badminton Tournament Manager — Production
 
-**Production version: V5.3.79.** The GitHub Pages root app and candidate source are aligned, and category-scoped persistence is enabled against the existing main Supabase project.
+**Production version: V5.3.80.** The GitHub Pages root app and candidate source are aligned, and category-scoped persistence is enabled against the existing main Supabase project.
 
-The additive category-persistence schema and the production legacy-category backfill were applied to the main Supabase project on 2026-10-04. Existing user accounts and legacy tournament records are retained. The backfill migrated only clubs with no category rows and a fully valid `badmintonTournamentManagerMaster` snapshot; existing live category sets were skipped. Two empty or unrecognized legacy records remain intentionally untouched and are handled by the guarded application startup path rather than overwritten. Routine saves update the active category and shared club metadata; full imports and category-list changes use the full-master replacement RPC.
+The additive category-persistence schema and the production legacy-category backfill were applied to the main Supabase project on 2026-10-04. Existing user accounts and legacy tournament records are retained. The backfill migrated only clubs with no category rows and a fully valid `badmintonTournamentManagerMaster` snapshot; existing live category sets were skipped. Two empty or unrecognized legacy records remain intentionally untouched and are handled by the guarded application startup path rather than overwritten. Routine saves update the active category and shared club metadata; full imports and category-list changes use the full-master replacement RPC. V5.3.80 also fixes a debounced-autosave confirmation defect: rapid edits now resolve all waiting save callers with the eventual cloud result instead of leaving an earlier manual-save confirmation unresolved.
 
 GitHub Actions automated tests and the GitHub Pages deployment both completed successfully for the production promotion. Future pushes to main continue to run the automated suite and publish the root app. Database transaction checks previously verified revision conflicts, owner authorization, migration-marker handling and denial of unauthenticated/non-owner calls. The available connected tools do not provide a real authenticated browser/mobile session, so real-device sign-in, cross-device reload, offline recovery and export/import UX still require live smoke testing.
 
 ## Contents
 
-- index.html, css/ and js/ — production app deployed at the GitHub Pages root, V5.3.79.
+- index.html, css/ and js/ — production app deployed at the GitHub Pages root, V5.3.80.
 - supabase.md — canonical production Supabase connection, security, schema, migration and verification guide.
 - candidate-app/ — source mirror for the production app and its category-persistence modules.
 - reference-app/ — untouched V5.3.78 reference.
