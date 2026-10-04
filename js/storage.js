@@ -210,7 +210,7 @@ window.BADMINTON_CLOUD={
   if(!this.clubId){
    const previous=this.readCategoryBootstrapQueue();
    const baseline=previous?.baseSnapshot||this.readCategoryBaseline();
-   const stored=this.writeCategoryBootstrapQueue({snapshot:JSON.parse(JSON.stringify(master)),baseSnapshot:baseline?JSON.parse(JSON.stringify(baseline)):null,replaceAll:Boolean(options?.replaceAll||previous?.replaceAll),queuedAt:Date.now()});
+   const stored=this.writeCategoryBootstrapQueue({snapshot:JSON.parse(JSON.stringify(master)),baseSnapshot:baseline?JSON.parse(JSON.stringify(baseline)):null,replaceAll:Boolean(options?.replaceAll||previous?.replaceAll),allowEmptyOverwrite:Boolean(options?.allowEmptyOverwrite||previous?.allowEmptyOverwrite),queuedAt:Date.now()});
    if(!stored){this.status('Local data saved, but offline cloud queue could not be stored. Export a backup.');return {status:'queue-failed'};}
    this.status('Saved on this device; cloud setup pending.');
    return {status:'cloud-not-loaded'};
