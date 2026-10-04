@@ -30,9 +30,8 @@ This is intentionally a hybrid model: relational rows define ownership and save 
 3. Explicit JSON import, category-list create/remove/rename, and Reset All use a transactional whole-master replacement. That operation intentionally deletes omitted categories.
 4. A migration marker (`shared_data.categoryPersistenceVersion = 1`) is set only by the complete replacement RPC. If category rows exist without the marker, startup refuses to load them as a complete set.
 5. Offline operations remain in a localStorage queue; each category is coalesced independently. If the cloud account/club has not yet been resolved, a bootstrap snapshot is kept and compared with the last confirmed cloud baseline after reconnection. Only categories that actually changed locally are queued. With no trustworthy baseline, cloud wins unless the operation was an explicit full import. Failed writes are not removed from the queue.
-5. During first-time bootstrap, local data may seed category storage only when the legacy cloud snapshot is genuinely empty. A non-empty but unrecognized legacy snapshot stops migration with an explicit error instead of risking a stale-local overwrite.
-6. Failed writes are not removed from the queue.
-6. `tournaments` is not dropped, truncated or changed by the draft migration.
+6. During first-time bootstrap, local data may seed category storage only when the legacy cloud snapshot is genuinely empty. A non-empty but unrecognized legacy snapshot stops migration with an explicit error instead of risking a stale-local overwrite.
+7. `tournaments` is not dropped, truncated or changed by the draft migration.
 
 ## Remaining validation sequence
 
