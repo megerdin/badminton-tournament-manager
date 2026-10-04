@@ -3074,7 +3074,7 @@ function resetAllCategories(){
   tournament=migrateTournamentData(active.data);
   tournament.clubName=masterTournament.clubName||"";
   renderAll();
-  saveLocal(true,{replaceAll:true});
+  saveLocal(true,{replaceAll:true,allowEmptyOverwrite:true});
   showMessage("All categories reset. Category names and settings were preserved.");
 }
 
@@ -3106,7 +3106,7 @@ function importTournamentFile(file){
       saveActiveCategoryToMaster();
       const importedSnapshot=deepClone(masterTournament);
       window.BADMINTON_LOCAL?.write(JSON.stringify(importedSnapshot));
-      window.BADMINTON_CLOUD?.queueSave?.(importedSnapshot,{replaceAll:true}).catch(err=>console.warn("Cloud import sync deferred:",err));
+      window.BADMINTON_CLOUD?.queueSave?.(importedSnapshot,{replaceAll:true,allowEmptyOverwrite:true}).catch(err=>console.warn("Cloud import sync deferred:",err));
       renderAll();
       showMessage("Tournament master JSON imported.");
     }catch(e){
