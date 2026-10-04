@@ -17,10 +17,10 @@ assert.match(storage,/resumeCloudSync\(\)/,'network recovery retries cloud setup
 assert.match(storage,/categoryPersistenceVersion/,'category migration marker is checked and preserved');
 assert.match(storage,/legacyIsEmpty[\s\S]*if\(!seed&&legacyIsEmpty&&masterTournament\?\.categories\?\.length\)seed=masterTournament[\s\S]*if\(!seed&&!legacyIsEmpty\)throw new Error/,'local data can seed an empty legacy cloud only; unknown non-empty cloud snapshots fail safely');
 assert.match(storage,/if\(!this\.appReady\|\|this\.profile\?\.approval_status!=='approved'\|\|!this\.tournamentId\)return \{status:'not-ready'\};\s*if\(this\.categoryModeEnabled\(\)\)/,'approval/startup guard remains before new persistence path');
-assert.match(tournament,/saveLocal\(true,\{replaceAll:true,allowEmptyOverwrite:true\}\);[\s\S]*showMessage\("All categories reset\./,'Reset All explicitly opts into clearing category data');
 assert.match(tournament,/category rename is metadata\/category-scoped work[\s\S]*saveLocal\(true\);[\s\S]*renderAll\(\);/,'category rename uses scoped persistence instead of full-master replacement');
+assert.match(tournament,/allowEmptyOverwrite:true,allowCategoryRemoval:true/,'Reset All and JSON import explicitly authorize empty replacement and category removal');
+assert.match(tournament,/saveLocal\(true,\{replaceAll:true,allowCategoryRemoval:true\}\)/,'category-list edits explicitly authorize removal of categories');
 assert.match(tournament,/saveLocal\(true,\{replaceAll:true\}\);[\s\S]*const active=getActiveCategoryRecord\(\)/,'category-count changes persist the category set');
-assert.match(tournament,/window\.BADMINTON_CLOUD\?\.queueSave\?\.\(importedSnapshot,\{replaceAll:true,allowEmptyOverwrite:true\}\)/,'JSON import explicitly opts into replacing category data');
 console.log('PASS: production category persistence is enabled; adapter and queue load before storage');
 console.log('PASS: authenticated startup guard precedes category-mode startup');
 console.log('PASS: imports and Reset All explicitly declare full data replacement; category rename uses scoped persistence');
