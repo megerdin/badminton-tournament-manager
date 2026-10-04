@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
-const adapter=require('../candidate-app/js/categoryPersistenceAdapter.js');
+const adapter=require('../js/categoryPersistenceAdapter.js');
 
 function queryFor(rows,filters=[],orders=[],updates=null){
   const q={select(){return q;},eq(k,v){filters.push([k,v]);return q;},order(k,o){orders.push([k,o]);return q;},limit(n){q._limit=n;return q;},update(values){updates=values;return q;},then(resolve,reject){try{let out=rows.filter(row=>filters.every(([k,v])=>row[k]===v));if(updates){out.forEach(row=>Object.assign(row,structuredClone(updates)));}for(const [k,o] of orders.slice().reverse())out.sort((a,b)=>{const av=a[k],bv=b[k];const cmp=av===bv?0:av<bv?-1:1;return o?.ascending===false?-cmp:cmp;});if(q._limit!=null)out=out.slice(0,q._limit);resolve({data:structuredClone(out),error:null});}catch(e){reject(e);}}};return q;
