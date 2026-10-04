@@ -2,7 +2,7 @@
 
 **Production version: V5.3.79.** The GitHub Pages root app and candidate source are aligned, and category-scoped persistence is enabled against the existing main Supabase project.
 
-The additive category-persistence schema was applied to the main Supabase project on 2026-10-04. Existing user accounts and legacy tournament records are retained. The categories table starts empty and each club is migrated on its first approved, authenticated startup: the app reads that club's legacy tournament snapshot, validates/converts it through the application migration path, writes the complete category set transactionally, then confirms the migration marker. Routine saves thereafter update the active category and shared club metadata; full imports and category-list changes use the full-master replacement RPC.
+The additive category-persistence schema and the production legacy-category backfill were applied to the main Supabase project on 2026-10-04. Existing user accounts and legacy tournament records are retained. The backfill migrated only clubs with no category rows and a fully valid `badmintonTournamentManagerMaster` snapshot; existing live category sets were skipped. Remaining empty or unrecognized legacy records are left untouched and are handled by the guarded application startup path rather than overwritten. Routine saves update the active category and shared club metadata; full imports and category-list changes use the full-master replacement RPC.
 
 GitHub Actions automated tests and the GitHub Pages deployment both completed successfully for the production promotion. Future pushes to main continue to run the automated suite and publish the root app. Database transaction checks previously verified revision conflicts, owner authorization, migration-marker handling and denial of unauthenticated/non-owner calls. The available connected tools do not provide a real authenticated browser/mobile session, so real-device sign-in, cross-device reload, offline recovery and export/import UX still require live smoke testing.
 
@@ -11,7 +11,8 @@ GitHub Actions automated tests and the GitHub Pages deployment both completed su
 - index.html, css/ and js/ — production app deployed at the GitHub Pages root, V5.3.79.
 - candidate-app/ — source mirror for the production app and its category-persistence modules.
 - reference-app/ — untouched V5.3.78 reference.
-- supabase/001_category_scoped_persistence.sql — reviewed additive schema reference; the corresponding migration is already applied to main. Do not rerun it blindly.
+- supabase/001_category_scoped_persistence.sql — reviewed additive schema reference; already applied to main. Do not rerun it blindly.
+- supabase/005_backfill_valid_legacy_category_snapshots.sql — guarded, additive backfill applied to main; skips clubs with existing category rows and leaves legacy snapshots intact.
 - supabase/002_rollback_staging_only.sql — destructive rollback draft for isolated testing only. Never run against main.
 - supabase/003_staging_validation.sql — read-only validation queries for a selected club.
 - tests/ — adapter/queue mock tests, static SQL safety checks, app integration guards and HTML safety checks.
@@ -51,4 +52,4 @@ This hybrid model keeps category save boundaries isolated while preserving the e
 
 ## Main Supabase migration record
 
-The live migration is recorded as 20261004153301 / category_scoped_persistence_main_additive. The checked-in SQL is a reference for review, not an instruction to apply it again to the existing project.
+The live migrations are recorded as 20261004153301 / category_scoped_persistence_main_additive, 20261004162444 / categories_updated_by_index, and 20261004165646 / backfill_valid_legacy_category_snapshots. The checked-in SQL files document the applied changes; do not rerun them blindly.
