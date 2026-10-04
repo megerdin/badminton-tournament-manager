@@ -18,7 +18,7 @@ window.BADMINTON_CLOUD_CONFIG = {
 /* ====================== cloud.js ====================== */
 window.BADMINTON_CLOUD_CONFIG=window.BADMINTON_CLOUD_CONFIG||{url:"",publishableKey:""};
 window.BADMINTON_CLOUD={
- client:null,session:null,profile:null,tournamentId:null,clubId:null,saveTimer:null,appReady:false,cloudHydrated:false,pageSessionId:(globalThis.crypto?.randomUUID?.()||String(Date.now())+'-'+Math.random()),cloudVersion:0,cloudBaseSnapshot:null,syncBusy:false,syncConflict:false,categoryQueue:null,categoryRevisions:{},categorySharedData:{},
+ client:null,session:null,profile:null,tournamentId:null,clubId:null,saveTimer:null,appReady:false,cloudHydrated:false,pageSessionId:(globalThis.crypto?.randomUUID?.()||String(Date.now())+'-'+Math.random()),cloudVersion:0,cloudBaseSnapshot:null,syncBusy:false,syncConflict:false,categoryQueue:null,categoryRevisions:{},categorySharedData:{},categorySaveWaiters:[],
  retryTimer:null,retryAttempt:0,
  queueKey:"badmintonTournamentManager.cloudQueue.v3",
  configured(){const c=window.BADMINTON_CLOUD_CONFIG||{};return Boolean(c.url&&c.publishableKey&&window.supabase);},
@@ -215,8 +215,26 @@ window.BADMINTON_CLOUD={
    }
   }catch(error){this.status('Local data saved, but cloud queue could not be stored. Export a backup.');return {status:'queue-failed',error:String(error?.message||error)};}
   this.status('Category save queued; syncing to cloud…');
-  clearTimeout(this.saveTimer);
-  return new Promise(resolve=>{this.saveTimer=setTimeout(async()=>{const result=await this.flushCategoryQueue();resolve(result);},300);});
+  return new Promise(resolve=>{
+   // Coalesce rapid autosaves without abandoning earlier callers (especially
+   // the manual Save button) when a newer edit resets the debounce timer.
+   this.categorySaveWaiters.push(resolve);
+   clearTimeout(this.saveTimer);
+   this.saveTimer=setTimeout(async()=>{
+    this.saveTimer=null;
+    const waiters=this.categorySaveWaiters.splice(0);
+    let result;
+    try{
+     result=await this.flushCategoryQueue();
+    }catch(error){
+     const message=String(error?.message||error);
+     this.status('Category changes saved locally; cloud sync pending: '+message);
+     this.scheduleCategoryRetry();
+     result={status:'pending',error:message};
+    }
+    waiters.forEach(resolveSave=>resolveSave(result));
+   },300);
+  });
  },
  async flushCategoryQueue(){
   if(!this.categoryModeEnabled()||!this.client||!this.session||this.profile?.approval_status!=='approved'||!this.clubId)return {status:'idle'};
