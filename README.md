@@ -1,8 +1,8 @@
 # Badminton Tournament Manager — Category-scoped persistence prototype
 
-**Status: staging prototype only. Do not deploy to production.**
+**Status: guarded candidate; category persistence remains disabled. Do not enable for production yet.**
 
-This package advances the redesign from a schema proposal to a local implementation branch. It is not a production-ready release because the SQL has not been executed on PostgreSQL staging, browser/mobile tests have not been run, and no real Supabase account has been used for integration tests.
+The additive category-persistence schema has been applied to the existing main Supabase project on 2026-10-04 and database-level checks have passed, including revision conflicts, owner authorization, and rollback-isolated write tests. Existing users and legacy tournament records were preserved. The new `categories` table is still empty and the app feature flag remains `false`. GitHub Actions passes the current automated suite. Real browser/mobile end-to-end testing with an authenticated Supabase session is still outstanding.
 
 ## Contents
 
@@ -32,16 +32,15 @@ This is intentionally a hybrid model: relational rows define ownership and save 
 5. Offline operations remain in a localStorage queue; each category is coalesced independently. If the cloud account/club has not yet been resolved, a bootstrap snapshot is kept and compared with the last confirmed cloud baseline after reconnection. Only categories that actually changed locally are queued. With no trustworthy baseline, cloud wins unless the operation was an explicit full import. Failed writes are not removed from the queue.
 6. `tournaments` is not dropped, truncated or changed by the draft migration.
 
-## Staging-only validation sequence
+## Remaining validation sequence
 
-1. Create a separate Supabase staging project or isolated database branch. Do not use production.
-2. Restore a copy of the current schema/policies and a representative JSON export with two populated categories.
-3. Run `supabase/001_category_scoped_persistence.sql` in staging only. Verify that the functions compile and the RLS policies behave as expected.
-4. In `candidate-app/js/storage.js`, change `categoryScopedPersistence: false` to `true` **only for the staging build**.
-5. Sign in with an approved owner account. On first category-mode startup, if `categories` is empty, the app seeds it from the existing `tournaments.data` master snapshot (or local master only when the legacy cloud snapshot is empty). Verify both category row counts and payloads before testing saves.
-6. Test A&B save, C&D save, reload on a second browser, category create/rename/remove, current-category reset, Reset All, JSON export/import, offline save/retry, and revision-race behaviour.
-7. Test unauthorised users, non-owner users, invalid category IDs and malformed imports.
-8. Do not cut over production until database-level tests and real browser/mobile integration tests pass and a rollback has been rehearsed.
+1. Do not re-run `001_category_scoped_persistence.sql` against the main project. The live migration is already recorded as `20261004153301 / category_scoped_persistence_main_additive`. The checked-in SQL is a review/deployment reference; compare it with the live definitions before using it elsewhere.
+2. For safer end-to-end testing, create a separate Supabase staging project and apply a reviewed copy of the migration there. Do not use the main project for destructive rollback rehearsal.
+3. Keep `categoryScopedPersistence: false` in `candidate-app/js/storage.js` until authenticated browser/mobile integration tests pass.
+4. On first category-mode startup, if `categories` is empty, the app is intended to seed it from the legacy `tournaments.data` master snapshot (or local master only when the legacy cloud snapshot is empty). Verify category IDs and JSON payload parity before testing saves.
+5. Test each category save and reload on a second browser, category create/rename/remove, current-category reset, Reset All, JSON export/import, offline save/retry, and revision-race behaviour.
+6. Test unauthorised users, non-owner users, invalid category IDs and malformed imports.
+7. Do not enable the feature on the live app until the end-to-end tests pass and a rollback has been rehearsed.
 
 ## Rollback note
 
@@ -55,4 +54,6 @@ After category-mode saves begin, the old `tournaments.data` snapshot will be sta
 - App integration guard checks verify feature flag default-off, script order, startup approval guard, and full-master operations for imports/resets/category-list changes.
 - All application JavaScript files pass `node --check`; package integrity is checked after packaging. A final design audit added a server-side metadata RPC because ordinary metadata saves must not create a false migration-complete marker.
 
-**Not yet proven:** SQL execution on PostgreSQL, real RLS enforcement, live Supabase integration, browser/mobile UX, and end-to-end import/export under the new schema.
+**Verified on the main database:** migration is recorded; required tables/columns/RPCs and grants exist; test transactions exercised save/revision conflict, full-master replacement, metadata marker preservation, non-owner denial and unauthenticated execute denial, with test writes rolled back. Existing data counts remained unchanged and the new categories table remained empty.
+
+**Not yet proven:** authenticated REST/browser integration, real browser/mobile UX, cross-device reload, and end-to-end import/export with category mode enabled. SQL-level checks do not replace those tests.
