@@ -54,12 +54,14 @@ begin
      or jsonb_array_length(coalesce(v_row.data->'players','[]'::jsonb)) > 0
      or jsonb_array_length(coalesce(v_row.data->'groups','[]'::jsonb)) > 0
      or jsonb_array_length(coalesce(v_row.data->'fixtures','[]'::jsonb)) > 0
-     or jsonb_array_length(coalesce(v_row.data->'results','[]'::jsonb)) > 0 then
+     or jsonb_array_length(coalesce(v_row.data->'results','[]'::jsonb)) > 0
+     or jsonb_typeof(v_row.data->'preliminaryRound') = 'object' then
     if jsonb_array_length(coalesce(p_data->'teams','[]'::jsonb)) = 0
        and jsonb_array_length(coalesce(p_data->'players','[]'::jsonb)) = 0
        and jsonb_array_length(coalesce(p_data->'groups','[]'::jsonb)) = 0
        and jsonb_array_length(coalesce(p_data->'fixtures','[]'::jsonb)) = 0
-       and jsonb_array_length(coalesce(p_data->'results','[]'::jsonb)) = 0 then
+       and jsonb_array_length(coalesce(p_data->'results','[]'::jsonb)) = 0
+       and coalesce(p_data->'preliminaryRound','null'::jsonb) = 'null'::jsonb then
       raise exception 'refusing to overwrite populated category with an empty competition payload; local changes remain queued and existing cloud data is preserved'
         using errcode = '22023';
     end if;
