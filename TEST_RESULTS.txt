@@ -6,8 +6,8 @@ Supabase project: tumqpsbwelmwawbkqtjh (eu-west-2)
 
 AUTOMATED CI
 Latest completed suite for the V5.3.80 application code:
-- GitHub Actions run #36: https://github.com/megerdin/badminton-tournament-manager/actions/runs/37218942943
-- Tested commit: ea3d638d6c1a5e75fea89ff61fc1203dd41973cf
+- GitHub Actions run #42: https://github.com/megerdin/badminton-tournament-manager/actions/runs/37219233318
+- Tested commit: 8c1781b18f30b65f0e625f9fb3b11d018ec45abd
 - Result: SUCCESS
 
 Coverage reported by CI:
@@ -15,7 +15,7 @@ Coverage reported by CI:
 - Category persistence adapter tests: isolated category writes, complete master import, reconstruction, revision races, metadata writes, invalid imports and legacy migration guards.
 - Category sync queue tests: per-category coalescing, independent category operations, in-flight edits, retained failed writes, retry and full-master replacement.
 - SQL safety tests: additive schema safeguards, RLS/authorization/revision checks, RPC grants and guarded legacy backfill.
-- Integration guards: approved startup, category-scoped ordinary saves, full-master operations and offline bootstrap handling.
+- Integration guards: approved startup, category-scoped ordinary saves, full-master operations, offline bootstrap handling and resolution of all coalesced autosave confirmation callers.
 - HTML safety: duplicate-ID check, root/candidate version parity (V5.3.80) and persistence script order.
 
 PRODUCTION SUPABASE VALIDATION
