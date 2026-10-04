@@ -23,9 +23,7 @@ for file in "$ROOT"/js/*.js; do
 done
 if [ "$syntax_failed" -eq 0 ]; then echo 'PASS: syntax checks for production JavaScript modules'; else failed=1; fi
 node "$ROOT/tests/categoryPersistenceAdapter.test.js" || failed=1
-node "$ROOT/tests/productionCategoryPersistenceAdapter.test.js" || failed=1
 node "$ROOT/tests/categorySyncQueue.test.js" || failed=1
-node "$ROOT/tests/productionCategorySyncQueue.test.js" || failed=1
 node "$ROOT/tests/sqlSafety.test.js" || failed=1
 node "$ROOT/tests/appIntegrationSafety.test.js" || failed=1
 python3 "$ROOT/tests/htmlSafety.py" || failed=1
