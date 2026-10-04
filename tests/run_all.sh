@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+if ! command -v node >/dev/null 2>&1; then
+  echo 'ERROR: Node.js is required to run the JavaScript tests.' >&2
+  echo 'Install it on Ubuntu/Debian with: sudo apt update && sudo apt install -y nodejs npm' >&2
+  echo 'Then verify with: node --version' >&2
+  exit 127
+fi
+
 failed=0
 syntax_failed=0
 for file in "$ROOT"/candidate-app/js/*.js "$ROOT"/reference-app/js/*.js "$ROOT"/js/*.js; do
