@@ -1,6 +1,6 @@
-/* Durable per-category operation queue used by the guarded candidate app.
- * The category persistence feature remains disabled by default until live
- * authenticated browser/mobile integration tests pass.
+/* Durable per-category operation queue used by the production app.
+ * The main app enables category-scoped persistence. Mock tests cover queue
+ * behaviour; authenticated browser/mobile smoke tests remain a separate check.
  */
 (function(root){
   'use strict';
