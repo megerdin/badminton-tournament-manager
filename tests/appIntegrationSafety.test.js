@@ -18,6 +18,7 @@ assert.match(storage,/categoryPersistenceVersion/,'category migration marker is 
 assert.match(storage,/legacyIsEmpty[\s\S]*if\(!seed&&legacyIsEmpty&&masterTournament\?\.categories\?\.length\)seed=masterTournament[\s\S]*if\(!seed&&!legacyIsEmpty\)throw new Error/,'local data can seed an empty legacy cloud only; unknown non-empty cloud snapshots fail safely');
 assert.match(storage,/if\(!this\.appReady\|\|this\.profile\?\.approval_status!=='approved'\|\|!this\.tournamentId\)return \{status:'not-ready'\};\s*if\(this\.categoryModeEnabled\(\)\)/,'approval/startup guard remains before new persistence path');
 assert.match(tournament,/saveLocal\(true,\{replaceAll:true\}\);[\s\S]*showMessage\("All categories reset\./,'reset-all persists all categories');
+assert.match(tournament,/category rename is metadata\/category-scoped work[\s\S]*saveLocal\(true\);[\s\S]*renderAll\(\);/,'category rename uses scoped persistence instead of full-master replacement');
 assert.match(tournament,/saveLocal\(true,\{replaceAll:true\}\);[\s\S]*const active=getActiveCategoryRecord\(\)/,'category-count changes persist the category set');
 assert.match(tournament,/window\.BADMINTON_CLOUD\?\.queueSave\?\.\(importedSnapshot,\{replaceAll:true\}\)/,'JSON import persists complete master');
 console.log('PASS: production category persistence is enabled; adapter and queue load before storage');
