@@ -17,6 +17,7 @@ declare
   v_count integer := 0;
   v_existing public.categories%rowtype;
   v_allow_empty_overwrite boolean := false;
+  v_allow_category_removal boolean := false;
 begin
   if auth.uid() is null or not private.is_approved_user() then raise exception 'not authorized' using errcode = '42501'; end if;
   if not (private.is_club_owner(p_club_id) or private.is_master_admin()) then raise exception 'not authorized' using errcode = '42501'; end if;
@@ -27,6 +28,23 @@ begin
   if (select count(distinct e->>'id') from jsonb_array_elements(p_categories) e) <> jsonb_array_length(p_categories) then raise exception 'duplicate category id' using errcode = '22023'; end if;
   perform pg_advisory_xact_lock(hashtextextended(p_club_id::text, 0));
   v_allow_empty_overwrite := coalesce((p_shared_data->>'allowEmptyOverwrite')::boolean, false);
+  v_allow_category_removal := coalesce((p_shared_data->>'allowCategoryRemoval')::boolean, false);
+  if not v_allow_category_removal then
+    for v_existing in select c.* from public.categories c
+      where c.club_id=p_club_id
+      and not exists (select 1 from jsonb_array_elements(p_categories) e where e->>'id'=c.legacy_category_id)
+      for update
+    loop
+      if jsonb_array_length(coalesce(v_existing.data->'teams','[]'::jsonb)) > 0
+        or jsonb_array_length(coalesce(v_existing.data->'players','[]'::jsonb)) > 0
+        or jsonb_array_length(coalesce(v_existing.data->'groups','[]'::jsonb)) > 0
+        or jsonb_array_length(coalesce(v_existing.data->'fixtures','[]'::jsonb)) > 0
+        or jsonb_array_length(coalesce(v_existing.data->'results','[]'::jsonb)) > 0
+        or (jsonb_typeof(v_existing.data->'preliminaryRound')='object' and v_existing.data->'preliminaryRound'<>'{}'::jsonb) then
+        raise exception 'refusing full-master replacement that omits populated category %; explicit category removal is required', v_existing.legacy_category_id using errcode = '22023';
+      end if;
+    end loop;
+  end if;
   if not v_allow_empty_overwrite then
     for v_item in select value from jsonb_array_elements(p_categories) loop
       v_id := v_item->>'id'; v_data := v_item->'data';
@@ -50,7 +68,7 @@ begin
   end if;
   update public.clubs set
     name=coalesce(nullif(trim(p_club_name),''),'Your club name'),
-    shared_data=(coalesce(p_shared_data,'{}'::jsonb) - 'allowEmptyOverwrite') || jsonb_build_object('categoryPersistenceVersion',1),
+    shared_data=(coalesce(p_shared_data,'{}'::jsonb) - 'allowEmptyOverwrite' - 'allowCategoryRemoval') || jsonb_build_object('categoryPersistenceVersion',1),
     updated_at=now()
   where id=p_club_id;
   if not found then raise exception 'club not found' using errcode = 'P0002'; end if;
