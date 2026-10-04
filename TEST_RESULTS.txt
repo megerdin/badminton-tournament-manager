@@ -1,29 +1,33 @@
-PASS: syntax checks for candidate, reference and adapter JavaScript modules
-PASS: whole-master import writes isolated category rows
-PASS: category save does not alter another category data or revision
-PASS: loader reconstructs full master and active category
-PASS: revision race retries automatically
-PASS: club metadata saves independently of category payloads
-PASS: invalid import rejected before database call
-PASS: explicit full import replaces category set atomically at adapter contract
-PASS: legacy migration skips existing category rows unless explicitly authorized
-PASS: legacy migration seeds every category when the target table is empty
-PASS: offline baseline diff isolates changed category from unchanged category despite shared-field drift
-NOTE: mock client tests adapter behaviour only; PostgreSQL/RLS/live Supabase not exercised.
-PASS: queue coalesces saves per category while retaining independent category operations
-PASS: shared club metadata is queued separately from category payloads
-PASS: a newer save during an in-flight write is retained and rebased
-PASS: failed network write preserves queue and subsequent retry drains it
-PASS: full import supersedes pending category operations and refreshes revisions
-PASS: additive migration only; legacy tournaments table is not dropped, truncated or deleted
-PASS: category RLS and authenticated owner/approval checks are present
-PASS: category writes and master replacement share a club-level advisory lock and revision check
-PASS: RPC execute privileges are revoked from public and anon
-NOTE: static checks are not a substitute for executing SQL on PostgreSQL staging.
-PASS: new adapter is loaded but disabled by default
-PASS: authenticated startup guard precedes category-mode startup
-PASS: import, reset-all, category create/remove/name changes use full-master replacement
-PASS: ordinary saves pass through category-scoped queue path when enabled
-PASS: offline bootstrap snapshots are reconciled against the last confirmed cloud baseline
-PASS: candidate HTML has 132 IDs with no duplicates
-PASS: app version and adapter script order are consistent
+BADMINTON TOURNAMENT MANAGER — PRODUCTION VALIDATION
+Date: 2026-10-04
+Production app version: V5.3.80
+Production branch: main
+Supabase project: tumqpsbwelmwawbkqtjh (eu-west-2)
+
+AUTOMATED CI
+Latest completed suite for the V5.3.80 application code:
+- GitHub Actions run #36: https://github.com/megerdin/badminton-tournament-manager/actions/runs/37218942943
+- Tested commit: ea3d638d6c1a5e75fea89ff61fc1203dd41973cf
+- Result: SUCCESS
+
+Coverage reported by CI:
+- JavaScript syntax checks for root, candidate and reference app modules.
+- Category persistence adapter tests: isolated category writes, complete master import, reconstruction, revision races, metadata writes, invalid imports and legacy migration guards.
+- Category sync queue tests: per-category coalescing, independent category operations, in-flight edits, retained failed writes, retry and full-master replacement.
+- SQL safety tests: additive schema safeguards, RLS/authorization/revision checks, RPC grants and guarded legacy backfill.
+- Integration guards: approved startup, category-scoped ordinary saves, full-master operations and offline bootstrap handling.
+- HTML safety: duplicate-ID check, root/candidate version parity (V5.3.80) and persistence script order.
+
+PRODUCTION SUPABASE VALIDATION
+Checked directly against the existing main project after applying migrations:
+- Migrations present: category_scoped_persistence_main_additive, categories_updated_by_index, backfill_valid_legacy_category_snapshots.
+- 8 auth users, 8 profiles, 6 clubs and 6 legacy tournament rows remain.
+- 5 live category rows exist across the clubs; the primary club retains 2 live categories.
+- The guarded backfill migrated only clubs with no category rows and a valid supported master snapshot. Existing category rows and legacy tournament snapshots were not deleted or overwritten.
+- The legacy tournament snapshot is expected to become stale after category-mode saves; category rows are the online source of truth for migrated clubs.
+
+LIMITATIONS / REQUIRED LIVE CHECKS
+- Mocked CI tests are not an authenticated browser/mobile end-to-end test.
+- Verify sign-in, category switching, a harmless edit, cloud-confirmed save, reload in a fresh session, offline recovery and JSON export/import in the live app.
+- Supabase Auth leaked-password protection was previously reported disabled and still needs to be enabled in Dashboard → Authentication → Password Security.
+- Do not treat a local save or queued save as cloud-confirmed until the app reports the cloud sync completed.
