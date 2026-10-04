@@ -30,6 +30,8 @@ This is intentionally a hybrid model: relational rows define ownership and save 
 3. Explicit JSON import, category-list create/remove/rename, and Reset All use a transactional whole-master replacement. That operation intentionally deletes omitted categories.
 4. A migration marker (`shared_data.categoryPersistenceVersion = 1`) is set only by the complete replacement RPC. If category rows exist without the marker, startup refuses to load them as a complete set.
 5. Offline operations remain in a localStorage queue; each category is coalesced independently. If the cloud account/club has not yet been resolved, a bootstrap snapshot is kept and compared with the last confirmed cloud baseline after reconnection. Only categories that actually changed locally are queued. With no trustworthy baseline, cloud wins unless the operation was an explicit full import. Failed writes are not removed from the queue.
+5. During first-time bootstrap, local data may seed category storage only when the legacy cloud snapshot is genuinely empty. A non-empty but unrecognized legacy snapshot stops migration with an explicit error instead of risking a stale-local overwrite.
+6. Failed writes are not removed from the queue.
 6. `tournaments` is not dropped, truncated or changed by the draft migration.
 
 ## Remaining validation sequence
@@ -52,7 +54,7 @@ After category-mode saves begin, the old `tournaments.data` snapshot will be sta
 - Queue mock tests cover per-category coalescing, separate club metadata, in-flight saves, offline retry, and whole-master import superseding earlier pending operations.
 - Static SQL checks verify additive migration intent, owner/approval checks, RLS, revision locking, and restricted RPC execution.
 - App integration guard checks verify feature flag default-off, script order, startup approval guard, and full-master operations for imports/resets/category-list changes.
-- All application JavaScript files pass `node --check`; package integrity is checked after packaging. A final design audit added a server-side metadata RPC because ordinary metadata saves must not create a false migration-complete marker.
+- All application JavaScript files pass `node --check`; package integrity is checked after packaging. A final design audit added a server-side metadata RPC because ordinary metadata saves must not create a false migration-complete marker. A follow-up bootstrap audit also added a fail-safe for non-empty, unrecognized legacy cloud snapshots so stale browser data cannot silently become the initial migration source.
 
 **Verified on the main database:** migration is recorded; required tables/columns/RPCs and grants exist; test transactions exercised save/revision conflict, full-master replacement, metadata marker preservation, non-owner denial and unauthenticated execute denial, with test writes rolled back. Existing data counts remained unchanged and the new categories table remained empty.
 
