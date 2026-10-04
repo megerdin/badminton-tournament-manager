@@ -224,7 +224,22 @@ window.BADMINTON_CLOUD={
     queue.enqueueMasterReplacement(master,{sharedData:{...this.categorySharedData,date:String(master.date||''),categoryPersistenceVersion:1}});
    }else{
     queue.enqueueClubMetadata({clubName:master.clubName,sharedData:{...this.categorySharedData,date:String(master.date||''),categoryPersistenceVersion:1}});
-    queue.enqueueCategory(category,{expectedRevision:Number(queue.revisions[activeId]||this.categoryRevisions[activeId]||0),sortOrder:(master.categories||[]).findIndex(c=>String(c.id)===activeId)});
+    // A master snapshot can contain unsynced edits in more than the active
+    // category (for example after a category switch or recovery). Reconcile it
+    // against the last confirmed cloud baseline so an ordinary Save cannot
+    // silently leave another locally changed category behind on this device.
+    const baseline=this.cloudBaseSnapshot||this.readCategoryBaseline();
+    const changed=baseline&&Array.isArray(baseline.categories)
+      ?window.BADMINTON_CATEGORY_PERSISTENCE.diffMasterAgainstBaseline(master,baseline).changedCategories
+      :[];
+    const pendingById=new Map(changed.map(item=>[String(item.category.id),item]));
+    // Always include the active category: Save is an explicit request to persist
+    // its current in-memory state, even if normalization makes it compare equal.
+    pendingById.set(activeId,{category,sortOrder:(master.categories||[]).findIndex(c=>String(c.id)===activeId)});
+    for(const item of pendingById.values()){
+     const id=String(item.category.id);
+     queue.enqueueCategory(item.category,{expectedRevision:Number(queue.revisions[id]||this.categoryRevisions[id]||0),sortOrder:item.sortOrder});
+    }
    }
   }catch(error){this.status('Local data saved, but cloud queue could not be stored. Export a backup.');return {status:'queue-failed',error:String(error?.message||error)};}
   this.status('Category save queued; syncing to cloud…');
@@ -258,6 +273,21 @@ window.BADMINTON_CLOUD={
   if(result.status==='synced'){
    clearTimeout(this.retryTimer);this.retryAttempt=0;
    this.cloudHydrated=true;
+   // Refresh the baseline only after the queue confirms all writes. This keeps
+   // future diffs anchored to a full, confirmed cloud snapshot rather than an
+   // older startup snapshot.
+   try{
+    const loaded=await window.BADMINTON_CATEGORY_PERSISTENCE.loadMaster(this.client,this.clubId,masterTournament?.activeCategoryId);
+    this.cloudBaseSnapshot=JSON.parse(JSON.stringify(loaded.master));
+    this.writeCategoryBaseline(loaded.master);
+    this.categoryRevisions={...(loaded.revisions||{})};
+    if(this.categoryQueue)this.categoryQueue.revisions={...(loaded.revisions||{})};
+    this.categorySharedData={...(loaded.sharedData||{})};
+   }catch(error){
+    // The writes themselves are confirmed. If baseline refresh fails, retain
+    // the previous baseline; the next save can safely retry reconciliation.
+    console.warn('Cloud saved; category baseline refresh deferred:',error);
+   }
    this.status('Cloud synced — category changes saved');
    return {status:'synced',saved:result.saved};
   }
