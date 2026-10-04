@@ -1,0 +1,29 @@
+PASS: syntax checks for candidate, reference and adapter JavaScript modules
+PASS: whole-master import writes isolated category rows
+PASS: category save does not alter another category data or revision
+PASS: loader reconstructs full master and active category
+PASS: revision race retries automatically
+PASS: club metadata saves independently of category payloads
+PASS: invalid import rejected before database call
+PASS: explicit full import replaces category set atomically at adapter contract
+PASS: legacy migration skips existing category rows unless explicitly authorized
+PASS: legacy migration seeds every category when the target table is empty
+PASS: offline baseline diff isolates changed category from unchanged category despite shared-field drift
+NOTE: mock client tests adapter behaviour only; PostgreSQL/RLS/live Supabase not exercised.
+PASS: queue coalesces saves per category while retaining independent category operations
+PASS: shared club metadata is queued separately from category payloads
+PASS: a newer save during an in-flight write is retained and rebased
+PASS: failed network write preserves queue and subsequent retry drains it
+PASS: full import supersedes pending category operations and refreshes revisions
+PASS: additive migration only; legacy tournaments table is not dropped, truncated or deleted
+PASS: category RLS and authenticated owner/approval checks are present
+PASS: category writes and master replacement share a club-level advisory lock and revision check
+PASS: RPC execute privileges are revoked from public and anon
+NOTE: static checks are not a substitute for executing SQL on PostgreSQL staging.
+PASS: new adapter is loaded but disabled by default
+PASS: authenticated startup guard precedes category-mode startup
+PASS: import, reset-all, category create/remove/name changes use full-master replacement
+PASS: ordinary saves pass through category-scoped queue path when enabled
+PASS: offline bootstrap snapshots are reconciled against the last confirmed cloud baseline
+PASS: candidate HTML has 132 IDs with no duplicates
+PASS: app version and adapter script order are consistent
