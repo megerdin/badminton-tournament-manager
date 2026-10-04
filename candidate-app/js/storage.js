@@ -137,7 +137,13 @@ window.BADMINTON_CLOUD={
      seed=masterTournament;
     }
    }
-   if(!seed&&masterTournament?.categories?.length)seed=masterTournament;
+   // Never replace a non-empty but unrecognized legacy cloud snapshot with
+   // this browser's local copy during first-time migration. That could silently
+   // overwrite valid cloud data with stale local data. Local seeding is allowed
+   // only when the legacy cloud snapshot is genuinely empty.
+   const legacyIsEmpty=!legacy||typeof legacy!=='object'||Array.isArray(legacy)||Object.keys(legacy).length===0;
+   if(!seed&&legacyIsEmpty&&masterTournament?.categories?.length)seed=masterTournament;
+   if(!seed&&!legacyIsEmpty)throw new Error('The legacy cloud snapshot is non-empty but is not a supported master-category snapshot. No migration was performed; existing cloud and local data have been preserved.');
    if(seed?.categories?.length){
     await adapter.replaceMaster(this.client,{clubId:this.clubId,master:seed,sharedData:{...(loaded.sharedData||{}),date:String(seed.date||''),categoryPersistenceVersion:1}});
     loaded=await adapter.loadMaster(this.client,this.clubId,seed.activeCategoryId);
