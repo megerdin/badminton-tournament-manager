@@ -1,7 +1,7 @@
 /*
  * Category-scoped persistence adapter used by the guarded candidate app.
- * The feature remains disabled by default until authenticated end-to-end
- * browser/mobile tests pass; the additive database schema is installed on main.
+ * Enabled by the production storage configuration after schema and CI checks.
+ * Authenticated browser/mobile smoke tests remain required for release validation.
  */
 (function(root){
   'use strict';
