@@ -7,7 +7,7 @@ assert.match(storage,/queueSave\(snapshot,options=\{\}\)[\s\S]*queueCategoryScop
 assert.match(storage,/if\(options\?\.replaceAll\)[\s\S]*enqueueMasterReplacement/,'full imports use transactional master replacement');
 assert.match(storage,/writeCategoryBaseline\(loaded\.master\)/,'successful cloud load persists a baseline for offline comparison');
 assert.match(storage,/diffMasterAgainstBaseline\(master,baseline\)[\s\S]*pendingById\.set\(activeId,\{category,sortOrder:/,'ordinary saves reconcile all locally changed categories against the confirmed cloud baseline');
-assert.match(storage,/Cloud saved; category baseline refresh deferred:[\s\S]*writeCategoryBaseline\(loaded\.master\)/,'successful category queue flush refreshes the full confirmed cloud baseline');
+assert.match(storage,/const loaded=await window\.BADMINTON_CATEGORY_PERSISTENCE\.loadMaster\(this\.client,this\.clubId,masterTournament\?\.activeCategoryId\)[\s\S]*writeCategoryBaseline\(loaded\.master\)[\s\S]*Cloud saved; category baseline refresh deferred:/,'successful category queue flush refreshes the full confirmed cloud baseline');
 assert.match(storage,/categorySaveWaiters:\[\]/,'debounced autosave tracks all pending confirmations');
 assert.match(storage,/const waiters=this\.categorySaveWaiters\.splice\(0\)/,'debounced autosave drains all callers together');
 assert.match(storage,/waiters\.forEach\(resolveSave=>resolveSave\(result\)\)/,'every coalesced save caller receives the actual sync result');
