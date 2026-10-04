@@ -23,6 +23,7 @@ for file in "$ROOT"/candidate-app/js/*.js "$ROOT"/reference-app/js/*.js "$ROOT"/
 done
 if [ "$syntax_failed" -eq 0 ]; then echo 'PASS: syntax checks for candidate, reference and adapter JavaScript modules'; else failed=1; fi
 node "$ROOT/tests/categoryPersistenceAdapter.test.js" || failed=1
+node "$ROOT/tests/candidateCategoryPersistenceAdapter.test.js" || failed=1
 node "$ROOT/tests/candidateAdapterSmoke.test.js" || failed=1
 node "$ROOT/tests/categorySyncQueue.test.js" || failed=1
 node "$ROOT/tests/sqlSafety.test.js" || failed=1
