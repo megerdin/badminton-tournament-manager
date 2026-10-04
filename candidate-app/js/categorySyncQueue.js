@@ -1,4 +1,7 @@
-/* Durable per-category operation queue. Prototype only; not wired into app yet. */
+/* Durable per-category operation queue used by the guarded candidate app.
+ * The category persistence feature remains disabled by default until live
+ * authenticated browser/mobile integration tests pass.
+ */
 (function(root){
   'use strict';
   const clone=value=>value===undefined?undefined:JSON.parse(JSON.stringify(value));
