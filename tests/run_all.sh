@@ -9,6 +9,13 @@ if ! command -v node >/dev/null 2>&1; then
   exit 127
 fi
 
+if ! node -e 'process.exit(Number(process.versions.node.split(".")[0]) >= 18 ? 0 : 1)' >/dev/null 2>&1; then
+  echo "ERROR: Node.js 18 or newer is required; this test suite uses modern JavaScript features." >&2
+  echo "Detected version: $(node --version 2>/dev/null || echo unknown)" >&2
+  echo "Install a current Node.js LTS release, then rerun: bash tests/run_all.sh" >&2
+  exit 2
+fi
+
 failed=0
 syntax_failed=0
 for file in "$ROOT"/candidate-app/js/*.js "$ROOT"/reference-app/js/*.js "$ROOT"/js/*.js; do
