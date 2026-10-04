@@ -6,6 +6,9 @@ assert.ok(html.indexOf('js/categorySyncQueue.js')<html.indexOf('js/storage.js'),
 assert.match(storage,/queueSave\(snapshot,options=\{\}\)[\s\S]*queueCategoryScopedSave\(snapshot,options\)/,'save options reach category persistence path');
 assert.match(storage,/if\(options\?\.replaceAll\)[\s\S]*enqueueMasterReplacement/,'full imports use transactional master replacement');
 assert.match(storage,/writeCategoryBaseline\(loaded\.master\)/,'successful cloud load persists a baseline for offline comparison');
+assert.match(storage,/categorySaveWaiters:\[\]/,'debounced autosave tracks all pending confirmations');
+assert.match(storage,/const waiters=this\.categorySaveWaiters\.splice\(0\)/,'debounced autosave drains all callers together');
+assert.match(storage,/waiters\.forEach\(resolveSave=>resolveSave\(result\)\)/,'every coalesced save caller receives the actual sync result');
 assert.match(storage,/readCategoryBootstrapQueue\(\)/,'offline saves before club resolution are persisted for later reconciliation');
 assert.match(storage,/resumeCloudSync\(\)/,'network recovery retries cloud setup as well as pending writes');
 assert.match(storage,/categoryPersistenceVersion/,'category migration marker is checked and preserved');
