@@ -504,7 +504,9 @@ function renderCategories(){
       if(category.data?.settings)category.data.settings.categories=[{id:String(category.id),name:category.name}];
       if(String(masterTournament?.activeCategoryId)===String(category.id))
         tournament.settings.categories=[{id:String(category.id),name:category.name}];
-      saveLocal(true,{replaceAll:true});
+      // A category rename is metadata/category-scoped work, not a whole-master replacement.
+      // Full replacement here could upload a stale snapshot and erase another category.
+      saveLocal(true);
       renderAll();
     });
   });
