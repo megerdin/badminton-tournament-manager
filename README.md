@@ -4,7 +4,7 @@
 
 The additive category-persistence schema was applied to the main Supabase project on 2026-10-04. Existing user accounts and legacy tournament records are retained. The categories table starts empty and each club is migrated on its first approved, authenticated startup: the app reads that club's legacy tournament snapshot, validates/converts it through the application migration path, writes the complete category set transactionally, then confirms the migration marker. Routine saves thereafter update the active category and shared club metadata; full imports and category-list changes use the full-master replacement RPC.
 
-GitHub Actions automated tests and Pages deployment passed for the pre-promotion commit. A new run will validate this production promotion. Database transaction checks previously verified revision conflicts, owner authorization, migration-marker handling and denial of unauthenticated/non-owner calls. The available connected tools do not provide a real authenticated browser/mobile session, so real-device sign-in, cross-device reload, offline recovery and export/import UX still require live smoke testing.
+GitHub Actions automated tests and the GitHub Pages deployment both completed successfully for the production promotion. Future pushes to main continue to run the automated suite and publish the root app. Database transaction checks previously verified revision conflicts, owner authorization, migration-marker handling and denial of unauthenticated/non-owner calls. The available connected tools do not provide a real authenticated browser/mobile session, so real-device sign-in, cross-device reload, offline recovery and export/import UX still require live smoke testing.
 
 ## Contents
 
