@@ -159,7 +159,7 @@ window.BADMINTON_CLOUD={
   queue.revisions={...(loaded.revisions||{})};this.categoryRevisions={...(loaded.revisions||{})};
   if(bootstrap?.snapshot&&Array.isArray(bootstrap.snapshot.categories)){
    if(bootstrap.replaceAll){
-    queue.enqueueMasterReplacement(bootstrap.snapshot,{sharedData:{...this.categorySharedData,date:String(bootstrap.snapshot.date||''),categoryPersistenceVersion:1,allowEmptyOverwrite:Boolean(bootstrap.allowEmptyOverwrite)}});
+    queue.enqueueMasterReplacement(bootstrap.snapshot,{sharedData:{...this.categorySharedData,date:String(bootstrap.snapshot.date||''),categoryPersistenceVersion:1,allowEmptyOverwrite:Boolean(bootstrap.allowEmptyOverwrite),allowCategoryRemoval:Boolean(bootstrap.allowCategoryRemoval)}});
     this.clearCategoryBootstrapQueue();
    }else if(bootstrap.baseSnapshot&&Array.isArray(bootstrap.baseSnapshot.categories)){
     // Reconcile only categories changed locally since the last known cloud
@@ -210,7 +210,7 @@ window.BADMINTON_CLOUD={
   if(!this.clubId){
    const previous=this.readCategoryBootstrapQueue();
    const baseline=previous?.baseSnapshot||this.readCategoryBaseline();
-   const stored=this.writeCategoryBootstrapQueue({snapshot:JSON.parse(JSON.stringify(master)),baseSnapshot:baseline?JSON.parse(JSON.stringify(baseline)):null,replaceAll:Boolean(options?.replaceAll||previous?.replaceAll),allowEmptyOverwrite:Boolean(options?.allowEmptyOverwrite||previous?.allowEmptyOverwrite),queuedAt:Date.now()});
+   const stored=this.writeCategoryBootstrapQueue({snapshot:JSON.parse(JSON.stringify(master)),baseSnapshot:baseline?JSON.parse(JSON.stringify(baseline)):null,replaceAll:Boolean(options?.replaceAll||previous?.replaceAll),allowEmptyOverwrite:Boolean(options?.allowEmptyOverwrite||previous?.allowEmptyOverwrite),allowCategoryRemoval:Boolean(options?.allowCategoryRemoval||previous?.allowCategoryRemoval),queuedAt:Date.now()});
    if(!stored){this.status('Local data saved, but offline cloud queue could not be stored. Export a backup.');return {status:'queue-failed'};}
    this.status('Saved on this device; cloud setup pending.');
    return {status:'cloud-not-loaded'};
@@ -221,7 +221,7 @@ window.BADMINTON_CLOUD={
   if(!category)return {status:'pending',error:'Active category is missing from the master snapshot.'};
   try{
    if(options?.replaceAll){
-    queue.enqueueMasterReplacement(master,{sharedData:{...this.categorySharedData,date:String(master.date||''),categoryPersistenceVersion:1,allowEmptyOverwrite:Boolean(options?.allowEmptyOverwrite)}});
+    queue.enqueueMasterReplacement(master,{sharedData:{...this.categorySharedData,date:String(master.date||''),categoryPersistenceVersion:1,allowEmptyOverwrite:Boolean(options?.allowEmptyOverwrite),allowCategoryRemoval:Boolean(options?.allowCategoryRemoval)}});
    }else{
     queue.enqueueClubMetadata({clubName:master.clubName,sharedData:{...this.categorySharedData,date:String(master.date||''),categoryPersistenceVersion:1}});
     // A master snapshot can contain unsynced edits in more than the active
