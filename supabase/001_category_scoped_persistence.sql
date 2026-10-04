@@ -1,5 +1,9 @@
--- Badminton Tournament Manager — category-scoped persistence (STAGING DRAFT)
--- Additive only: does not modify/drop public.tournaments or migrate production data.
+-- Badminton Tournament Manager — category-scoped persistence schema reference.
+-- The corresponding additive migration was applied to the main Supabase project
+-- on 2026-10-04 (migration name: category_scoped_persistence_main_additive).
+-- DO NOT re-run this file against that project without reviewing live definitions.
+-- This checked-in reference must be compared with the recorded live migration
+-- before reuse on another project. It does not migrate legacy tournament data.
 -- Requires existing public.clubs/public.profiles and private.is_approved_user(),
 -- private.is_master_admin(), private.is_club_owner(uuid) from policies.sql.
 
