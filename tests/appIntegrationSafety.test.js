@@ -9,6 +9,7 @@ assert.match(storage,/writeCategoryBaseline\(loaded\.master\)/,'successful cloud
 assert.match(storage,/readCategoryBootstrapQueue\(\)/,'offline saves before club resolution are persisted for later reconciliation');
 assert.match(storage,/resumeCloudSync\(\)/,'network recovery retries cloud setup as well as pending writes');
 assert.match(storage,/categoryPersistenceVersion/,'category migration marker is checked and preserved');
+assert.match(storage,/legacyIsEmpty[\s\S]*if\(!seed&&legacyIsEmpty&&masterTournament\?\.categories\?\.length\)seed=masterTournament[\s\S]*if\(!seed&&!legacyIsEmpty\)throw new Error/,'local data can seed an empty legacy cloud only; unknown non-empty cloud snapshots fail safely');
 assert.match(storage,/if\(!this\.appReady\|\|this\.profile\?\.approval_status!=='approved'\|\|!this\.tournamentId\)return \{status:'not-ready'\};\s*if\(this\.categoryModeEnabled\(\)\)/,'approval/startup guard remains before new persistence path');
 assert.match(tournament,/saveLocal\(true,\{replaceAll:true\}\);[\s\S]*showMessage\("All categories reset\./,'reset-all persists all categories');
 assert.match(tournament,/saveLocal\(true,\{replaceAll:true\}\);[\s\S]*const active=getActiveCategoryRecord\(\)/,'category-count changes persist the category set');
