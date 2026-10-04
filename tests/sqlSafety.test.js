@@ -43,8 +43,10 @@ assert.match(emptyOverwriteGuard,/jsonb_array_length\(coalesce\(p_data->'teams'/
 assert.match(emptyOverwriteGuard,/revoke all on function public\.save_category_data[\s\S]*from public, anon/i,'RPC permissions remain restricted');
 assert.doesNotMatch(emptyOverwriteGuard,/drop table|truncate|delete from public\./i,'guard migration does not delete data or tables');
 assert.match(masterOverwriteGuard,/allowEmptyOverwrite/i,'only explicitly intentional import/reset may bypass full-master empty-category protection');
-assert.match(masterOverwriteGuard,/refusing full-master replacement that would erase populated category/i,'stale full-master snapshots cannot silently erase populated categories');
-assert.match(masterOverwriteGuard,/shared_data=\(coalesce\(p_shared_data,'\{\}'::jsonb\) - 'allowEmptyOverwrite'\)/i,'intent flag is not persisted as club metadata');
+assert.match(masterOverwriteGuard,/refusing full-master replacement that would erase populated category/i,'stale full-master snapshots cannot silently empty populated categories');
+assert.match(masterOverwriteGuard,/refusing full-master replacement that omits populated category/i,'stale full-master snapshots cannot silently delete populated categories');
+assert.match(masterOverwriteGuard,/allowCategoryRemoval/i,'category deletion requires explicit category-removal intent');
+assert.match(masterOverwriteGuard,/shared_data=\(coalesce\(p_shared_data,'\{\}'::jsonb\) - 'allowEmptyOverwrite' - 'allowCategoryRemoval'\)/i,'intent flag is not persisted as club metadata');
 assert.match(masterOverwriteGuard,/pg_advisory_xact_lock\(hashtextextended\(p_club_id::text, 0\)\)/i,'full-master guard shares the transaction lock');
 assert.doesNotMatch(masterOverwriteGuard,/drop table|truncate/i,'full-master guard is additive and does not truncate tables');
 
