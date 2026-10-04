@@ -1,4 +1,4 @@
-const APP_VERSION = '5.3.77';
+const APP_VERSION = '5.3.79';
 
 "use strict";
 
@@ -504,7 +504,7 @@ function renderCategories(){
       if(category.data?.settings)category.data.settings.categories=[{id:String(category.id),name:category.name}];
       if(String(masterTournament?.activeCategoryId)===String(category.id))
         tournament.settings.categories=[{id:String(category.id),name:category.name}];
-      saveLocal(true);
+      saveLocal(true,{replaceAll:true});
       renderAll();
     });
   });
@@ -549,11 +549,17 @@ function createCategories(){
     saveActiveCategoryToMaster();
     categories.length=count;
     masterTournament.categories=categories;
-    if(activeWillBeRemoved)masterTournament.activeCategoryId=categories[0].id;
+    if(activeWillBeRemoved){
+      masterTournament.activeCategoryId=categories[0].id;
+      const nextActive=getActiveCategoryRecord();
+      tournament=migrateTournamentData(nextActive.data);
+      tournament.clubName=masterTournament.clubName||"";
+      renderAll();
+    }
   }
   masterTournament.categories=categories;
   addHistory("Categories created",String(count));
-  saveLocal(true);
+  saveLocal(true,{replaceAll:true});
   const active=getActiveCategoryRecord();
   tournament=migrateTournamentData(active.data);
   tournament.clubName=masterTournament.clubName||"";
@@ -576,14 +582,15 @@ function removeCategory(categoryId){
     saveActiveCategoryToMaster();
   }
   masterTournament.categories=categories.filter(category=>String(category.id)!==String(categoryId));
-  if(wasActive)masterTournament.activeCategoryId=masterTournament.categories[0].id;
-  addHistory("Category removed",target.name);
-  saveLocal(true);
   if(wasActive){
-    const active=getActiveCategoryRecord();
-    tournament=migrateTournamentData(active.data);
+    masterTournament.activeCategoryId=masterTournament.categories[0].id;
+    const nextActive=getActiveCategoryRecord();
+    tournament=migrateTournamentData(nextActive.data);
     tournament.clubName=masterTournament.clubName||"";
+    renderAll();
   }
+  addHistory("Category removed",target.name);
+  saveLocal(true,{replaceAll:true});
   renderAll();
 }
 
@@ -3065,7 +3072,7 @@ function resetAllCategories(){
   tournament=migrateTournamentData(active.data);
   tournament.clubName=masterTournament.clubName||"";
   renderAll();
-  saveLocal(true);
+  saveLocal(true,{replaceAll:true});
   showMessage("All categories reset. Category names and settings were preserved.");
 }
 
@@ -3097,7 +3104,7 @@ function importTournamentFile(file){
       saveActiveCategoryToMaster();
       const importedSnapshot=deepClone(masterTournament);
       window.BADMINTON_LOCAL?.write(JSON.stringify(importedSnapshot));
-      window.BADMINTON_CLOUD?.queueSave?.(importedSnapshot).catch(err=>console.warn("Cloud import sync deferred:",err));
+      window.BADMINTON_CLOUD?.queueSave?.(importedSnapshot,{replaceAll:true}).catch(err=>console.warn("Cloud import sync deferred:",err));
       renderAll();
       showMessage("Tournament master JSON imported.");
     }catch(e){

@@ -12,7 +12,7 @@
 window.BADMINTON_CLOUD_CONFIG = {
   url: "https://tumqpsbwelmwawbkqtjh.supabase.co",
   publishableKey: "sb_publishable_CcmUtzpRMlCqEY8o5yXdGQ_7Otmu4t4",
-  categoryScopedPersistence: false
+  categoryScopedPersistence: true
 };
 
 /* ====================== cloud.js ====================== */

@@ -1,7 +1,7 @@
 /*
- * Category-scoped persistence prototype.
- * Not wired into the production app by default. Keep behind explicit opt-in
- * until the SQL is applied to a staging Supabase project and integration tests pass.
+ * Category-scoped persistence adapter used by the guarded candidate app.
+ * The feature remains disabled by default until authenticated end-to-end
+ * browser/mobile tests pass; the additive database schema is installed on main.
  */
 (function(root){
   'use strict';

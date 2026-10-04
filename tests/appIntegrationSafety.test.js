@@ -1,6 +1,6 @@
 const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');
 const root=path.join(__dirname,'../candidate-app');const storage=fs.readFileSync(path.join(root,'js/storage.js'),'utf8');const tournament=fs.readFileSync(path.join(root,'js/tournament.js'),'utf8');const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-assert.match(storage,/categoryScopedPersistence:\s*false/,'new persistence remains opt-in by default');
+assert.match(storage,/categoryScopedPersistence:\s*true/,'production category persistence is enabled');
 assert.ok(html.indexOf('js/categoryPersistenceAdapter.js')<html.indexOf('js/storage.js'),'adapter loads before storage module');
 assert.ok(html.indexOf('js/categorySyncQueue.js')<html.indexOf('js/storage.js'),'queue loads before storage module');
 assert.match(storage,/queueSave\(snapshot,options=\{\}\)[\s\S]*queueCategoryScopedSave\(snapshot,options\)/,'save options reach category persistence path');
@@ -14,7 +14,7 @@ assert.match(storage,/if\(!this\.appReady\|\|this\.profile\?\.approval_status!==
 assert.match(tournament,/saveLocal\(true,\{replaceAll:true\}\);[\s\S]*showMessage\("All categories reset\./,'reset-all persists all categories');
 assert.match(tournament,/saveLocal\(true,\{replaceAll:true\}\);[\s\S]*const active=getActiveCategoryRecord\(\)/,'category-count changes persist the category set');
 assert.match(tournament,/window\.BADMINTON_CLOUD\?\.queueSave\?\.\(importedSnapshot,\{replaceAll:true\}\)/,'JSON import persists complete master');
-console.log('PASS: new adapter is loaded but disabled by default');
+console.log('PASS: production category persistence is enabled; adapter and queue load before storage');
 console.log('PASS: authenticated startup guard precedes category-mode startup');
 console.log('PASS: import, reset-all, category create/remove/name changes use full-master replacement');
 console.log('PASS: ordinary saves pass through category-scoped queue path when enabled');
