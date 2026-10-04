@@ -4,6 +4,7 @@ const path=require('node:path');
 const root=path.join(__dirname,'../supabase/');
 const sql=fs.readFileSync(path.join(root,'001_category_scoped_persistence.sql'),'utf8');
 const backfill=fs.readFileSync(path.join(root,'005_backfill_valid_legacy_category_snapshots.sql'),'utf8');
+const emptyOverwriteGuard=fs.readFileSync(path.join(root,'006_prevent_empty_category_overwrite.sql'),'utf8');
 
 assert.match(sql,/alter table public\.clubs\s+add column if not exists shared_data/i);
 assert.match(sql,/create table if not exists public\.categories/i);
@@ -32,6 +33,14 @@ assert.match(backfill,/categoryPersistenceVersion/i,'migration marker is written
 assert.doesNotMatch(backfill,/drop table\s+public\./i);
 assert.doesNotMatch(backfill,/truncate\s+public\./i);
 assert.doesNotMatch(backfill,/delete from public\.(tournaments|profiles|categories)/i);
+
+assert.match(emptyOverwriteGuard,/create or replace function public\.save_category_data/i,'guard updates the existing category-save RPC');
+assert.match(emptyOverwriteGuard,/for update/i,'guard reads the category row under a write lock');
+assert.match(emptyOverwriteGuard,/refusing to overwrite populated category with an empty competition payload/i,'ordinary saves cannot erase all competition data from a populated category');
+assert.match(emptyOverwriteGuard,/jsonb_array_length\(coalesce\(v_row\.data->'teams'/i,'guard detects existing competition records');
+assert.match(emptyOverwriteGuard,/jsonb_array_length\(coalesce\(p_data->'teams'/i,'guard detects an empty incoming competition payload');
+assert.match(emptyOverwriteGuard,/revoke all on function public\.save_category_data[\s\S]*from public, anon/i,'RPC permissions remain restricted');
+assert.doesNotMatch(emptyOverwriteGuard,/drop table|truncate|delete from public\./i,'guard migration does not delete data or tables');
 
 console.log('PASS: category schema is additive and preserves the legacy tournaments table');
 console.log('PASS: category RLS, authorization, revision checks and RPC grants are guarded');
