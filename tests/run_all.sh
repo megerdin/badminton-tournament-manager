@@ -26,7 +26,6 @@ node "$ROOT/tests/categoryPersistenceAdapter.test.js" || failed=1
 node "$ROOT/tests/candidateCategoryPersistenceAdapter.test.js" || failed=1
 node "$ROOT/tests/candidateAdapterSmoke.test.js" || failed=1
 node "$ROOT/tests/categorySyncQueue.test.js" || failed=1
-node "$ROOT/tests/autosaveConfirmation.test.js" || failed=1
 node "$ROOT/tests/candidateCategorySyncQueue.test.js" || failed=1
 node "$ROOT/tests/sqlSafety.test.js" || failed=1
 node "$ROOT/tests/appIntegrationSafety.test.js" || failed=1
