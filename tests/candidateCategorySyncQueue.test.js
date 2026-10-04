@@ -1,5 +1,5 @@
 const assert=require('node:assert/strict');
-const Queue=require('../candidate-app/js/categorySyncQueue.js');
+const Queue=require('../js/categorySyncQueue.js');
 const memoryStorage=()=>{const data=new Map();return {getItem:k=>data.get(k)||null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)};};
 const category=(id,name)=>({id,name,data:{teams:[{name}],results:[]}});
 (async()=>{
