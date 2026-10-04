@@ -10,6 +10,7 @@ assert.match(storage,/categorySaveWaiters:\[\]/,'debounced autosave tracks all p
 assert.match(storage,/const waiters=this\.categorySaveWaiters\.splice\(0\)/,'debounced autosave drains all callers together');
 assert.match(storage,/waiters\.forEach\(resolveSave=>resolveSave\(result\)\)/,'every coalesced save caller receives the actual sync result');
 assert.match(storage,/readCategoryBootstrapQueue\(\)/,'offline saves before club resolution are persisted for later reconciliation');
+assert.match(storage,/if\(bootstrap\.baseSnapshot&&Array\.isArray\(bootstrap\.baseSnapshot\.categories\)\)[\s\S]*this\.clearCategoryBootstrapQueue\(\);[\s\S]*no saved cloud baseline exists[\s\S]*this\.clearCategoryBootstrapQueue\(\);[\s\S]*local recovery record has been preserved/,'bootstrap recovery requires a baseline or matching cloud data before clearing the local recovery record');
 assert.match(storage,/resumeCloudSync\(\)/,'network recovery retries cloud setup as well as pending writes');
 assert.match(storage,/categoryPersistenceVersion/,'category migration marker is checked and preserved');
 assert.match(storage,/legacyIsEmpty[\s\S]*if\(!seed&&legacyIsEmpty&&masterTournament\?\.categories\?\.length\)seed=masterTournament[\s\S]*if\(!seed&&!legacyIsEmpty\)throw new Error/,'local data can seed an empty legacy cloud only; unknown non-empty cloud snapshots fail safely');

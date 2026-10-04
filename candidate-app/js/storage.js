@@ -160,14 +160,27 @@ window.BADMINTON_CLOUD={
   if(bootstrap?.snapshot&&Array.isArray(bootstrap.snapshot.categories)){
    if(bootstrap.replaceAll){
     queue.enqueueMasterReplacement(bootstrap.snapshot,{sharedData:{...this.categorySharedData,date:String(bootstrap.snapshot.date||''),categoryPersistenceVersion:1}});
+    this.clearCategoryBootstrapQueue();
    }else if(bootstrap.baseSnapshot&&Array.isArray(bootstrap.baseSnapshot.categories)){
+    // Reconcile only categories changed locally since the last known cloud
+    // baseline. Cloud-only changes remain untouched; conflicting edits to the
+    // same category use the single-user policy: local wins.
     const diff=adapter.diffMasterAgainstBaseline(bootstrap.snapshot,bootstrap.baseSnapshot);
     if(diff.clubChanged)queue.enqueueClubMetadata({clubName:bootstrap.snapshot.clubName,sharedData:{...this.categorySharedData,date:String(bootstrap.snapshot.date||''),categoryPersistenceVersion:1}});
     diff.changedCategories.forEach(item=>queue.enqueueCategory(item.category,{expectedRevision:Number(queue.revisions[String(item.category.id)]||0),sortOrder:item.sortOrder}));
+    this.clearCategoryBootstrapQueue();
+   }else{
+    // Without a trustworthy baseline, differences alone cannot prove which
+    // copy is newer. Keep the local recovery record and stop automatic sync;
+    // never silently discard local edits or overwrite cloud data.
+    const localDiff=adapter.diffMasterAgainstBaseline(bootstrap.snapshot,loaded.master);
+    if(!localDiff.clubChanged&&!localDiff.changedCategories.length){
+     this.clearCategoryBootstrapQueue();
+    }else{
+     this.status('Local recovery data needs review: no saved cloud baseline exists. Cloud and local copies have been preserved. Export a local backup before continuing.');
+     throw new Error('Local recovery data has no trustworthy baseline. Neither copy was overwritten; the local recovery record has been preserved.');
+    }
    }
-   // Without a known cloud baseline, a routine local snapshot cannot be proven
-   // newer. In that case the cloud wins. Explicit imports remain authoritative.
-   this.clearCategoryBootstrapQueue();
   }
   if(queue.pendingCount()){
    const sync=await queue.flush();
