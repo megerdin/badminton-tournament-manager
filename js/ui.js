@@ -151,8 +151,14 @@ function renderHeaderClubName(){
   if(!el)return;
   const name=masterTournament?.clubName||tournament?.clubName||"Your club name";
   el.textContent=name;
+  const categories=getMasterCategories();
   const active=getActiveCategoryRecord();
-  const categoryName=String(active?.name||normalizeCategories()[0]?.name||"C & D").trim()||"C & D";
+  const categoryName=String(active?.name||categories[0]?.name||"C & D").trim()||"C & D";
+  const categoryIndex=Math.max(0,categories.findIndex(c=>String(c.id)===String(active?.id)));
+  const header=el.closest(".app-header");
+  if(header){
+    header.dataset.categoryColor=String((categoryIndex%8)+1);
+  }
   el.setAttribute("aria-label",`Switch category. Current category: ${categoryName}`);
   const versionEl=document.getElementById("appVersion");
   if(versionEl)versionEl.textContent=`V${escapeHtml(APP_VERSION)}`;
