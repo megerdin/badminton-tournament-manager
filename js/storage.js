@@ -277,7 +277,7 @@ async completeCloudStartup(){
     this.gate(false);
     return {status:'offline',error};
    }
-  }
+  },
 finishAppStartup(){this.appReady=true;if(this.profile?.approval_status==='approved')this.completeCloudStartup().catch(e=>{this.status('Cloud load failed — local data kept.');this.message('Cloud load failed: '+e.message);this.gate(false);});}
 };
 window.BADMINTON_CLOUD.applySnapshot=s=>{if(typeof window.applyCloudSnapshotInternal==='function')window.applyCloudSnapshotInternal(s);};
