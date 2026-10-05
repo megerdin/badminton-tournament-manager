@@ -65,7 +65,7 @@
     return {status:'saved',club:clone(row.club)};
   }
 
-  async function replaceMaster(client,{clubId,master,sharedData={}}){
+  async function replaceMaster(client,{clubId,master,sharedData={},allowEmptyOverwrite=false,allowCategoryRemoval=false}){
     if(!master||!Array.isArray(master.categories)||!master.categories.length)throw makeError('A master import must contain at least one category.');
     const seen=new Set();
     const categories=master.categories.map((category,index)=>{
@@ -75,6 +75,8 @@
       return {id,name:String(category.name||`Category ${index+1}`),sortOrder:index,data:clone(category.data)};
     });
     const shared={...(object(sharedData)?clone(sharedData):{}),date:String(master.date||''),categoryPersistenceVersion:1};
+    if(allowEmptyOverwrite)shared.allowEmptyOverwrite=true;
+    if(allowCategoryRemoval)shared.allowCategoryRemoval=true;
     const response=await checked(client.rpc('replace_club_master',{
       p_club_id:clubId,p_club_name:String(master.clubName||''),p_shared_data:shared,p_categories:categories
     }));
