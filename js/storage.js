@@ -192,7 +192,7 @@ async flushCategoryQueue(){
    this.gate(false);
    if(window.renderAll)window.renderAll();
    return {status:'loaded',categoryCount:loaded.master.categories.length};
-  }
+  },
 
   queueSave(snapshot,options={}){
    if(!this.configured()||!this.client||!this.session||this.profile?.approval_status!=='approved'||!this.clubId)
