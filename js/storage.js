@@ -140,7 +140,7 @@ window.BADMINTON_CLOUD={
    this.gate(false);
    if(window.renderAll)window.renderAll();
    return {status:'loaded',categoryCount:loaded.master.categories.length};
-  }
+  },
 
 async flushCategoryQueue(){
   if(!this.categoryModeEnabled()||!this.client||!this.session||this.profile?.approval_status!=='approved'||!this.clubId)return {status:'idle'};
