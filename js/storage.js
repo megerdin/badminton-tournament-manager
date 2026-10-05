@@ -19,6 +19,7 @@ window.BADMINTON_CLOUD_CONFIG = {
 window.BADMINTON_CLOUD_CONFIG=window.BADMINTON_CLOUD_CONFIG||{url:"",publishableKey:""};
 window.BADMINTON_CLOUD={
  client:null,session:null,profile:null,tournamentId:null,clubId:null,saveTimer:null,appReady:false,cloudHydrated:false,pageSessionId:(globalThis.crypto?.randomUUID?.()||String(Date.now())+'-'+Math.random()),cloudVersion:0,cloudBaseSnapshot:null,syncBusy:false,syncConflict:false,categoryQueue:null,categoryRevisions:{},categorySharedData:{},categorySaveWaiters:[],
+ cloudSaveChain:Promise.resolve(),cloudSaveSequence:0,
  retryTimer:null,retryAttempt:0,
  queueKey:"badmintonTournamentManager.cloudQueue.v3",
  configured(){const c=window.BADMINTON_CLOUD_CONFIG||{};return Boolean(c.url&&c.publishableKey&&window.supabase);},
@@ -199,6 +200,12 @@ async flushCategoryQueue(){
      return Promise.resolve({status:'local-only'});
    const master=snapshot&&Array.isArray(snapshot.categories)?JSON.parse(JSON.stringify(snapshot)):null;
    if(!master||!master.categories.length)return Promise.resolve({status:'local-only'});
+
+   // Serialize complete-master writes. Autosave, Save, category switching and
+   // other UI actions can legitimately request saves close together. Only one
+   // replace_club_master call may be in flight at a time, so an older snapshot
+   // can never finish after a newer snapshot and overwrite it.
+   const sequence=++this.cloudSaveSequence;
    const attemptCloud=async()=>{
     if(!navigator.onLine)throw new Error('offline');
     const result=await window.BADMINTON_CATEGORY_PERSISTENCE.replaceMaster(this.client,{
@@ -219,15 +226,28 @@ async flushCategoryQueue(){
     this.cloudHydrated=true;
     this.syncConflict=false;
     window.BADMINTON_LOCAL?.write(JSON.stringify(loaded.master));
-    try{localStorage.removeItem(this.queueKey);}catch{}
+    // A save that completes after a newer request has already been queued must
+    // not clear that newer request's offline queue entry.
+    const queued=this.queueRead();
+    if(!queued || sequence>=Number(queued.saveSequence||0)){
+      try{localStorage.removeItem(this.queueKey);}catch{}
+    }
     return {status:'synced',categoryCount:result.categoryCount};
    };
-   return attemptCloud().catch(error=>{
+
+   const run=()=>attemptCloud().catch(error=>{
     this.queueWrite(master,this.cloudVersion);
-    this.queueUpdate({replaceAll:true,allowEmptyOverwrite:Boolean(options?.allowEmptyOverwrite),allowCategoryRemoval:Boolean(options?.allowCategoryRemoval),requiresReview:false,lastError:String(error?.message||error)});
+    this.queueUpdate({replaceAll:true,allowEmptyOverwrite:Boolean(options?.allowEmptyOverwrite),allowCategoryRemoval:Boolean(options?.allowCategoryRemoval),requiresReview:false,lastError:String(error?.message||error),saveSequence:sequence});
     this.status(navigator.onLine?'Cloud save failed — saved locally and queued for retry':'Offline — saved locally and queued for cloud retry');
     return {status:'offline',error};
    });
+
+   const result=this.cloudSaveChain.then(run,run);
+   // Keep the chain alive even when an individual save resolves to a failure
+   // object. This is deliberately a promise chain rather than a mutex flag so
+   // later saves always execute after the previous attempt has settled.
+   this.cloudSaveChain=result.then(()=>undefined,()=>undefined);
+   return result;
   },
 
 async syncPending(){
