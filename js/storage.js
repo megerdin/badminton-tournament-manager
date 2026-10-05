@@ -224,110 +224,37 @@ async flushCategoryQueue(){
   }
 
 async syncPending(){
-  if(this.categoryModeEnabled())return this.flushCategoryQueue();
-  if(this.syncBusy||!this.client||!this.session||this.profile?.approval_status!=='approved'||!this.tournamentId)return {status:'idle'};
-  const q=this.queueRead();if(!q)return {status:'clean'};if(!navigator.onLine){this.status('Offline — changes saved locally');return {status:'offline'};}
-  const queueId=q.queueId||String(q.queuedAt||"");
-  this.syncBusy=true;this.status('Syncing…');
-  try{
-   const remote=await this.client.from('tournaments').select('version,data').eq('id',this.tournamentId).single();if(remote.error)throw remote.error;
-   // A save may have replaced the queue while the remote read was in flight.
-   // Never resolve or clear the older queue over a newer local edit.
-   const newestQueue=this.queueRead();
-   if(newestQueue?.queueId!==queueId){
-    if(newestQueue)this.scheduleRetry();
-    return {status:newestQueue?'superseded':'clean'};
-   }
-   const remoteVersion=Number(remote.data.version||1),baseVersion=Number(q.baseVersion||0);
-   const remoteSnapshot=remote.data.data;
-   let uploadSnapshot=q.snapshot;
-   const clone=value=>value===undefined?undefined:JSON.parse(JSON.stringify(value));
-   const stable=value=>{
-    if(value===undefined)return 'undefined';
-    if(value===null||typeof value!=='object')return JSON.stringify(value);
-    if(Array.isArray(value))return '['+value.map(stable).join(',')+']';
-    return '{'+Object.keys(value).sort().map(key=>JSON.stringify(key)+':'+stable(value[key])).join(',')+'}';
-   };
-   const same=(a,b)=>stable(a)===stable(b);
-   const applyCloudWins=()=>{
-    this.cloudVersion=remoteVersion;
-    this.cloudBaseSnapshot=clone(remoteSnapshot);
+   if(!this.client||!this.session||this.profile?.approval_status!=='approved'||!this.clubId)return {status:'idle'};
+   const q=this.queueRead();
+   if(!q?.snapshot)return {status:'clean'};
+   if(!navigator.onLine){this.status('Offline — local changes queued for cloud retry');return {status:'offline'};}
+   try{
+    const result=await window.BADMINTON_CATEGORY_PERSISTENCE.replaceMaster(this.client,{
+      clubId:this.clubId,
+      master:q.snapshot,
+      sharedData:{...(this.categorySharedData||{}),date:String(q.snapshot.date||''),categoryPersistenceVersion:1},
+      allowEmptyOverwrite:Boolean(q.allowEmptyOverwrite),
+      allowCategoryRemoval:Boolean(q.allowCategoryRemoval)
+    });
+    const loaded=await window.BADMINTON_CATEGORY_PERSISTENCE.loadMaster(this.client,this.clubId,q.snapshot.activeCategoryId);
+    window.BADMINTON_CLOUD.applySnapshot(loaded.master);
+    this.cloudBaseSnapshot=JSON.parse(JSON.stringify(loaded.master));
+    this.categorySharedData={...(loaded.sharedData||{})};
+    this.categoryRevisions={...(loaded.revisions||{})};
+    this.cloudHydrated=true;
+    this.syncConflict=false;
+    window.BADMINTON_LOCAL?.write(JSON.stringify(loaded.master));
     this.queueClear();
-    this.applySnapshot(remoteSnapshot);
-    this.cloudHydrated=true;this.syncConflict=false;
-    if(window.renderAll)window.renderAll();
-    this.status('Cloud synced — latest cloud data loaded');
-    return {status:'cloud-won',version:remoteVersion};
-   };
-   // A snapshot queued before cloud hydration has no trustworthy baseline.
-   // Never let it overwrite an established cloud record, even if the revision
-   // number happens to match.
-   if((q.requiresReview||!q.baseSnapshot)&&!q.replaceAll)return applyCloudWins();
-   if(remoteVersion!==baseVersion&&!q.replaceAll){
-    // Reconcile whole-master snapshots by category. A local edit to category A
-    // must not replace a newer cloud copy of category B with stale data.
-    // For the same category changed on both sides, the pending local edit wins
-    // automatically under the current single-user last-save-wins policy.
-    const base=q.baseSnapshot,local=q.snapshot,remoteData=remoteSnapshot;
-    if(!Array.isArray(base?.categories)||!Array.isArray(local?.categories)||!Array.isArray(remoteData?.categories))
-      return applyCloudWins();
-    const byId=list=>new Map(list.map(item=>[String(item?.id||''),item]));
-    const bCats=byId(base.categories),lCats=byId(local.categories),rCats=byId(remoteData.categories);
-    const ids=new Set([...bCats.keys(),...lCats.keys(),...rCats.keys()]);
-    const mergedCats=[];
-    for(const cid of ids){
-     const b=bCats.get(cid),l=lCats.get(cid),r=rCats.get(cid);
-     const localChanged=!same(l,b);
-     const chosen=localChanged?l:r;
-     if(chosen!==undefined)mergedCats.push(clone(chosen));
-    }
-    const merged=clone(remoteData);
-    const keys=new Set([...Object.keys(base),...Object.keys(local),...Object.keys(remoteData)]);
-    keys.delete('categories');keys.delete('activeCategoryId');
-    for(const key of keys){
-     if(!same(local[key],base[key])){
-      if(local[key]===undefined)delete merged[key];else merged[key]=clone(local[key]);
-     }
-    }
-    merged.categories=mergedCats;
-    const activeLocal=String(local.activeCategoryId||'');
-    const activeRemote=String(remoteData.activeCategoryId||'');
-    merged.activeCategoryId=mergedCats.some(c=>String(c.id)===activeLocal)?activeLocal:
-      (mergedCats.some(c=>String(c.id)===activeRemote)?activeRemote:String(mergedCats[0]?.id||''));
-    if(same(merged,remoteData))return applyCloudWins();
-    uploadSnapshot=merged;
-    // Rebase the queued snapshot on the exact remote revision being merged.
-    // If the conditional write loses another race, the next retry merges again.
-    this.queueUpdate({snapshot:clone(uploadSnapshot),baseSnapshot:clone(remoteData),baseVersion:remoteVersion,requiresReview:false,attempts:0,lastError:null});
+    this.status('Cloud synced — queued local changes uploaded');
+    return {status:'synced',categoryCount:result.categoryCount};
+   }catch(error){
+    this.queueUpdate({attempts:Number(q.attempts||0)+1,lastError:String(error?.message||error)});
+    this.status('Cloud retry pending — local data retained');
+    this.scheduleRetry();
+    return {status:'pending',error};
    }
-   const next=remoteVersion+1;
-   const w=await this.client.from('tournaments').update({data:uploadSnapshot,version:next,updated_by:this.session.user.id}).eq('id',this.tournamentId).eq('version',remoteVersion).select('version').single();
-   if(w.error)throw w.error;
-   this.cloudVersion=Number(w.data.version||next);this.cloudBaseSnapshot=JSON.parse(JSON.stringify(uploadSnapshot));this.syncConflict=false;
-   // A user may save again while this network write is in flight. Only clear
-   // the queue when it is still the exact snapshot that we just uploaded.
-   const latest=this.queueRead();
-   if(latest?.queueId===queueId){
-    this.queueClear();
-    this.status('Cloud synced');
-    return {status:'synced',version:this.cloudVersion};
-   }
-   // The newer queue entry is based on the state immediately after the
-   // snapshot we just uploaded. Rebase its expected cloud version onto the
-   // version we just committed so sequential local saves do not become a
-   // false conflict with the user's own preceding upload. A genuinely
-   // external cloud change is still detected by the version check above.
-   const rebased=this.queueRead();
-   if(rebased?.queueId!==queueId){
-    this.queueUpdate({baseSnapshot:JSON.parse(JSON.stringify(uploadSnapshot)),baseVersion:this.cloudVersion,attempts:0,lastError:null});
-   }
-   this.status('Cloud synced; newer local changes pending…');
-   this.scheduleRetry(0);
-   return {status:'synced-with-pending',version:this.cloudVersion};
-  }catch(e){const reason=String(e?.message||e||'Unknown cloud error').slice(0,140);console.warn('Cloud sync deferred:',e);this.queueUpdate({attempts:Number(this.queueRead()?.attempts||0)+1,lastError:reason});this.status(navigator.onLine?'Cloud sync failed — retrying: '+reason:'Offline — changes saved locally; cloud retry pending');this.scheduleRetry();return {status:'pending',error:e};}
-  finally{this.syncBusy=false;}
- },
- async completeCloudStartup(){
+  },
+async completeCloudStartup(){
    if(!this.appReady||this.profile?.approval_status!=='approved'||!this.tournamentId)return {status:'not-ready'};
    // Login/startup always trusts the cloud. A local offline queue must never
    // win over a successfully reachable cloud snapshot.
