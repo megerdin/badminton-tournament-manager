@@ -328,17 +328,23 @@ async syncPending(){
   finally{this.syncBusy=false;}
  },
  async completeCloudStartup(){
-  if(!this.appReady||this.profile?.approval_status!=='approved'||!this.tournamentId)return {status:'not-ready'};
-  if(this.categoryModeEnabled())return this.loadRemoteIntoApp();
-  const q=this.queueRead();
-  if(q){
-   const synced=await this.syncPending();
-   if(!['synced','clean','cloud-won'].includes(synced.status)){this.gate(false);return synced;}
-   if(synced.status==='cloud-won')return synced;
+   if(!this.appReady||this.profile?.approval_status!=='approved'||!this.tournamentId)return {status:'not-ready'};
+   // Login/startup always trusts the cloud. A local offline queue must never
+   // win over a successfully reachable cloud snapshot.
+   try{
+    const result=await this.loadRemoteIntoApp();
+    if(result?.status==='loaded')return result;
+    return result;
+   }catch(error){
+    // Only when cloud cannot be reached do we retain the browser's local copy
+    // and its queued changes for later retry.
+    this.loadLocalFallback();
+    this.status('Cloud unavailable — using local data until cloud reconnects');
+    this.gate(false);
+    return {status:'offline',error};
+   }
   }
-  return this.loadRemoteIntoApp();
- },
- finishAppStartup(){this.appReady=true;if(this.profile?.approval_status==='approved')this.completeCloudStartup().catch(e=>{this.status('Cloud load failed — local data kept.');this.message('Cloud load failed: '+e.message);this.gate(false);});}
+finishAppStartup(){this.appReady=true;if(this.profile?.approval_status==='approved')this.completeCloudStartup().catch(e=>{this.status('Cloud load failed — local data kept.');this.message('Cloud load failed: '+e.message);this.gate(false);});}
 };
 window.BADMINTON_CLOUD.applySnapshot=s=>{if(typeof window.applyCloudSnapshotInternal==='function')window.applyCloudSnapshotInternal(s);};
 document.addEventListener('DOMContentLoaded',()=>BADMINTON_CLOUD.init().catch(e=>BADMINTON_CLOUD.message(e.message||String(e))));
