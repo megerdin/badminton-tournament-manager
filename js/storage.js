@@ -1,6 +1,6 @@
 /* ================================================================
    BADMINTON APP — STORAGE / CLOUD
-   V6.1.0 — Club + Category persistence model
+   V6.1.1 — Club + Category persistence model
    Cloud is authoritative whenever online. LocalStorage is offline-only
    recovery/cache and is never uploaded merely because it is newer locally.
    ================================================================ */
