@@ -1,6 +1,6 @@
 /* ================================================================
    BADMINTON APP — APPLICATION ORCHESTRATION
-   V6.1.1 — Club + Category architecture
+   V6.1.4 — Club + Category architecture
    Startup order is deliberate: cloud/auth must initialise before the
    application is rendered or authentication controls are used.
    ================================================================ */
