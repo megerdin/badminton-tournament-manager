@@ -6,8 +6,8 @@ const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const app=fs.readFileSync(path.join(root,'js/app.js'),'utf8');
 
 assert.match(app,/cloudConfigured=Boolean\(window\.BADMINTON_CLOUD\?\.configured\?\.\(\)\)/,'app startup detects cloud configuration before local hydration');
-assert.match(app,/if\(!cloudConfigured&&typeof loadLocal === "function"\) loadLocal\(\)/,'configured cloud startup does not hydrate localStorage first');
-assert.match(app,/if\(!cloudConfigured&&typeof renderAll === "function"\) renderAll\(\)/,'configured cloud startup does not render stale local data first');
+assert.match(app,/if\(!cloudConfigured && typeof loadLocal === "function"\) loadLocal\(\)/,'configured cloud startup does not hydrate localStorage first');
+assert.match(app,/if\(!cloudConfigured && typeof renderAll === "function"\) renderAll\(\)/,'configured cloud startup does not render stale local data first');
 
 assert.match(storage,/categoryScopedPersistence:\s*false/,'category-scoped runtime mode is disabled');
 assert.ok(html.indexOf('js/categoryPersistenceAdapter.js')<html.indexOf('js/storage.js'),'cloud adapter loads before storage module');
