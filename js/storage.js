@@ -1,6 +1,6 @@
 /* ================================================================
    BADMINTON APP — STORAGE / CLOUD
-   V6.0.0 — Club + Category persistence model
+   V6.1.0 — Club + Category persistence model
    Cloud is authoritative whenever online. LocalStorage is offline-only
    recovery/cache and is never uploaded merely because it is newer locally.
    ================================================================ */
@@ -31,34 +31,27 @@ window.BADMINTON_CLOUD={
   },
   async prepareCloudRecord(){
     const uid=this.session?.user?.id;if(!uid)throw new Error('Cloud session is not available.');
-    let r=await this.client.from('clubs').select('id,name,shared_settings,version').eq('owner_id',uid).order('created_at',{ascending:true}).limit(1).maybeSingle();
+    const r=await this.client.from('clubs').select('id,name,shared_settings,version').eq('owner_id',uid).order('created_at',{ascending:true}).limit(1).maybeSingle();
     if(r.error)throw r.error;
-    let club=r.data;
+    const club=r.data||null;
+    this.clubId=club?.id||null;
+    this.cloudClub=club;
+    this.cloudVersion=Number(club?.version||0);
     if(!club){
-      const requestedName=String(this.profile?.club_name||'Your club name').trim()||'Your club name';
-      r=await this.client.from('clubs').insert({owner_id:uid,name:requestedName,shared_settings:{},version:1}).select('id,name,shared_settings,version').single();
-      if(r.error)throw r.error;club=r.data;
+      // A signed-in user with no cloud Club gets a clean local workspace.
+      // Do not create anything in Supabase until the first explicit/automatic save.
+      this.cloudCategories=[];
+      return {club:null,categories:[]};
     }
-    this.clubId=club.id;
     const member=await this.client.from('club_members').select('club_id').eq('club_id',this.clubId).eq('user_id',uid).maybeSingle();
     if(member.error)throw member.error;
-    if(!member.data){const addMember=await this.client.from('club_members').insert({club_id:this.clubId,user_id:uid,role:'owner'});if(addMember.error&&addMember.error.code!=='23505')throw addMember.error;}
-    this.cloudVersion=Number(club.version||1);
-    let cats=await this.client.from('categories').select('id,category_key,name,data,settings,sort_order').eq('club_id',this.clubId).order('sort_order',{ascending:true}).order('created_at',{ascending:true});
-    if(cats.error)throw cats.error;
-    if(!cats.data?.length){
-      const fresh=blankTournament();
-      const categoryId=id('category');
-      const categoryName='Internal';
-      fresh.clubName=String(club.name||'');
-      fresh.settings=fresh.settings||{};
-      fresh.settings.categories=[{id:categoryId,name:categoryName}];
-      const ins=await this.client.from('categories').insert({id:crypto.randomUUID(),club_id:this.clubId,category_key:categoryId,name:categoryName,settings:fresh.settings,data:fresh,sort_order:0}).select('id,category_key,name,data,settings,sort_order').single();
-      if(ins.error)throw ins.error;
-      cats={data:[ins.data],error:null};
+    if(!member.data){
+      const addMember=await this.client.from('club_members').insert({club_id:this.clubId,user_id:uid,role:'owner'});
+      if(addMember.error&&addMember.error.code!=='23505')throw addMember.error;
     }
+    const cats=await this.client.from('categories').select('id,category_key,name,data,settings,sort_order').eq('club_id',this.clubId).order('sort_order',{ascending:true}).order('created_at',{ascending:true});
+    if(cats.error)throw cats.error;
     this.cloudCategories=cats.data||[];
-    this.cloudClub=club;
     return {club,categories:this.cloudCategories};
   },
   buildSnapshot(club,categories){
@@ -78,14 +71,29 @@ window.BADMINTON_CLOUD={
     return normalizeMasterRecord(master);
   },
   async loadRemoteIntoApp(){
-    if(!this.clubId)return {status:'idle'};
+    if(!this.session?.user?.id)return {status:'idle'};
+    if(!this.clubId){
+      const fresh=blankTournament();
+      const snapshot=normalizeMasterRecord(buildMasterFromLegacy(fresh));
+      this.cloudVersion=0;
+      this.cloudCategories=[];
+      this.cloudClub=null;
+      window.BADMINTON_CLOUD.applySnapshot(snapshot);
+      window.BADMINTON_LOCAL?.write(JSON.stringify(snapshot));
+      this.cloudHydrated=true;
+      this.status('Cloud ready — no club data');
+      this.gate(false);
+      if(window.renderAll)window.renderAll();
+      return {status:'empty-cloud',version:0};
+    }
     const clubR=await this.client.from('clubs').select('id,name,shared_settings,version,updated_at').eq('id',this.clubId).single();
     if(clubR.error)throw clubR.error;
     const catsR=await this.client.from('categories').select('id,category_key,name,data,settings,sort_order,updated_at').eq('club_id',this.clubId).order('sort_order',{ascending:true}).order('created_at',{ascending:true});
     if(catsR.error)throw catsR.error;
-    if(!catsR.data?.length){await this.prepareCloudRecord();return this.loadRemoteIntoApp();}
-    const snapshot=this.buildSnapshot(clubR.data,catsR.data);
+    const snapshot=this.buildSnapshot(clubR.data,catsR.data||[]);
     this.cloudVersion=Number(clubR.data.version||1);
+    this.cloudClub=clubR.data;
+    this.cloudCategories=catsR.data||[];
     window.BADMINTON_CLOUD.applySnapshot(snapshot);
     window.BADMINTON_LOCAL?.write(JSON.stringify(snapshot));
     this.cloudHydrated=true;
@@ -95,15 +103,19 @@ window.BADMINTON_CLOUD={
     return {status:'loaded',version:this.cloudVersion};
   },
   async saveSnapshot(snapshot){
-    if(!this.cloudHydrated||!this.clubId||!this.session?.user?.id)return {status:'cloud-not-loaded'};
+    if(!this.cloudHydrated||!this.session?.user?.id)return {status:'cloud-not-loaded'};
     const categories=(snapshot?.categories||[]).map((c,index)=>({id:String(c.id||id('category')),name:String(c.name||`Category ${index+1}`).trim()||`Category ${index+1}`,settings:c.data?.settings||{},data:c.data||{},sort_order:index}));
     const shared={date:String(snapshot?.date||'')};
     const r=await this.client.rpc('save_club_snapshot',{p_club_id:this.clubId,p_name:String(snapshot?.clubName||'').trim()||'Your club name',p_shared_settings:shared,p_categories:categories});
     if(r.error)throw r.error;
     const row=Array.isArray(r.data)?r.data[0]:r.data;
+    this.clubId=row?.club_id||this.clubId;
     this.cloudVersion=Number(row?.version||this.cloudVersion+1);
+    if(this.clubId){
+      this.cloudClub={id:this.clubId,name:String(snapshot?.clubName||'').trim()||'Your club name',shared_settings:shared,version:this.cloudVersion};
+    }
     window.BADMINTON_LOCAL?.write(JSON.stringify(snapshot));
-    return {status:'synced',version:this.cloudVersion};
+    return {status:'synced',version:this.cloudVersion,clubId:this.clubId};
   },
   async queueSave(snapshot){
     if(!this.configured()||!this.client||!this.session||this.profile?.approval_status!=='approved')return {status:'local-only'};

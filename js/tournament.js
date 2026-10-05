@@ -1,4 +1,4 @@
-const APP_VERSION = '6.0.0';
+const APP_VERSION = '6.1.0';
 
 "use strict";
 
@@ -3055,7 +3055,7 @@ function resetCurrentCategory(){
 }
 function resetAllCategories(){
   if(!masterTournament)return;
-  if(!confirm("Reset EVERYTHING? This clears the club name, shared settings, all categories, players, teams, groups, fixtures, results and knockout data. The cloud record will be replaced with a fresh blank tournament. Continue?"))return;
+  if(!confirm("Reset EVERYTHING? This clears the club name, shared settings, all categories, players, teams, groups, fixtures, results and knockout data. The cloud copy will be replaced with this fresh blank workspace when the save completes. Continue?"))return;
   const fresh=blankTournament();
   const categoryId=id("category");
   const categoryName="Internal";
@@ -3074,7 +3074,7 @@ function resetAllCategories(){
   tournament=migrateTournamentData(fresh);
   renderAll();
   saveLocal(true);
-  showMessage("Everything reset. Shared data and all categories were cleared.");
+  showMessage("Everything reset. Shared data and all categories were cleared and will be saved to cloud.");
 }
 
 function importTournamentFile(file){
