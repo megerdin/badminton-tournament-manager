@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-const APP_VERSION = '5.3.82';
-=======
 const APP_VERSION = '6.0.0';
->>>>>>> 66ec6e5 (Testing)
 
 "use strict";
 
@@ -508,11 +504,6 @@ function renderCategories(){
       if(category.data?.settings)category.data.settings.categories=[{id:String(category.id),name:category.name}];
       if(String(masterTournament?.activeCategoryId)===String(category.id))
         tournament.settings.categories=[{id:String(category.id),name:category.name}];
-<<<<<<< HEAD
-      // A category rename is metadata/category-scoped work, not a whole-master replacement.
-      // Full replacement here could upload a stale snapshot and erase another category.
-=======
->>>>>>> 66ec6e5 (Testing)
       saveLocal(true);
       renderAll();
     });
@@ -562,11 +553,7 @@ function createCategories(){
   }
   masterTournament.categories=categories;
   addHistory("Categories created",String(count));
-<<<<<<< HEAD
-  saveLocal(true,{replaceAll:true,allowCategoryRemoval:true});
-=======
   saveLocal(true);
->>>>>>> 66ec6e5 (Testing)
   const active=getActiveCategoryRecord();
   tournament=migrateTournamentData(active.data);
   tournament.clubName=masterTournament.clubName||"";
@@ -591,16 +578,12 @@ function removeCategory(categoryId){
   masterTournament.categories=categories.filter(category=>String(category.id)!==String(categoryId));
   if(wasActive)masterTournament.activeCategoryId=masterTournament.categories[0].id;
   addHistory("Category removed",target.name);
-<<<<<<< HEAD
-  saveLocal(true,{replaceAll:true,allowCategoryRemoval:true});
-=======
   saveLocal(true);
   if(wasActive){
     const active=getActiveCategoryRecord();
     tournament=migrateTournamentData(active.data);
     tournament.clubName=masterTournament.clubName||"";
   }
->>>>>>> 66ec6e5 (Testing)
   renderAll();
 }
 
@@ -3090,13 +3073,8 @@ function resetAllCategories(){
   };
   tournament=migrateTournamentData(fresh);
   renderAll();
-<<<<<<< HEAD
-  saveLocal(true,{replaceAll:true,allowEmptyOverwrite:true,allowCategoryRemoval:true});
-  showMessage("All categories reset. Category names and settings were preserved.");
-=======
   saveLocal(true);
   showMessage("Everything reset. Shared data and all categories were cleared.");
->>>>>>> 66ec6e5 (Testing)
 }
 
 function importTournamentFile(file){
@@ -3127,7 +3105,7 @@ function importTournamentFile(file){
       saveActiveCategoryToMaster();
       const importedSnapshot=deepClone(masterTournament);
       window.BADMINTON_LOCAL?.write(JSON.stringify(importedSnapshot));
-      window.BADMINTON_CLOUD?.queueSave?.(importedSnapshot,{replaceAll:true,allowEmptyOverwrite:true,allowCategoryRemoval:true}).catch(err=>console.warn("Cloud import sync deferred:",err));
+      window.BADMINTON_CLOUD?.queueSave?.(importedSnapshot,{replaceAll:true}).catch(err=>console.warn("Cloud import sync deferred:",err));
       renderAll();
       showMessage("Tournament master JSON imported.");
     }catch(e){
