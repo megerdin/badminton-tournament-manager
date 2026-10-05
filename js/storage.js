@@ -121,150 +121,28 @@ window.BADMINTON_CLOUD={
   this.retryTimer=setTimeout(()=>this.flushCategoryQueue().catch(()=>{}),delay);
  },
  async loadCategoryScopedIntoApp(){
-  if(!this.clubId)return {status:'idle'};
-  const adapter=window.BADMINTON_CATEGORY_PERSISTENCE;
-  let loaded=await adapter.loadMaster(this.client,this.clubId,masterTournament?.activeCategoryId);
-  this.categorySharedData={...(loaded.sharedData||{})};
-  if(!loaded.master.categories.length){
-   const legacyResult=await this.client.from('tournaments').select('data,version').eq('id',this.tournamentId).single();
-   if(legacyResult.error)throw legacyResult.error;
-   let seed=null;const legacy=legacyResult.data?.data;
-   if(legacy&&typeof legacy==='object'&&Object.keys(legacy).length){
-    if(legacy.type==='badmintonTournamentManagerMaster'&&Array.isArray(legacy.categories)&&legacy.categories.length)seed=legacy;
-    else if(typeof window.applyCloudSnapshotInternal==='function'){
-     window.BADMINTON_CLOUD.applySnapshot(legacy);
-     if(typeof saveActiveCategoryToMaster==='function')saveActiveCategoryToMaster();
-     seed=masterTournament;
-    }
-   }
-   // Never replace a non-empty but unrecognized legacy cloud snapshot with
-   // this browser's local copy during first-time migration. That could silently
-   // overwrite valid cloud data with stale local data. Local seeding is allowed
-   // only when the legacy cloud snapshot is genuinely empty.
-   const legacyIsEmpty=!legacy||typeof legacy!=='object'||Array.isArray(legacy)||Object.keys(legacy).length===0;
-   if(!seed&&legacyIsEmpty&&masterTournament?.categories?.length)seed=masterTournament;
-   if(!seed&&!legacyIsEmpty)throw new Error('The legacy cloud snapshot is non-empty but is not a supported master-category snapshot. No migration was performed; existing cloud and local data have been preserved.');
-   if(seed?.categories?.length){
-    await adapter.replaceMaster(this.client,{clubId:this.clubId,master:seed,sharedData:{...(loaded.sharedData||{}),date:String(seed.date||''),categoryPersistenceVersion:1}});
-    loaded=await adapter.loadMaster(this.client,this.clubId,seed.activeCategoryId);
+   if(!this.clubId)return {status:'idle'};
+   // Cloud is authoritative whenever reachable. Do not apply local category
+   // queues, baselines or bootstrap snapshots during login/startup.
+   const loaded=await window.BADMINTON_CATEGORY_PERSISTENCE.loadMaster(this.client,this.clubId,masterTournament?.activeCategoryId);
+   if(!loaded?.master?.categories?.length)throw new Error('No category data exists in the cloud for this club.');
    this.categorySharedData={...(loaded.sharedData||{})};
-   }
+   this.categoryRevisions={...(loaded.revisions||{})};
+   this.cloudBaseSnapshot=JSON.parse(JSON.stringify(loaded.master));
+   this.cloudHydrated=true;
+   this.syncConflict=false;
+   window.BADMINTON_CLOUD.applySnapshot(loaded.master);
+   window.BADMINTON_LOCAL?.write(JSON.stringify(loaded.master));
+   this.clearCategoryBootstrapQueue();
+   this.categoryQueue?.clear?.();
+   try{localStorage.removeItem(this.queueKey);}catch{}
+   this.status('Cloud synced — latest cloud data loaded');
+   this.gate(false);
+   if(window.renderAll)window.renderAll();
+   return {status:'loaded',categoryCount:loaded.master.categories.length};
   }
-  const bootstrap=this.readCategoryBootstrapQueue();
-  const queue=this.ensureCategoryQueue();
-  const explicitReplacementPending=Boolean(bootstrap?.replaceAll||queue.read().some(op=>op.type==='master'));
-  if(loaded.master.categories.length&&Number(loaded.sharedData?.categoryPersistenceVersion)!==1&&!explicitReplacementPending){
-   throw new Error('Category storage is present but has no completed-migration marker. The legacy tournament data has been preserved; refusing to load a potentially incomplete category set.');
-  }
-  queue.revisions={...(loaded.revisions||{})};this.categoryRevisions={...(loaded.revisions||{})};
-  if(bootstrap?.snapshot&&Array.isArray(bootstrap.snapshot.categories)){
-   if(bootstrap.replaceAll){
-    queue.enqueueMasterReplacement(bootstrap.snapshot,{sharedData:{...this.categorySharedData,date:String(bootstrap.snapshot.date||''),categoryPersistenceVersion:1,allowEmptyOverwrite:Boolean(bootstrap.allowEmptyOverwrite),allowCategoryRemoval:Boolean(bootstrap.allowCategoryRemoval)}});
-    this.clearCategoryBootstrapQueue();
-   }else if(bootstrap.baseSnapshot&&Array.isArray(bootstrap.baseSnapshot.categories)){
-    // Reconcile only categories changed locally since the last known cloud
-    // baseline. Cloud-only changes remain untouched; conflicting edits to the
-    // same category use the single-user policy: local wins.
-    const diff=adapter.diffMasterAgainstBaseline(bootstrap.snapshot,bootstrap.baseSnapshot);
-    if(diff.clubChanged)queue.enqueueClubMetadata({clubName:bootstrap.snapshot.clubName,sharedData:{...this.categorySharedData,date:String(bootstrap.snapshot.date||''),categoryPersistenceVersion:1}});
-    diff.changedCategories.forEach(item=>queue.enqueueCategory(item.category,{expectedRevision:Number(queue.revisions[String(item.category.id)]||0),sortOrder:item.sortOrder}));
-    this.clearCategoryBootstrapQueue();
-   }else{
-    // Without a trustworthy baseline, differences alone cannot prove which
-    // copy is newer. Keep the local recovery record and stop automatic sync;
-    // never silently discard local edits or overwrite cloud data.
-    const localDiff=adapter.diffMasterAgainstBaseline(bootstrap.snapshot,loaded.master);
-    if(!localDiff.clubChanged&&!localDiff.changedCategories.length){
-     this.clearCategoryBootstrapQueue();
-    }else{
-     this.status('Local recovery data needs review: no saved cloud baseline exists. Cloud and local copies have been preserved. Export a local backup before continuing.');
-     throw new Error('Local recovery data has no trustworthy baseline. Neither copy was overwritten; the local recovery record has been preserved.');
-    }
-   }
-  }
-  if(queue.pendingCount()){
-   const sync=await queue.flush();
-   if(sync.status!=='synced'){
-    this.status('Category changes saved locally; cloud sync pending.');
-    this.scheduleCategoryRetry();
-    return {status:'pending',error:sync.error};
-   }
-   loaded=await adapter.loadMaster(this.client,this.clubId,masterTournament?.activeCategoryId);
-   this.categorySharedData={...(loaded.sharedData||{})};
-   if(loaded.master.categories.length&&Number(loaded.sharedData?.categoryPersistenceVersion)!==1)throw new Error('Category migration marker is missing after sync; local data has been preserved.');
-   queue.revisions={...(loaded.revisions||{})};this.categoryRevisions={...(loaded.revisions||{})};
-  }
-  if(!loaded.master.categories.length){this.status('Cloud has no category data yet; local data preserved.');return {status:'empty-cloud'};}
-  this.cloudBaseSnapshot=JSON.parse(JSON.stringify(loaded.master));
-  this.writeCategoryBaseline(loaded.master);
-  this.cloudHydrated=true;this.syncConflict=false;
-  this.applySnapshot(loaded.master);
-  this.status('Cloud synced — categories loaded');this.gate(false);
-  if(window.renderAll)window.renderAll();
-  return {status:'loaded',categoryCount:loaded.master.categories.length};
- },
- async queueCategoryScopedSave(snapshot,options={}){
-  if(!this.configured()||!this.client||!this.session||this.profile?.approval_status!=='approved')return {status:'local-only'};
-  const master=snapshot&&Array.isArray(snapshot.categories)?snapshot:masterTournament;
-  if(!master||!Array.isArray(master.categories)||!master.categories.length)return {status:'local-only'};
-  if(!this.clubId){
-   const previous=this.readCategoryBootstrapQueue();
-   const baseline=previous?.baseSnapshot||this.readCategoryBaseline();
-   const stored=this.writeCategoryBootstrapQueue({snapshot:JSON.parse(JSON.stringify(master)),baseSnapshot:baseline?JSON.parse(JSON.stringify(baseline)):null,replaceAll:Boolean(options?.replaceAll||previous?.replaceAll),allowEmptyOverwrite:Boolean(options?.allowEmptyOverwrite||previous?.allowEmptyOverwrite),allowCategoryRemoval:Boolean(options?.allowCategoryRemoval||previous?.allowCategoryRemoval),queuedAt:Date.now()});
-   if(!stored){this.status('Local data saved, but offline cloud queue could not be stored. Export a backup.');return {status:'queue-failed'};}
-   this.status('Saved on this device; cloud setup pending.');
-   return {status:'cloud-not-loaded'};
-  }
-  const queue=this.ensureCategoryQueue();
-  const activeId=String(master?.activeCategoryId||'');
-  const category=(master?.categories||[]).find(c=>String(c.id)===activeId);
-  if(!category)return {status:'pending',error:'Active category is missing from the master snapshot.'};
-  try{
-   if(options?.replaceAll){
-    queue.enqueueMasterReplacement(master,{sharedData:{...this.categorySharedData,date:String(master.date||''),categoryPersistenceVersion:1,allowEmptyOverwrite:Boolean(options?.allowEmptyOverwrite),allowCategoryRemoval:Boolean(options?.allowCategoryRemoval)}});
-   }else{
-    queue.enqueueClubMetadata({clubName:master.clubName,sharedData:{...this.categorySharedData,date:String(master.date||''),categoryPersistenceVersion:1}});
-    // A master snapshot can contain unsynced edits in more than the active
-    // category (for example after a category switch or recovery). Reconcile it
-    // against the last confirmed cloud baseline so an ordinary Save cannot
-    // silently leave another locally changed category behind on this device.
-    const baseline=this.cloudBaseSnapshot||this.readCategoryBaseline();
-    const changed=baseline&&Array.isArray(baseline.categories)
-      ?window.BADMINTON_CATEGORY_PERSISTENCE.diffMasterAgainstBaseline(master,baseline).changedCategories
-      :[];
-    const pendingById=new Map(changed.map(item=>[String(item.category.id),item]));
-    // Always include the active category: Save is an explicit request to persist
-    // its current in-memory state, even if normalization makes it compare equal.
-    pendingById.set(activeId,{category,sortOrder:(master.categories||[]).findIndex(c=>String(c.id)===activeId)});
-    for(const item of pendingById.values()){
-     const id=String(item.category.id);
-     queue.enqueueCategory(item.category,{expectedRevision:Number(queue.revisions[id]||this.categoryRevisions[id]||0),sortOrder:item.sortOrder});
-    }
-   }
-  }catch(error){this.status('Local data saved, but cloud queue could not be stored. Export a backup.');return {status:'queue-failed',error:String(error?.message||error)};}
-  this.status('Category save queued; syncing to cloud…');
-  return new Promise(resolve=>{
-   // Coalesce rapid autosaves without abandoning earlier callers (especially
-   // the manual Save button) when a newer edit resets the debounce timer.
-   this.categorySaveWaiters.push(resolve);
-   clearTimeout(this.saveTimer);
-   this.saveTimer=setTimeout(async()=>{
-    this.saveTimer=null;
-    const waiters=this.categorySaveWaiters.splice(0);
-    let result;
-    try{
-     result=await this.flushCategoryQueue();
-    }catch(error){
-     const message=String(error?.message||error);
-     this.status('Category changes saved locally; cloud sync pending: '+message);
-     this.scheduleCategoryRetry();
-     result={status:'pending',error:message};
-    }
-    waiters.forEach(resolveSave=>resolveSave(result));
-   },300);
-  });
- },
- async flushCategoryQueue(){
+
+async flushCategoryQueue(){
   if(!this.categoryModeEnabled()||!this.client||!this.session||this.profile?.approval_status!=='approved'||!this.clubId)return {status:'idle'};
   const queue=this.ensureCategoryQueue();
   if(!navigator.onLine){this.status('Offline — category changes saved locally; cloud retry pending.');return {status:'offline'};}
@@ -310,13 +188,42 @@ window.BADMINTON_CLOUD={
   return {status:'loaded',version:this.cloudVersion};
  },
  queueSave(snapshot,options={}){
-  if(this.categoryModeEnabled())return this.queueCategoryScopedSave(snapshot,options);
-  if(!this.configured()||!this.client||!this.session||this.profile?.approval_status!=='approved'||!this.tournamentId)return Promise.resolve({status:'local-only'});
-  if(!this.cloudHydrated){this.queueWrite(snapshot,this.cloudVersion);if(options?.replaceAll)this.queueUpdate({replaceAll:true,requiresReview:false});this.status('Cloud not loaded — local changes kept; review required before upload.');return Promise.resolve({status:'cloud-not-loaded'});}
-  clearTimeout(this.saveTimer);this.queueWrite(snapshot,this.cloudVersion);if(options?.replaceAll)this.queueUpdate({replaceAll:true,requiresReview:false});this.status('Sync pending…');
-  return new Promise(resolve=>{this.saveTimer=setTimeout(async()=>{const r=await this.syncPending();resolve(r);},400);});
- },
- async syncPending(){
+   if(!this.configured()||!this.client||!this.session||this.profile?.approval_status!=='approved'||!this.clubId)
+     return Promise.resolve({status:'local-only'});
+   const master=snapshot&&Array.isArray(snapshot.categories)?JSON.parse(JSON.stringify(snapshot)):null;
+   if(!master||!master.categories.length)return Promise.resolve({status:'local-only'});
+   const attemptCloud=async()=>{
+    if(!navigator.onLine)throw new Error('offline');
+    const result=await window.BADMINTON_CATEGORY_PERSISTENCE.replaceMaster(this.client,{
+      clubId:this.clubId,
+      master,
+      sharedData:{
+       ...(this.categorySharedData||{}),
+       date:String(master.date||''),
+       categoryPersistenceVersion:1,
+       ...(options?.allowEmptyOverwrite?{allowEmptyOverwrite:true}:{}),
+       ...(options?.allowCategoryRemoval?{allowCategoryRemoval:true}:{})
+      }
+    });
+    const loaded=await window.BADMINTON_CATEGORY_PERSISTENCE.loadMaster(this.client,this.clubId,master.activeCategoryId);
+    this.cloudBaseSnapshot=JSON.parse(JSON.stringify(loaded.master));
+    this.categorySharedData={...(loaded.sharedData||{})};
+    this.categoryRevisions={...(loaded.revisions||{})};
+    this.cloudHydrated=true;
+    this.syncConflict=false;
+    window.BADMINTON_LOCAL?.write(JSON.stringify(loaded.master));
+    try{localStorage.removeItem(this.queueKey);}catch{}
+    return {status:'synced',categoryCount:result.categoryCount};
+   };
+   return attemptCloud().catch(error=>{
+    this.queueWrite(master,this.cloudVersion);
+    this.queueUpdate({replaceAll:true,allowEmptyOverwrite:Boolean(options?.allowEmptyOverwrite),allowCategoryRemoval:Boolean(options?.allowCategoryRemoval),requiresReview:false,lastError:String(error?.message||error)});
+    this.status(navigator.onLine?'Cloud save failed — saved locally and queued for retry':'Offline — saved locally and queued for cloud retry');
+    return {status:'offline',error};
+   });
+  }
+
+async syncPending(){
   if(this.categoryModeEnabled())return this.flushCategoryQueue();
   if(this.syncBusy||!this.client||!this.session||this.profile?.approval_status!=='approved'||!this.tournamentId)return {status:'idle'};
   const q=this.queueRead();if(!q)return {status:'clean'};if(!navigator.onLine){this.status('Offline — changes saved locally');return {status:'offline'};}
