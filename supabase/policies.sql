@@ -1,4 +1,4 @@
--- Badminton Tournament Manager V6.0.2 RLS + atomic cloud save
+-- Badminton Tournament Manager V6.1.0 RLS + atomic cloud save
 
 revoke all on table public.clubs from anon;
 revoke all on table public.club_members from anon;

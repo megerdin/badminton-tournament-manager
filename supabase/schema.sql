@@ -1,4 +1,4 @@
--- Badminton Tournament Manager V6.0.2
+-- Badminton Tournament Manager V6.1.0
 -- Data model: Club (shared) -> Categories (independent competition data)
 -- Existing tournament JSON data is intentionally NOT migrated.
 
