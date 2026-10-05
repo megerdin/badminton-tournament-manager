@@ -228,7 +228,7 @@ async flushCategoryQueue(){
     this.status(navigator.onLine?'Cloud save failed — saved locally and queued for retry':'Offline — saved locally and queued for cloud retry');
     return {status:'offline',error};
    });
-  }
+  },
 
 async syncPending(){
    if(!this.client||!this.session||this.profile?.approval_status!=='approved'||!this.clubId)return {status:'idle'};
