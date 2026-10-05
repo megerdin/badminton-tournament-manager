@@ -16,6 +16,9 @@ assert.match(storage,/loadRemoteIntoApp\(\)[\s\S]*applySnapshot\(loaded\.master\
 assert.match(storage,/loadRemoteIntoApp\(\)[\s\S]*this\.queueClear\(\)/,'successful cloud login discards stale local cloud queue');
 assert.match(storage,/async completeCloudStartup\(\)[\s\S]*loadRemoteIntoApp\(\)[\s\S]*loadLocalFallback\(\)/,'startup uses local data only when cloud loading fails');
 assert.match(storage,/queueSave\(snapshot,options=\{\}\)[\s\S]*replaceMaster\(this\.client,[\s\S]*master,[\s\S]*sharedData/,'normal save uploads the complete master snapshot');
+assert.match(storage,/cloudSaveChain:Promise\.resolve\(\),cloudSaveSequence:0/,'complete-master cloud saves have a serialized save chain');
+assert.match(storage,/const result=this\.cloudSaveChain\.then\(run,run\)/,'each cloud save waits for the previous complete-master save');
+assert.match(storage,/saveSequence:sequence/,'offline queue records the save sequence so a newer save cannot be cleared by an older completion');
 assert.doesNotMatch(storage,/queueSave\(snapshot,options=\{\}\)[\s\S]*queueCategoryScopedSave/,'normal save does not route through category-scoped saving');
 assert.match(storage,/async syncPending\(\)[\s\S]*replaceMaster\(this\.client,[\s\S]*master:q\.snapshot/,'offline queue retries the complete master snapshot');
 assert.match(storage,/window\.BADMINTON_LOCAL\?\.write\(JSON\.stringify\(loaded\.master\)\)/,'successful cloud retry refreshes local cache from cloud');
@@ -25,5 +28,6 @@ assert.match(tournament,/category rename is metadata\/category-scoped work[\s\S]
 console.log('PASS: cloud is authoritative on successful startup/login');
 console.log('PASS: local storage is fallback only when cloud is unavailable');
 console.log('PASS: every normal save uploads the complete master snapshot');
+console.log('PASS: overlapping complete-master saves are serialized and cannot overwrite newer saves');
 console.log('PASS: offline retry uploads the complete queued master snapshot');
 console.log('PASS: destructive full-master operations explicitly declare their intent');
