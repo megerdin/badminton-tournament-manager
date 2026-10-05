@@ -12,7 +12,7 @@
 window.BADMINTON_CLOUD_CONFIG = {
   url: "https://tumqpsbwelmwawbkqtjh.supabase.co",
   publishableKey: "sb_publishable_CcmUtzpRMlCqEY8o5yXdGQ_7Otmu4t4",
-  categoryScopedPersistence: true
+  categoryScopedPersistence: false
 };
 
 /* ====================== cloud.js ====================== */
@@ -174,20 +174,27 @@ async flushCategoryQueue(){
   return {status:'pending',error:result.error};
  },
  async loadRemoteIntoApp(){
-  if(!this.tournamentId)return {status:'idle'};
-  if(this.categoryModeEnabled())return this.loadCategoryScopedIntoApp();
-  // Pending local changes are resolved automatically by syncPending().
-  // With no pending queue, the cloud is the authoritative startup snapshot.
-  if(this.queueRead()){
-   const pending=await this.syncPending();
-   if(!['synced','clean','cloud-won'].includes(pending.status))return pending;
-   if(pending.status==='cloud-won')return pending;
+   if(!this.clubId)return {status:'idle'};
+   // The category tables contain the complete cloud master. They are the
+   // authoritative source regardless of the active category.
+   const loaded=await window.BADMINTON_CATEGORY_PERSISTENCE.loadMaster(this.client,this.clubId,masterTournament?.activeCategoryId);
+   if(!loaded?.master?.categories?.length)throw new Error('No category data exists in the cloud for this club.');
+   this.cloudBaseSnapshot=JSON.parse(JSON.stringify(loaded.master));
+   this.categorySharedData={...(loaded.sharedData||{})};
+   this.categoryRevisions={...(loaded.revisions||{})};
+   this.cloudHydrated=true;
+   this.syncConflict=false;
+   window.BADMINTON_CLOUD.applySnapshot(loaded.master);
+   window.BADMINTON_LOCAL?.write(JSON.stringify(loaded.master));
+   this.queueClear();
+   this.clearCategoryBootstrapQueue();
+   this.status('Cloud synced — latest cloud data loaded');
+   this.gate(false);
+   if(window.renderAll)window.renderAll();
+   return {status:'loaded',categoryCount:loaded.master.categories.length};
   }
-  const r=await this.client.from('tournaments').select('data,version,updated_at').eq('id',this.tournamentId).single();if(r.error)throw r.error;
-  this.cloudVersion=Number(r.data.version||1);if(r.data?.data&&Object.keys(r.data.data).length){this.cloudBaseSnapshot=JSON.parse(JSON.stringify(r.data.data));window.BADMINTON_CLOUD.applySnapshot(r.data.data);}this.cloudHydrated=true;this.syncConflict=false;this.status('Cloud synced');this.gate(false);if(window.renderAll)window.renderAll();
-  return {status:'loaded',version:this.cloudVersion};
- },
- queueSave(snapshot,options={}){
+
+  queueSave(snapshot,options={}){
    if(!this.configured()||!this.client||!this.session||this.profile?.approval_status!=='approved'||!this.clubId)
      return Promise.resolve({status:'local-only'});
    const master=snapshot&&Array.isArray(snapshot.categories)?JSON.parse(JSON.stringify(snapshot)):null;
