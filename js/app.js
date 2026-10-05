@@ -8,11 +8,19 @@
   "use strict";
   function start(){
     try{
+<<<<<<< HEAD
       const cloudConfigured=Boolean(window.BADMINTON_CLOUD?.configured?.());
       // When Supabase is configured, never hydrate the visible app from localStorage
       // first. Cloud startup owns the initial data load; localStorage is used only
       // by completeCloudStartup() when the cloud cannot be reached.
       if(!cloudConfigured && typeof loadLocal === "function") loadLocal();
+=======
+      if(!navigator.onLine){
+        if(typeof loadLocal === "function") loadLocal();
+      }else if(typeof initializeBlankCloudFirstState === "function"){
+        initializeBlankCloudFirstState();
+      }
+>>>>>>> 66ec6e5 (Testing)
       if(typeof ensurePlayerPoolState === "function") ensurePlayerPoolState(tournament.settings?.playerPoolCount);
       if(typeof bindFloatingScorecardDismissal === "function") bindFloatingScorecardDismissal();
       if(typeof bindCategorySwitcher === "function") bindCategorySwitcher();

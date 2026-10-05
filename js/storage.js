@@ -1,23 +1,23 @@
-/* ================================================================ */
-/* BADMINTON APP — STORAGE / CLOUD                                  */
-/* Sections: Cloud Config, Supabase/Auth, Local Cache, Persistence  */
-/* ================================================================ */
+/* ================================================================
+   BADMINTON APP — STORAGE / CLOUD
+   V6.0.0 — Club + Category persistence model
+   Cloud is authoritative whenever online. LocalStorage is offline-only
+   recovery/cache and is never uploaded merely because it is newer locally.
+   ================================================================ */
 
-/* ====================== cloud-config.js ====================== */
-/*
-  Safe browser configuration.
-  The Supabase publishable key is designed for browser use.
-  NEVER put a Supabase service_role/secret key here.
-*/
 window.BADMINTON_CLOUD_CONFIG = {
   url: "https://tumqpsbwelmwawbkqtjh.supabase.co",
+<<<<<<< HEAD
   publishableKey: "sb_publishable_CcmUtzpRMlCqEY8o5yXdGQ_7Otmu4t4",
   categoryScopedPersistence: false
+=======
+  publishableKey: "sb_publishable_CcmUtzpRMlCqEY8o5yXdGQ_7Otmu4t4"
+>>>>>>> 66ec6e5 (Testing)
 };
 
-/* ====================== cloud.js ====================== */
 window.BADMINTON_CLOUD_CONFIG=window.BADMINTON_CLOUD_CONFIG||{url:"",publishableKey:""};
 window.BADMINTON_CLOUD={
+<<<<<<< HEAD
  client:null,session:null,profile:null,tournamentId:null,clubId:null,saveTimer:null,appReady:false,cloudHydrated:false,pageSessionId:(globalThis.crypto?.randomUUID?.()||String(Date.now())+'-'+Math.random()),cloudVersion:0,cloudBaseSnapshot:null,syncBusy:false,syncConflict:false,categoryQueue:null,categoryRevisions:{},categorySharedData:{},categorySaveWaiters:[],
  cloudSaveChain:Promise.resolve(),cloudSaveSequence:0,
  retryTimer:null,retryAttempt:0,
@@ -299,142 +299,200 @@ async completeCloudStartup(){
    }
   },
 finishAppStartup(){this.appReady=true;if(this.profile?.approval_status==='approved')this.completeCloudStartup().catch(e=>{this.status('Cloud load failed — local data kept.');this.message('Cloud load failed: '+e.message);this.gate(false);});}
+=======
+  client:null,session:null,profile:null,clubId:null,cloudVersion:0,cloudHydrated:false,appReady:false,syncBusy:false,pendingSnapshot:null,saveTimer:null,
+  configured(){const c=window.BADMINTON_CLOUD_CONFIG||{};return Boolean(c.url&&c.publishableKey&&window.supabase);},
+  message(t){const e=document.getElementById('cloudAuthMessage');if(e)e.textContent=t||'';},
+  gate(v){document.getElementById('cloudAuthGate')?.classList.toggle('hidden',!v);},
+  status(t){const e=document.getElementById('cloudSyncStatus');if(e)e.textContent=t||'';window.BADMINTON_AUTH?.syncAppStatus?.();},
+  profileCacheKey(userId){return 'badmintonTournamentManager.profile.v1.'+String(userId||'');},
+  profileCacheRead(userId){try{return JSON.parse(localStorage.getItem(this.profileCacheKey(userId))||'null');}catch{return null;}},
+  profileCacheWrite(profile){try{if(profile?.id)localStorage.setItem(this.profileCacheKey(profile.id),JSON.stringify(profile));}catch{}},
+  loadLocalFallback(){try{if(typeof window.loadLocal==='function')window.loadLocal();if(typeof window.renderAll==='function')window.renderAll();}catch(e){console.warn('Offline local fallback failed:',e);}},
+  async init(){
+    if(!this.configured()){this.gate(false);return;}
+    this.client=window.supabase.createClient(window.BADMINTON_CLOUD_CONFIG.url,window.BADMINTON_CLOUD_CONFIG.publishableKey,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}});
+    window.addEventListener('online',()=>{this.status('Internet available — loading cloud data…');if(this.appReady&&this.profile?.approval_status==='approved')this.completeCloudStartup().catch(e=>this.status('Cloud load failed: '+e.message));});
+    window.addEventListener('offline',()=>{this.status('Offline — local data mode');});
+    this.gate(false);
+    if(window.BADMINTON_AUTH?.init) await window.BADMINTON_AUTH.init();
+  },
+  async prepareCloudRecord(){
+    const uid=this.session?.user?.id;if(!uid)throw new Error('Cloud session is not available.');
+    let r=await this.client.from('clubs').select('id,name,shared_settings,version').eq('owner_id',uid).order('created_at',{ascending:true}).limit(1).maybeSingle();
+    if(r.error)throw r.error;
+    let club=r.data;
+    if(!club){
+      const requestedName=String(this.profile?.club_name||'Your club name').trim()||'Your club name';
+      r=await this.client.from('clubs').insert({owner_id:uid,name:requestedName,shared_settings:{},version:1}).select('id,name,shared_settings,version').single();
+      if(r.error)throw r.error;club=r.data;
+    }
+    this.clubId=club.id;
+    const member=await this.client.from('club_members').select('club_id').eq('club_id',this.clubId).eq('user_id',uid).maybeSingle();
+    if(member.error)throw member.error;
+    if(!member.data){const addMember=await this.client.from('club_members').insert({club_id:this.clubId,user_id:uid,role:'owner'});if(addMember.error&&addMember.error.code!=='23505')throw addMember.error;}
+    this.cloudVersion=Number(club.version||1);
+    let cats=await this.client.from('categories').select('id,category_key,name,data,settings,sort_order').eq('club_id',this.clubId).order('sort_order',{ascending:true}).order('created_at',{ascending:true});
+    if(cats.error)throw cats.error;
+    if(!cats.data?.length){
+      const fresh=blankTournament();
+      const categoryId=id('category');
+      const categoryName='Internal';
+      fresh.clubName=String(club.name||'');
+      fresh.settings=fresh.settings||{};
+      fresh.settings.categories=[{id:categoryId,name:categoryName}];
+      const ins=await this.client.from('categories').insert({id:crypto.randomUUID(),club_id:this.clubId,category_key:categoryId,name:categoryName,settings:fresh.settings,data:fresh,sort_order:0}).select('id,category_key,name,data,settings,sort_order').single();
+      if(ins.error)throw ins.error;
+      cats={data:[ins.data],error:null};
+    }
+    this.cloudCategories=cats.data||[];
+    this.cloudClub=club;
+    return {club,categories:this.cloudCategories};
+  },
+  buildSnapshot(club,categories){
+    const name=String(club?.name||'').trim();
+    const shared=club?.shared_settings&&typeof club.shared_settings==='object'?club.shared_settings:{};
+    const list=(categories||[]).map((c,index)=>{
+      const data=(c?.data&&typeof c.data==='object'&&!Array.isArray(c.data))?JSON.parse(JSON.stringify(c.data)):blankTournament();
+      const cid=String(c.category_key||c.id||id('category'));
+      const cname=String(c.name||`Category ${index+1}`).trim()||`Category ${index+1}`;
+      data.clubName=name;
+      if(shared.date!==undefined)data.date=String(shared.date||'');
+      data.settings=data.settings||{};
+      data.settings.categories=[{id:cid,name:cname}];
+      return {id:cid,name:cname,data};
+    });
+    const master={masterSchemaVersion:MASTER_SCHEMA_VERSION,type:'badmintonTournamentManagerMaster',clubName:name,date:String(shared.date||list[0]?.data?.date||''),activeCategoryId:String(list[0]?.id||''),categories:list};
+    return normalizeMasterRecord(master);
+  },
+  async loadRemoteIntoApp(){
+    if(!this.clubId)return {status:'idle'};
+    const clubR=await this.client.from('clubs').select('id,name,shared_settings,version,updated_at').eq('id',this.clubId).single();
+    if(clubR.error)throw clubR.error;
+    const catsR=await this.client.from('categories').select('id,category_key,name,data,settings,sort_order,updated_at').eq('club_id',this.clubId).order('sort_order',{ascending:true}).order('created_at',{ascending:true});
+    if(catsR.error)throw catsR.error;
+    if(!catsR.data?.length){await this.prepareCloudRecord();return this.loadRemoteIntoApp();}
+    const snapshot=this.buildSnapshot(clubR.data,catsR.data);
+    this.cloudVersion=Number(clubR.data.version||1);
+    window.BADMINTON_CLOUD.applySnapshot(snapshot);
+    window.BADMINTON_LOCAL?.write(JSON.stringify(snapshot));
+    this.cloudHydrated=true;
+    this.status('Cloud synced');
+    this.gate(false);
+    if(window.renderAll)window.renderAll();
+    return {status:'loaded',version:this.cloudVersion};
+  },
+  async saveSnapshot(snapshot){
+    if(!this.cloudHydrated||!this.clubId||!this.session?.user?.id)return {status:'cloud-not-loaded'};
+    const categories=(snapshot?.categories||[]).map((c,index)=>({id:String(c.id||id('category')),name:String(c.name||`Category ${index+1}`).trim()||`Category ${index+1}`,settings:c.data?.settings||{},data:c.data||{},sort_order:index}));
+    const shared={date:String(snapshot?.date||'')};
+    const r=await this.client.rpc('save_club_snapshot',{p_club_id:this.clubId,p_name:String(snapshot?.clubName||'').trim()||'Your club name',p_shared_settings:shared,p_categories:categories});
+    if(r.error)throw r.error;
+    const row=Array.isArray(r.data)?r.data[0]:r.data;
+    this.cloudVersion=Number(row?.version||this.cloudVersion+1);
+    window.BADMINTON_LOCAL?.write(JSON.stringify(snapshot));
+    return {status:'synced',version:this.cloudVersion};
+  },
+  async queueSave(snapshot){
+    if(!this.configured()||!this.client||!this.session||this.profile?.approval_status!=='approved')return {status:'local-only'};
+    if(!navigator.onLine)return {status:'offline'};
+    if(!this.cloudHydrated)return {status:'cloud-not-loaded'};
+    if(this.syncBusy){this.pendingSnapshot=JSON.parse(JSON.stringify(snapshot));return {status:'pending'};}
+    this.syncBusy=true;this.status('Saving to cloud…');
+    try{
+      const result=await this.saveSnapshot(snapshot);
+      this.status('Cloud synced');
+      return result;
+    }catch(e){
+      this.status('Cloud save failed — data remains in memory.');
+      return {status:'cloud-error',error:e};
+    }finally{
+      this.syncBusy=false;
+      const pending=this.pendingSnapshot;this.pendingSnapshot=null;
+      if(pending&&navigator.onLine&&this.cloudHydrated)this.queueSave(pending).catch(()=>{});
+    }
+  },
+  async completeCloudStartup(){
+    if(!this.appReady||this.profile?.approval_status!=='approved')return {status:'not-ready'};
+    if(!navigator.onLine){this.loadLocalFallback();return {status:'offline'};}
+    try{return await this.loadRemoteIntoApp();}
+    catch(e){this.status('Cloud load failed — switching to local offline data.');this.loadLocalFallback();return {status:'offline-fallback',error:e};}
+  },
+  finishAppStartup(){
+    this.appReady=true;
+    if(this.profile?.approval_status==='approved')this.completeCloudStartup().catch(e=>this.status('Cloud startup failed: '+e.message));
+  }
+>>>>>>> 66ec6e5 (Testing)
 };
 window.BADMINTON_CLOUD.applySnapshot=s=>{if(typeof window.applyCloudSnapshotInternal==='function')window.applyCloudSnapshotInternal(s);};
-document.addEventListener('DOMContentLoaded',()=>BADMINTON_CLOUD.init().catch(e=>BADMINTON_CLOUD.message(e.message||String(e))));
 
 /* ====================== local.js ====================== */
-/*
- Badminton Tournament Manager — local persistence adapter
- Phase 9 / v5.3.16
-
- This module owns only the tournament document's localStorage boundary.
- It deliberately does not own authentication, the cloud sync queue, or
- tournament calculations.
-*/
 (function(){
   "use strict";
-
-  const STORAGE_KEY = "badmintonTournamentManager.v1";
-
-  function read(){
-    try{
-      return localStorage.getItem(STORAGE_KEY);
-    }catch(error){
-      console.warn("Local tournament storage could not be read:", error);
-      return null;
-    }
-  }
-
-  function write(value){
-    try{
-      localStorage.setItem(STORAGE_KEY, String(value));
-      return true;
-    }catch(error){
-      console.warn("Local tournament storage could not be written:", error);
-      return false;
-    }
-  }
-
-  function remove(){
-    try{
-      localStorage.removeItem(STORAGE_KEY);
-      return true;
-    }catch(error){
-      console.warn("Local tournament storage could not be removed:", error);
-      return false;
-    }
-  }
-
-  window.BADMINTON_LOCAL = Object.freeze({
-    key: STORAGE_KEY,
-    read,
-    write,
-    remove
-  });
+  const STORAGE_KEY='badmintonTournamentManager.v6.offline';
+  function read(){try{return localStorage.getItem(STORAGE_KEY);}catch{return null;}}
+  function write(value){try{localStorage.setItem(STORAGE_KEY,String(value));return true;}catch(e){console.warn('Local storage write failed:',e);return false;}}
+  function remove(){try{localStorage.removeItem(STORAGE_KEY);return true;}catch{return false;}}
+  window.BADMINTON_LOCAL=Object.freeze({key:STORAGE_KEY,read,write,remove});
 })();
 
-/* ====================== persistence.js ====================== */
-/*
- Badminton Tournament Manager — persistence boundary
- Phase 19 / v5.3.26
-
- Owns the tournament document persistence workflow: settings synchronization,
- migration/normalization on local load, and local/cloud save dispatch.
- Tournament calculations and rendering remain outside this module.
-*/
-"use strict";
-
-function saveLocal(silent=false,options={}){
-  // Persistence is intentionally separate from rendering. The active category
-  // is calculated/saved exactly as before, then copied into the master record.
-  // Other category subsets are untouched.
+function saveLocal(silent=false){
   syncSettings();
   clearCalculationCache();
-  // Ranking calculation can create a lottery order for exact global-metric
-  // ties. Calculate it before serialization so a newly created lottery is
-  // persisted together with the active category state.
-  if(typeof calculateAndStoreGroupGlobalMetrics==="function")
-    calculateAndStoreGroupGlobalMetrics();
-  if(typeof calculateTournamentRanking==="function")
-    calculateTournamentRanking();
+  if(typeof calculateAndStoreGroupGlobalMetrics==='function')calculateAndStoreGroupGlobalMetrics();
+  if(typeof calculateTournamentRanking==='function')calculateTournamentRanking();
   saveActiveCategoryToMaster();
-  const snapshot = deepClone(masterTournament||tournament);
-
-  // Persist the complete master record immediately. A cloud queue is not a
-  // successful cloud save, so the user-facing message must wait for the actual
-  // sync result instead of claiming success before the network write completes.
-  const localSaved=window.BADMINTON_LOCAL?.write(JSON.stringify(snapshot))!==false;
+  const snapshot=deepClone(masterTournament||tournament);
   const cloud=window.BADMINTON_CLOUD;
-  if(!localSaved && !silent)showMessage("Local save failed. Check browser storage space or permissions.","warning");
-  if(cloud?.queueSave){
-    if(!silent && localSaved)showMessage("Saved on this device; syncing to cloud…");
-    Promise.resolve(cloud.queueSave(snapshot,options)).then(result=>{
+  const online=Boolean(navigator.onLine&&cloud?.client&&cloud?.session&&cloud?.profile?.approval_status==='approved');
+  if(online){
+    if(silent){
+      clearTimeout(cloud.saveTimer);
+      cloud.saveTimer=setTimeout(()=>cloud.queueSave(snapshot).catch(()=>{}),300);
+      return;
+    }
+    Promise.resolve(cloud.queueSave(snapshot)).then(result=>{
       if(silent)return;
-      const status=result?.status||"pending";
-      if(status==="synced")showMessage("Tournament saved and synced to cloud.","success");
-      else if(status==="cloud-won")showMessage("Latest cloud copy loaded; this local copy was outdated.","warning");
-      else if(status==="offline")showMessage("Saved on this device; offline. Cloud sync will retry.","warning");
-      else if(status==="cloud-not-loaded")showMessage("Saved on this device; waiting for cloud data to load.","warning");
-      else if(status==="queue-failed")showMessage("Saved locally, but cloud retry could not be queued. Export a backup and check browser storage space.","warning");
-      else if(status==="local-only")showMessage("Saved on this device only; cloud sync is not ready.","warning");
-      else if(status==="clean")showMessage("Tournament is already synced with the cloud.","success");
-      else showMessage("Saved on this device; cloud sync has not completed and will retry.","warning");
-    }).catch(err=>{
-      console.warn("Cloud save deferred:",err);
-      if(!silent)showMessage("Saved on this device; cloud sync failed and will retry.","warning");
+      const status=result?.status;
+      if(status==='synced')showMessage('Tournament saved and synced to cloud.','success');
+      else if(status==='cloud-not-loaded')showMessage('Cloud data is still loading. Please save again after sync completes.','warning');
+      else if(status==='cloud-error')showMessage('Cloud save failed. Nothing was overwritten locally.','warning');
+      else if(status==='pending')showMessage('Cloud save already in progress.','warning');
+      else showMessage('Cloud save is not ready.','warning');
     });
-  }else if(!silent && localSaved){
-    showMessage("Tournament saved on this device.");
+    return;
   }
+  const localSaved=window.BADMINTON_LOCAL?.write(JSON.stringify(snapshot))!==false;
+  if(!silent)showMessage(localSaved?'Saved locally for offline use.':'Local save failed.','warning');
 }
 
-// Tournament settings remain editable after results exist so the admin can correct
-// setup mistakes without locking the tournament to its original scoring configuration.
 function syncSettings(){
-  tournament.clubName=$("clubName").value.trim();
-  tournament.date=$("tournamentDate").value;
+  tournament.clubName=$('clubName').value.trim();
+  tournament.date=$('tournamentDate').value;
   if(masterTournament)masterTournament.date=tournament.date;
   syncCategorySettingsFromUI();
-  if($("tournamentMode")){
-    const mode=$("tournamentMode").value;
-    tournament.settings.mode=["doubles","singles","multiplayer"].includes(mode)?mode:"doubles";
-  }else if(!["doubles","singles","multiplayer"].includes(tournament.settings.mode)){
-    tournament.settings.mode="doubles";
-  }
-  // Legacy format settings are retained for imported JSON compatibility only.
-  // Tournament mode is the sole active format authority from V5.1.2 onward.
+  if($('tournamentMode')){
+    const mode=$('tournamentMode').value;
+    tournament.settings.mode=['doubles','singles','multiplayer'].includes(mode)?mode:'doubles';
+  }else if(!['doubles','singles','multiplayer'].includes(tournament.settings.mode))tournament.settings.mode='doubles';
   const activeFormat=modeToTeamFormat(tournament.settings.mode);
   tournament.settings.defaultFormat=activeFormat;
   tournament.settings.entryFormat=activeFormat;
   tournament.settings.allowedFormats=[activeFormat];
-  tournament.settings.defaultQualifiers=Math.max(0,Number($("defaultQualifiers")?.value ?? tournament.settings.defaultQualifiers ?? 2)||0);
-  const nextBestOf=Math.max(1,Number($("bestOf").value)||1);
+  tournament.settings.defaultQualifiers=Math.max(0,Number($('defaultQualifiers')?.value??tournament.settings.defaultQualifiers??2)||0);
+  const nextBestOf=Math.max(1,Number($('bestOf').value)||1);
   const previousBestOf=Math.max(1,Number(tournament.settings.bestOf)||1);
-  if(nextBestOf!==previousBestOf&&typeof markLegacyMatchFormatsBeforeDefaultChange==="function")
-    markLegacyMatchFormatsBeforeDefaultChange(previousBestOf);
+  if(nextBestOf!==previousBestOf&&typeof markLegacyMatchFormatsBeforeDefaultChange==='function')markLegacyMatchFormatsBeforeDefaultChange(previousBestOf);
   tournament.settings.bestOf=nextBestOf;
-  tournament.settings.pointsTarget=Math.max(1,Number($("pointsTarget").value)||21);
+  tournament.settings.pointsTarget=Math.max(1,Number($('pointsTarget').value)||21);
+}
+
+function initializeBlankCloudFirstState(){
+  try{
+    const fresh=blankTournament();
+    masterTournament=buildMasterFromLegacy(fresh);
+    tournament=migrateTournamentData(masterTournament.categories[0].data);
+  }catch(e){console.warn('Blank startup state failed:',e);}
 }
 
 function migrateTournamentData(data){
@@ -596,23 +654,16 @@ function migrateTournamentData(data){
 
 function loadLocal(){
   const raw=window.BADMINTON_LOCAL?.read();
-  if(!raw) return;
+  if(!raw)return;
   try{
     const parsed=JSON.parse(raw);
     masterTournament=normalizeMasterRecord(parsed);
     const active=getActiveCategoryRecord();
     tournament=migrateTournamentData(active.data);
-    tournament.clubName=masterTournament.clubName||"";
+    tournament.clubName=masterTournament.clubName||'';
+    tournament.date=masterTournament.date||tournament.date||'';
     tournament.settings=tournament.settings||{};
-    tournament.settings.categories=[{id:String(active.id),name:String(active.name||"Internal").trim()||"Internal"}];
+    tournament.settings.categories=[{id:String(active.id),name:String(active.name||'Internal').trim()||'Internal'}];
     syncThirdPlacePlayoffFromMainKnockout();
-    saveActiveCategoryToMaster();
-    window.BADMINTON_LOCAL?.write(JSON.stringify(masterTournament));
-  }catch(e){
-    console.error(e);
-    showMessage("Saved tournament data could not be loaded.","warning");
-  }
+  }catch(e){console.error(e);showMessage('Saved offline tournament data could not be loaded.','warning');}
 }
-
-
-

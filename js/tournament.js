@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 const APP_VERSION = '5.3.82';
+=======
+const APP_VERSION = '6.0.0';
+>>>>>>> 66ec6e5 (Testing)
 
 "use strict";
 
@@ -504,8 +508,11 @@ function renderCategories(){
       if(category.data?.settings)category.data.settings.categories=[{id:String(category.id),name:category.name}];
       if(String(masterTournament?.activeCategoryId)===String(category.id))
         tournament.settings.categories=[{id:String(category.id),name:category.name}];
+<<<<<<< HEAD
       // A category rename is metadata/category-scoped work, not a whole-master replacement.
       // Full replacement here could upload a stale snapshot and erase another category.
+=======
+>>>>>>> 66ec6e5 (Testing)
       saveLocal(true);
       renderAll();
     });
@@ -551,17 +558,15 @@ function createCategories(){
     saveActiveCategoryToMaster();
     categories.length=count;
     masterTournament.categories=categories;
-    if(activeWillBeRemoved){
-      masterTournament.activeCategoryId=categories[0].id;
-      const nextActive=getActiveCategoryRecord();
-      tournament=migrateTournamentData(nextActive.data);
-      tournament.clubName=masterTournament.clubName||"";
-      renderAll();
-    }
+    if(activeWillBeRemoved)masterTournament.activeCategoryId=categories[0].id;
   }
   masterTournament.categories=categories;
   addHistory("Categories created",String(count));
+<<<<<<< HEAD
   saveLocal(true,{replaceAll:true,allowCategoryRemoval:true});
+=======
+  saveLocal(true);
+>>>>>>> 66ec6e5 (Testing)
   const active=getActiveCategoryRecord();
   tournament=migrateTournamentData(active.data);
   tournament.clubName=masterTournament.clubName||"";
@@ -584,15 +589,18 @@ function removeCategory(categoryId){
     saveActiveCategoryToMaster();
   }
   masterTournament.categories=categories.filter(category=>String(category.id)!==String(categoryId));
-  if(wasActive){
-    masterTournament.activeCategoryId=masterTournament.categories[0].id;
-    const nextActive=getActiveCategoryRecord();
-    tournament=migrateTournamentData(nextActive.data);
-    tournament.clubName=masterTournament.clubName||"";
-    renderAll();
-  }
+  if(wasActive)masterTournament.activeCategoryId=masterTournament.categories[0].id;
   addHistory("Category removed",target.name);
+<<<<<<< HEAD
   saveLocal(true,{replaceAll:true,allowCategoryRemoval:true});
+=======
+  saveLocal(true);
+  if(wasActive){
+    const active=getActiveCategoryRecord();
+    tournament=migrateTournamentData(active.data);
+    tournament.clubName=masterTournament.clubName||"";
+  }
+>>>>>>> 66ec6e5 (Testing)
   renderAll();
 }
 
@@ -3063,19 +3071,32 @@ function resetCurrentCategory(){
   showMessage(`Category "${name}" reset. Other categories were preserved.`);
 }
 function resetAllCategories(){
-  if(!masterTournament||!Array.isArray(masterTournament.categories)||!masterTournament.categories.length)return;
-  if(!confirm("Reset ALL categories? This clears all players, teams, pools, groups, fixtures, results and knockout data in every category. Category names, category settings and the club name will be preserved."))return;
-  syncSettings();
-  saveActiveCategoryToMaster();
-  masterTournament.categories.forEach(category=>{
-    category.data=resetCategoryDataKeepingSettings(category.data,category.id,category.name,masterTournament.clubName);
-  });
-  const active=getActiveCategoryRecord();
-  tournament=migrateTournamentData(active.data);
-  tournament.clubName=masterTournament.clubName||"";
+  if(!masterTournament)return;
+  if(!confirm("Reset EVERYTHING? This clears the club name, shared settings, all categories, players, teams, groups, fixtures, results and knockout data. The cloud record will be replaced with a fresh blank tournament. Continue?"))return;
+  const fresh=blankTournament();
+  const categoryId=id("category");
+  const categoryName="Internal";
+  fresh.clubName="";
+  fresh.date="";
+  fresh.settings=fresh.settings||{};
+  fresh.settings.categories=[{id:categoryId,name:categoryName}];
+  masterTournament={
+    masterSchemaVersion:MASTER_SCHEMA_VERSION,
+    type:"badmintonTournamentManagerMaster",
+    clubName:"",
+    date:"",
+    activeCategoryId:categoryId,
+    categories:[{id:categoryId,name:categoryName,data:fresh}]
+  };
+  tournament=migrateTournamentData(fresh);
   renderAll();
+<<<<<<< HEAD
   saveLocal(true,{replaceAll:true,allowEmptyOverwrite:true,allowCategoryRemoval:true});
   showMessage("All categories reset. Category names and settings were preserved.");
+=======
+  saveLocal(true);
+  showMessage("Everything reset. Shared data and all categories were cleared.");
+>>>>>>> 66ec6e5 (Testing)
 }
 
 function importTournamentFile(file){
@@ -3151,7 +3172,7 @@ function exportJson(){
   showMessage("Tournament master JSON exported.");
 }
 
-window.applyCloudSnapshotInternal=function(snapshot){if(!snapshot||typeof snapshot!=='object')return;try{masterTournament=normalizeMasterRecord(deepClone(snapshot));tournament=loadActiveCategoryFromMaster();if(!tournament)tournament=buildDefaultTournament();window.BADMINTON_LOCAL?.write(JSON.stringify(masterTournament));}catch(e){console.warn('Cloud snapshot could not be applied:',e);}};
+window.applyCloudSnapshotInternal=function(snapshot){if(!snapshot||typeof snapshot!=='object')return;try{masterTournament=normalizeMasterRecord(deepClone(snapshot));const active=getActiveCategoryRecord();tournament=active?.data?migrateTournamentData(active.data):blankTournament();tournament.clubName=masterTournament.clubName||'';tournament.date=masterTournament.date||tournament.date||'';tournament.settings=tournament.settings||{};tournament.settings.categories=[{id:String(active?.id||''),name:String(active?.name||'Internal').trim()||'Internal'}];}catch(e){console.warn('Cloud snapshot could not be applied:',e);}};
 
 
 function scrollToPlayerTeamEntryHeader(){
