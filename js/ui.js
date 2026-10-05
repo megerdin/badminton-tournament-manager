@@ -139,8 +139,8 @@ function renderLandingDashboard(){
   setText("dashboardProgressText",tournamentProgress);
   const progressCategory=ui$("dashboardProgressCategory");
   if(progressCategory){
-    const category=getActiveCategoryRecord()||normalizeCategories()[0]||{name:"Internal"};
-    const categoryName=String(category.name||"Internal").trim()||"Internal";
+    const category=getActiveCategoryRecord()||normalizeCategories()[0]||{name:"C & D"};
+    const categoryName=String(category.name||"C & D").trim()||"C & D";
     progressCategory.textContent=`[  ${categoryName}  ]`;
     progressCategory.style.color=getCategoryReflectiveColor(categoryName);
   }
@@ -152,7 +152,7 @@ function renderHeaderClubName(){
   const name=masterTournament?.clubName||tournament?.clubName||"Your club name";
   el.textContent=name;
   const active=getActiveCategoryRecord();
-  const categoryName=String(active?.name||normalizeCategories()[0]?.name||"Internal").trim()||"Internal";
+  const categoryName=String(active?.name||normalizeCategories()[0]?.name||"C & D").trim()||"C & D";
   el.setAttribute("aria-label",`Switch category. Current category: ${categoryName}`);
   const versionEl=document.getElementById("appVersion");
   if(versionEl)versionEl.textContent=`V${escapeHtml(APP_VERSION)}`;
@@ -183,8 +183,8 @@ function renderPodium(){
   }
   const third=tournament.thirdPlacePlayoff;
   const clubName=tournament?.clubName?.trim()||"Tournament";
-  const category=getActiveCategoryRecord()||normalizeCategories()[0]||{name:"Internal"};
-  const categoryName=String(category.name||"Internal").trim()||"Internal";
+  const category=getActiveCategoryRecord()||normalizeCategories()[0]||{name:"C & D"};
+  const categoryName=String(category.name||"C & D").trim()||"C & D";
   const categoryColor=getCategoryReflectiveColor(categoryName);
   el.innerHTML=`<div class="result-box">
     <div class="podium-content">
@@ -219,7 +219,7 @@ function renderSummary(){
     const results=Array.isArray(d.results)?d.results.length:0;
     return {
       id:String(category?.id||""),
-      name:String(category?.name||"Internal").trim()||"Internal",
+      name:String(category?.name||"C & D").trim()||"C & D",
       players,teams,teamPool,groups,fixtures,results
     };
   });
@@ -446,8 +446,8 @@ function buildGroupFixturePdfData(){
   const groups=Array.isArray(tournament?.groups)?tournament.groups:[];
   const teamsAll=Array.isArray(tournament?.teams)?tournament.teams:[];
   const clubName=String(tournament?.clubName||"Tournament").trim()||"Tournament";
-  const category=getActiveCategoryRecord()||normalizeCategories()[0]||{name:"Internal"};
-  const categoryName=String(category.name||"Internal").trim()||"Internal";
+  const category=getActiveCategoryRecord()||normalizeCategories()[0]||{name:"C & D"};
+  const categoryName=String(category.name||"C & D").trim()||"C & D";
   const pages=[];
   let totalFixtureCount=0;
 
@@ -704,7 +704,7 @@ async function exportGroupFixturesPdf(){
     }
     const pdfBytes=buildImagePdf(jpegPages,width,height);
     const blob=new Blob([pdfBytes],{type:"application/pdf"});
-    const category=sanitizePdfFilenamePart(data.pages[0].categoryName,"Internal");
+    const category=sanitizePdfFilenamePart(data.pages[0].categoryName,"C & D");
     const club=sanitizePdfFilenamePart(data.pages[0].clubName,"Tournament");
     const filename=`${category}-${club}.pdf`;
     const url=URL.createObjectURL(blob);

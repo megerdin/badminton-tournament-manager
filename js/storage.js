@@ -1,6 +1,6 @@
 /* ================================================================
    BADMINTON APP — STORAGE / CLOUD
-   V6.1.4 — Club + Category persistence model
+   V6.1.5 — Club + Category persistence model
    Cloud is authoritative whenever online. LocalStorage is offline-only
    recovery/cache and is never uploaded merely because it is newer locally.
    ================================================================ */
@@ -300,10 +300,10 @@ function migrateTournamentData(data){
     if(migrated.settings[key]===undefined)migrated.settings[key]=defaults.settings[key];
   }
   if(!Array.isArray(migrated.settings.categories) || !migrated.settings.categories.length)
-    migrated.settings.categories=[{id:id("category"),name:"Internal"}];
+    migrated.settings.categories=[{id:id("category"),name:"C & D"}];
   migrated.settings.categories=migrated.settings.categories.map((category,index)=>({
     id:String(category?.id||id("category")),
-    name:String(category?.name||((index===0)?"Internal":`Category ${index+1}`)).trim()
+    name:String(category?.name||((index===0)?"C & D":`Category ${index+1}`)).trim()
   }));
   for(const key of ["players","teams","groups","history","fixtures","results"]){
     if(!Array.isArray(migrated[key]))migrated[key]=[];
@@ -386,7 +386,7 @@ function loadLocal(){
     tournament.clubName=masterTournament.clubName||'';
     tournament.date=masterTournament.date||tournament.date||'';
     tournament.settings=tournament.settings||{};
-    tournament.settings.categories=[{id:String(active.id),name:String(active.name||'Internal').trim()||'Internal'}];
+    tournament.settings.categories=[{id:String(active.id),name:String(active.name||'C & D').trim()||'C & D'}];
     syncThirdPlacePlayoffFromMainKnockout();
   }catch(e){console.error(e);showMessage('Saved offline tournament data could not be loaded.','warning');}
 }

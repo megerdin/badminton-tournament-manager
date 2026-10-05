@@ -1,4 +1,4 @@
-const APP_VERSION = '6.1.1';
+const APP_VERSION = '6.1.5';
 
 "use strict";
 
@@ -446,17 +446,17 @@ function normalizeCategories(){
   if(!masterTournament){
     if(!tournament.settings)tournament.settings={};
     if(!Array.isArray(tournament.settings.categories) || !tournament.settings.categories.length)
-      tournament.settings.categories=[{id:id("category"),name:"Internal"}];
+      tournament.settings.categories=[{id:id("category"),name:"C & D"}];
     return tournament.settings.categories;
   }
   if(!Array.isArray(masterTournament.categories) || !masterTournament.categories.length){
-    const category={id:id("category"),name:"Internal"};
+    const category={id:id("category"),name:"C & D"};
     masterTournament.categories=[makeBlankCategoryRecord(category.id,category.name)];
     masterTournament.activeCategoryId=category.id;
   }
   masterTournament.categories=masterTournament.categories.map((category,index)=>{
     const cid=String(category?.id||id("category"));
-    const name=String(category?.name||((index===0)?"Internal":`Category ${index+1}`)).trim()||`Category ${index+1}`;
+    const name=String(category?.name||((index===0)?"C & D":`Category ${index+1}`)).trim()||`Category ${index+1}`;
     category.id=cid; category.name=name;
     return category;
   });
@@ -472,14 +472,14 @@ function syncCategorySettingsFromUI(){
   const names=new Map(inputs.map(input=>[String(input.dataset.categoryId),input.value.trim()]));
   current.forEach(category=>{
     if(names.has(String(category.id))){
-      category.name=names.get(String(category.id))||"Internal";
+      category.name=names.get(String(category.id))||"C & D";
       if(category.data?.settings)category.data.settings.categories=[{id:String(category.id),name:category.name}];
     }
   });
   const active=getActiveCategoryRecord();
   if(active){
     tournament.settings=tournament.settings||{};
-    tournament.settings.categories=[{id:String(active.id),name:String(active.name||"Internal").trim()||"Internal"}];
+    tournament.settings.categories=[{id:String(active.id),name:String(active.name||"C & D").trim()||"C & D"}];
   }
 }
 
@@ -499,7 +499,7 @@ function renderCategories(){
     input.addEventListener("change",()=>{
       const category=normalizeCategories().find(item=>String(item.id)===String(input.dataset.categoryId));
       if(!category)return;
-      category.name=input.value.trim()||"Internal";
+      category.name=input.value.trim()||"C & D";
       input.value=category.name;
       if(category.data?.settings)category.data.settings.categories=[{id:String(category.id),name:category.name}];
       if(String(masterTournament?.activeCategoryId)===String(category.id))
@@ -532,7 +532,7 @@ function createCategories(){
   const categories=normalizeCategories();
   while(categories.length<count){
     const index=categories.length;
-    const category={id:id("category"),name:index===0?"Internal":`Category ${index+1}`};
+    const category={id:id("category"),name:index===0?"C & D":`Category ${index+1}`};
     categories.push(makeBlankCategoryRecord(category.id,category.name));
   }
   if(categories.length>count){
@@ -2369,7 +2369,7 @@ function clearThirdPlaceResult(){
 }
 
 function getCategoryReflectiveColor(categoryName){
-  const text=String(categoryName||"Internal");
+  const text=String(categoryName||"C & D");
   let hash=0;
   for(let i=0;i<text.length;i++)hash=((hash<<5)-hash)+text.charCodeAt(i)|0;
   const hue=Math.abs(hash)%360;
@@ -3015,7 +3015,7 @@ function resetCategoryDataKeepingSettings(existing,categoryId,categoryName,clubN
   fresh.clubName=String(clubName||previous.clubName||"");
   fresh.date=String(previous.date||"");
   fresh.settings={...fresh.settings,...oldSettings};
-  fresh.settings.categories=[{id:String(categoryId),name:String(categoryName||"Internal").trim()||"Internal"}];
+  fresh.settings.categories=[{id:String(categoryId),name:String(categoryName||"C & D").trim()||"C & D"}];
   // Preserve category configuration but clear entry/pool data and generated state.
   fresh.settings.teamPoolEntries=[];
   fresh.settings.teamPoolNames=[];
@@ -3041,7 +3041,7 @@ function openResetDialog(){
 function resetCurrentCategory(){
   const active=getActiveCategoryRecord();
   if(!active)return;
-  const name=String(active.name||"Internal");
+  const name=String(active.name||"C & D");
   if(!confirm(`Reset category "${name}"? All its players, teams, pools, groups, fixtures, results and knockout data will be cleared. Other categories and this category's settings will be preserved.`))return;
   syncSettings();
   saveActiveCategoryToMaster();
@@ -3058,7 +3058,7 @@ function resetAllCategories(){
   if(!confirm("Reset EVERYTHING? This clears the club name, shared settings, all categories, players, teams, groups, fixtures, results and knockout data. The cloud copy will be replaced with this fresh blank workspace when the save completes. Continue?"))return;
   const fresh=blankTournament();
   const categoryId=id("category");
-  const categoryName="Internal";
+  const categoryName="C & D";
   fresh.clubName="";
   fresh.date="";
   fresh.settings=fresh.settings||{};
@@ -3095,7 +3095,7 @@ function importTournamentFile(file){
       tournament.clubName=masterTournament.clubName||"";
       tournament.date=masterTournament.date||tournament.date||"";
       tournament.settings=tournament.settings||{};
-      tournament.settings.categories=[{id:String(active.id),name:String(active.name||"Internal").trim()||"Internal"}];
+      tournament.settings.categories=[{id:String(active.id),name:String(active.name||"C & D").trim()||"C & D"}];
       syncThirdPlacePlayoffFromMainKnockout();
       // Do not call saveLocal() here: saveLocal() reads the current form controls.
       // The imported master is authoritative. Do not call saveLocal() or
@@ -3150,7 +3150,7 @@ function exportJson(){
   showMessage("Tournament master JSON exported.");
 }
 
-window.applyCloudSnapshotInternal=function(snapshot){if(!snapshot||typeof snapshot!=='object')return;try{masterTournament=normalizeMasterRecord(deepClone(snapshot));const active=getActiveCategoryRecord();tournament=active?.data?migrateTournamentData(active.data):blankTournament();tournament.clubName=masterTournament.clubName||'';tournament.date=masterTournament.date||tournament.date||'';tournament.settings=tournament.settings||{};tournament.settings.categories=[{id:String(active?.id||''),name:String(active?.name||'Internal').trim()||'Internal'}];}catch(e){console.warn('Cloud snapshot could not be applied:',e);}};
+window.applyCloudSnapshotInternal=function(snapshot){if(!snapshot||typeof snapshot!=='object')return;try{masterTournament=normalizeMasterRecord(deepClone(snapshot));const active=getActiveCategoryRecord();tournament=active?.data?migrateTournamentData(active.data):blankTournament();tournament.clubName=masterTournament.clubName||'';tournament.date=masterTournament.date||tournament.date||'';tournament.settings=tournament.settings||{};tournament.settings.categories=[{id:String(active?.id||''),name:String(active?.name||'C & D').trim()||'C & D'}];}catch(e){console.warn('Cloud snapshot could not be applied:',e);}};
 
 
 function scrollToPlayerTeamEntryHeader(){
@@ -3228,7 +3228,7 @@ function blankTournament(){
       entryFormat:"doubles",
       allowedFormats:["doubles"],
       defaultQualifiers: 2,
-      categories: [{id:id("category"),name:"Internal"}],
+      categories: [{id:id("category"),name:"C & D"}],
       playerPoolCount: 2,
       playerPoolBuildInputSignature:'',
       teamPoolEntries:[],
@@ -3486,8 +3486,8 @@ function saveActiveCategoryToMaster(){
   snapshot.clubName=String(tournament.clubName||"").trim();
   snapshot.date=String(tournament.date||"");
   snapshot.settings=snapshot.settings||{};
-  snapshot.settings.categories=[{id:String(active.id),name:String(active.name||"Internal").trim()||"Internal"}];
-  active.name=String(active.name||"Internal").trim()||"Internal";
+  snapshot.settings.categories=[{id:String(active.id),name:String(active.name||"C & D").trim()||"C & D"}];
+  active.name=String(active.name||"C & D").trim()||"C & D";
   active.data=snapshot;
   masterTournament.clubName=snapshot.clubName;
   masterTournament.date=snapshot.date;
@@ -3503,17 +3503,17 @@ function makeBlankCategoryRecord(categoryId,categoryName){
   const data=blankTournament();
   data.clubName=masterTournament?.clubName||"";
   data.date=masterTournament?.date||data.date||"";
-  data.settings.categories=[{id:String(categoryId),name:String(categoryName||"Internal").trim()||"Internal"}];
-  return {id:String(categoryId),name:String(categoryName||"Internal").trim()||"Internal",data};
+  data.settings.categories=[{id:String(categoryId),name:String(categoryName||"C & D").trim()||"C & D"}];
+  return {id:String(categoryId),name:String(categoryName||"C & D").trim()||"C & D",data};
 }
 
 function buildMasterFromLegacy(legacy){
   const categories=Array.isArray(legacy?.settings?.categories)&&legacy.settings.categories.length
     ? legacy.settings.categories
-    : [{id:id("category"),name:"Internal"}];
+    : [{id:id("category"),name:"C & D"}];
   const normalized=categories.map((category,index)=>({
     id:String(category?.id||id("category")),
-    name:String(category?.name||((index===0)?"Internal":`Category ${index+1}`)).trim()||`Category ${index+1}`
+    name:String(category?.name||((index===0)?"C & D":`Category ${index+1}`)).trim()||`Category ${index+1}`
   }));
   const master={
     masterSchemaVersion:MASTER_SCHEMA_VERSION,
@@ -3564,7 +3564,7 @@ function normalizeMasterRecord(raw){
   };
   raw.categories.forEach((category,index)=>{
     const cid=String(category?.id||id("category"));
-    const name=String(category?.name||((index===0)?"Internal":`Category ${index+1}`)).trim()||`Category ${index+1}`;
+    const name=String(category?.name||((index===0)?"C & D":`Category ${index+1}`)).trim()||`Category ${index+1}`;
     let data;
     if(category?.data && typeof category.data==="object" && !Array.isArray(category.data))
       data=migrateTournamentData(category.data);
@@ -3603,7 +3603,7 @@ function activateCategory(categoryId,{message=true}={}){
       tournament.clubName=masterTournament.clubName||"";
       tournament.date=masterTournament.date||tournament.date||"";
       tournament.settings=tournament.settings||{};
-      tournament.settings.categories=[{id:String(refreshed.id),name:String(refreshed.name||"Internal").trim()||"Internal"}];
+      tournament.settings.categories=[{id:String(refreshed.id),name:String(refreshed.name||"C & D").trim()||"C & D"}];
     }
     renderAll();
     focusActiveCategorySettingsTab();
@@ -3622,7 +3622,7 @@ function activateCategory(categoryId,{message=true}={}){
   tournament.clubName=masterTournament.clubName||"";
   tournament.date=masterTournament.date||tournament.date||"";
   tournament.settings=tournament.settings||{};
-  tournament.settings.categories=[{id:String(target.id),name:String(target.name||"Internal").trim()||"Internal"}];
+  tournament.settings.categories=[{id:String(target.id),name:String(target.name||"C & D").trim()||"C & D"}];
   // Refresh the UI from the newly selected category BEFORE saving. saveLocal()
   // synchronizes form controls into tournament.settings; calling it while the
   // previous category's controls are still visible would overwrite this
