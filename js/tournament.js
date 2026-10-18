@@ -1,4 +1,4 @@
-const APP_VERSION = '6.1.6';
+const APP_VERSION = '6.1.8';
 
 "use strict";
 
@@ -2493,7 +2493,8 @@ function renderMainKnockoutMatchElement(match){
   const winnerId=completed&&match.winnerTeamId?String(match.winnerTeamId):"";
   const aWin=completed&&winnerId===String(match.team1Id);
   const bWin=completed&&winnerId===String(match.team2Id);
-  const html=`<div class="fixture-number main-ko-match-number">${match.number}.</div><div class="fixture-teams"><strong class="participant-label ${aWin?"winner-team":""}">${escapeHtml(mainKnockoutSlotLabel(match,1))}</strong><span class="match-vs">VS</span><strong class="participant-label ${bWin?"winner-team":""}">${escapeHtml(mainKnockoutSlotLabel(match,2))}</strong></div><span class="badge main-ko-status">${completed?"✓":"—"}</span>`;
+  const result=match.result||null;
+  const html=`<div class="fixture-number main-ko-match-number">${match.number}.</div><div class="fixture-teams"><strong class="participant-label ${matchParticipantClasses(completed,winnerId,match.team1Id)}">${escapeHtml(mainKnockoutSlotLabel(match,1))}</strong>${matchOutcomeMarkup(result,completed,winnerId)}<strong class="participant-label ${matchParticipantClasses(completed,winnerId,match.team2Id)}">${escapeHtml(mainKnockoutSlotLabel(match,2))}</strong></div><span class="badge main-ko-status">${completed?"✓":"—"}</span>`;
   return {html,playable,selected};
 }
 
@@ -2522,8 +2523,9 @@ function renderThirdPlaceBracketSection(){
   const status=completed?"✓":"—";
   const selectable=Boolean(teamAId&&teamBId&&!getStageStaleInfo("third-place").stale);
   const selected=selectedKnockoutResultMatchType==="third-place";
+  const result=m?.result||null;
   return `<section class="main-ko-round main-ko-third-place-round"><h4>3rd-place</h4><div class="fixture-row main-ko-match ${selectable?"main-ko-match-selectable":""} ${selected?"main-ko-match-selected":""}" data-third-place-match="1" role="${selectable?"button":"presentation"}" tabindex="${selectable?"0":"-1"}">
-    <div class="fixture-number main-ko-match-number">1.</div><div class="fixture-teams"><strong class="participant-label ${aWin?"winner-team":""}">${escapeHtml(a)}</strong><span class="match-vs">VS</span><strong class="participant-label ${bWin?"winner-team":""}">${escapeHtml(b)}</strong></div><span class="badge main-ko-status">${status}</span>
+    <div class="fixture-number main-ko-match-number">1.</div><div class="fixture-teams"><strong class="participant-label ${matchParticipantClasses(completed,m?.winnerTeamId,teamAId)}">${escapeHtml(a)}</strong>${matchOutcomeMarkup(result,completed,m?.winnerTeamId)}<strong class="participant-label ${matchParticipantClasses(completed,m?.winnerTeamId,teamBId)}">${escapeHtml(b)}</strong></div><span class="badge main-ko-status">${status}</span>
   </div></section>`;
 }
 
@@ -4745,12 +4747,12 @@ function renderPreliminaryRound(){
       const matchWinnerId=m.winnerTeamId?String(m.winnerTeamId):"";
       const aWinner=isGeneratedMatchResultComplete(m) && matchWinnerId===String(m.teamAId);
       const bWinner=isGeneratedMatchResultComplete(m) && matchWinnerId===String(m.teamBId);
-      const aDisplay=`<span class="ko-prelim-team ${aWinner?"winner-team":""}"><span class="prelim-source">${escapeHtml(aInfo.source)}</span><span class="prelim-player">${preliminaryTeamDisplay(a)}</span></span>`;
-      const bDisplay=`<span class="ko-prelim-team ${bWinner?"winner-team":""}"><span class="prelim-source">${escapeHtml(bInfo.source)}</span><span class="prelim-player">${preliminaryTeamDisplay(b)}</span></span>`;
+      const aDisplay=`<span class="ko-prelim-team ${matchParticipantClasses(aWinner||bWinner,matchWinnerId,m.teamAId)}"><span class="prelim-source">${escapeHtml(aInfo.source)}</span><span class="prelim-player">${preliminaryTeamDisplay(a)}</span></span>`;
+      const bDisplay=`<span class="ko-prelim-team ${matchParticipantClasses(aWinner||bWinner,matchWinnerId,m.teamBId)}"><span class="prelim-source">${escapeHtml(bInfo.source)}</span><span class="prelim-player">${preliminaryTeamDisplay(b)}</span></span>`;
       const selected=String(selectedPreliminaryMatchId||"")===String(m.id);
       html+=`<div class="fixture-row ko-prelim-match${selected?" selected-prelim-match":""}" data-prelim-match="${m.id}" role="button" tabindex="0" title="Select this Pre-Knockout match for scoring">
         <div class="fixture-number ko-prelim-match-number">${m.matchNumber}.</div>
-        <div class="fixture-teams">${aDisplay}<span class="match-vs">VS</span>${bDisplay}</div>
+        <div class="fixture-teams">${aDisplay}${matchOutcomeMarkup(m.result||null,aWinner||bWinner,matchWinnerId)}${bDisplay}</div>
         <span class="badge ko-prelim-status">${isGeneratedMatchResultComplete(m)?"✓":"—"}</span>
       </div>`;
     });
@@ -5811,6 +5813,27 @@ function generateGroupFixturesSilent(groupId){
     generatedAt:Date.now()
   };
 }
+function completedMatchScoreText(result){
+  const games=Array.isArray(result?.games)?result.games:[];
+  return games
+    .filter(g=>g&&g.a!==undefined&&g.a!==""&&g.b!==undefined&&g.b!=="")
+    .map(g=>`${Number(g.a)}-${Number(g.b)}`)
+    .join(" · ");
+}
+
+function matchParticipantClasses(completed,winner,teamId){
+  if(!completed)return "";
+  const team=String(teamId||"");
+  if(team&&team===String(winner||""))return "winner-team";
+  return "match-loser-team";
+}
+
+function matchOutcomeMarkup(result,completed,winner){
+  if(!completed)return `<span class="match-vs">VS</span>`;
+  const score=completedMatchScoreText(result);
+  return `<span class="match-score-summary" aria-label="Match score">${escapeHtml(score||"—")}</span>`;
+}
+
 function renderFixtureGroupFilter(){
   const el=$("fixtureGroupFilter");
   if(!el)return;
@@ -5868,9 +5891,9 @@ function renderFixtures(){
     return `<div class="fixture-row group-fixture-selectable${selected?" selected-fixture":""}" data-fixture-id="${f.id}" role="button" tabindex="0" title="Select this fixture for scoring">
       <div class="fixture-number">${letter}${f.number}</div>
       <div class="fixture-teams">
-        <strong class="participant-label ${aWin?'winner-team':''}">${labelA}</strong>
-        <span class="match-vs">VS</span>
-        <strong class="participant-label ${bWin?'winner-team':''}">${labelB}</strong>
+        <strong class="participant-label ${matchParticipantClasses(resultComplete,winner,f.teamAId)}">${labelA}</strong>
+        ${matchOutcomeMarkup(result,resultComplete,winner)}
+        <strong class="participant-label ${matchParticipantClasses(resultComplete,winner,f.teamBId)}">${labelB}</strong>
       </div>
       <span class="badge">${resultComplete?(result?.walkover?'WO':'✓'):'—'}</span>
     </div>`;

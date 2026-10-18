@@ -122,7 +122,7 @@ details.card>summary select{margin-left:auto;width:auto;min-width:125px;padding:
 .result-game input{width:72px;padding:8px}
 
 .result-match-line{white-space:nowrap;overflow-x:auto}
-.winner-team{color:#16833b}.match-vs{opacity:.65}.prelim-vs{opacity:.65}
+.winner-team{color:#16833b}.match-loser-team{color:#b45309}.match-vs{opacity:.65}.match-score-summary{font-weight:700;color:#38bdf8;opacity:1;font-variant-numeric:tabular-nums;white-space:nowrap;flex:0 0 auto}.prelim-vs{opacity:.65}
 .participant-label{font-size:0.9em}
 .loser-team{opacity:.78}
 .compact-result{overflow-x:auto}
@@ -331,7 +331,7 @@ details.card>summary select{margin-left:auto;width:auto;min-width:125px;padding:
 .ko-prelim-match-number{font-weight:700;white-space:nowrap}
 .ko-prelim-team{display:flex;flex-direction:column;align-items:flex-start;flex:1 1 0;flex-basis:0;width:auto;max-width:100%;min-width:0;overflow-wrap:anywhere;word-break:normal;white-space:normal;font-size:.9em}.fixture-teams .ko-prelim-team{flex:1 1 0;min-width:0;opacity:1}.ko-prelim-team .prelim-source,.ko-prelim-team .prelim-player{display:block;min-width:0;width:100%;white-space:normal;overflow-wrap:anywhere;word-break:normal;opacity:1}
 .ko-prelim-team .prelim-source{font-weight:600;margin-right:5px}.ko-prelim-team .prelim-player{font-size:calc(.9em + 1px)}
-.ko-prelim-vs{white-space:nowrap;opacity:.65;text-align:center}.ko-prelim-match .match-vs{color:#38bdf8;font-weight:700}
+.ko-prelim-vs{white-space:nowrap;opacity:.65;text-align:center}.ko-prelim-team+.match-score-summary{white-space:nowrap;opacity:1;text-align:center}.ko-prelim-match .match-vs{color:#38bdf8;font-weight:700}
 .ko-prelim-status{width:20px;text-align:center;white-space:nowrap;overflow:hidden}
 .group-metric{font-variant-numeric:tabular-nums;font-weight:600}
 .match-participant-compact{font-size:0.9em}
