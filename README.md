@@ -1,6 +1,6 @@
 # Badminton Tournament Manager
 
-**Current version: V6.1.8**
+**Current version: V6.1.10**
 
 A mobile-first, browser-based badminton tournament management application for managing players, teams, groups, fixtures, results, rankings, qualification and knockout stages.
 
@@ -328,7 +328,7 @@ The application version is maintained consistently across the application releas
 
 Current release:
 
-**V6.1.8**
+**V6.1.10**
 
 Version changes should be updated consistently before publishing a new release.
 

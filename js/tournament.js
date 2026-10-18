@@ -1,4 +1,4 @@
-const APP_VERSION = '6.1.8';
+const APP_VERSION = '6.1.9';
 
 "use strict";
 
@@ -5831,7 +5831,12 @@ function matchParticipantClasses(completed,winner,teamId){
 function matchOutcomeMarkup(result,completed,winner){
   if(!completed)return `<span class="match-vs">VS</span>`;
   const score=completedMatchScoreText(result);
-  return `<span class="match-score-summary" aria-label="Match score">${escapeHtml(score||"—")}</span>`;
+  const scoreLines=score?score.split(" · "):[];
+  const visual=scoreLines.length
+    ? scoreLines.map(s=>`<span class="match-score-line">${escapeHtml(s)}</span>`).join("")
+    : "—";
+  const aria=scoreLines.join(" ")||"No score";
+  return `<span class="match-score-summary" aria-label="Match score">${visual}</span>`;
 }
 
 function renderFixtureGroupFilter(){
