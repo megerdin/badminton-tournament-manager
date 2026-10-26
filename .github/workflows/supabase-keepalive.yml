@@ -1,0 +1,47 @@
+name: Supabase Keep Alive
+
+on:
+  schedule:
+    # Twice daily, away from the top of the hour to reduce scheduling delays.
+    - cron: "23 6,18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-keepalive
+  cancel-in-progress: false
+
+jobs:
+  keepalive:
+    name: Send harmless database heartbeat
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Call read-only keepalive function
+        env:
+          SUPABASE_URL: https://tumqpsbwelmwawbkqtjh.supabase.co
+          SUPABASE_PUBLISHABLE_KEY: sb_publishable_CcmUtzpRMlCqEY8o5yXdGQ_7Otmu4t4
+        run: |
+          set -eu
+          response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
+
+          status_code="$(curl --silent --show-error \
+            --output "$response_file" \
+            --write-out "%{http_code}" \
+            --request POST \
+            --url "${SUPABASE_URL}/rest/v1/rpc/keepalive" \
+            --header "apikey: ${SUPABASE_PUBLISHABLE_KEY}" \
+            --header "Content-Type: application/json" \
+            --data '{}')"
+
+          if [ "$status_code" -lt 200 ] || [ "$status_code" -ge 300 ]; then
+            echo "Supabase keepalive failed (HTTP $status_code). Response:"
+            cat "$response_file"
+            exit 1
+          fi
+
+          echo "Supabase keepalive succeeded (HTTP $status_code)."
+          cat "$response_file"
